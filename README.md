@@ -19,6 +19,8 @@ cd RawPhotoForge
 [sam2.1-hiera-largeのダウンロードページ](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)から
 - sam2.1_hiera_large.pt
 - sam2.1_hiera_l.yaml
+
+
 をダウンロードしてRawPhotoForge ディレクトリ内に配置 ("RawPhotoForge\sam2.1_hiera_l.yaml", "RawPhotoForge\sam2.1_hiera_large.pt")
 
 
