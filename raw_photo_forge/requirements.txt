@@ -1,0 +1,15 @@
+numpy
+pyopencl
+pillow
+opencv-python
+scipy
+numba
+lensfunpy
+rawpy
+torch
+sam2
+matplotlib
+PySide6
+chardet
+tqdm
+pyinstaller
