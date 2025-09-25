@@ -38,4 +38,22 @@ python raw_photo_forge\raw_photo_forge.py
 ```
 
 
+# このリポジトリは一部のコードがAIで生成されたものです。 
+# このリポジトリの制作に使用したAIサービス
+
+- ChatGPT
+- Claude
+- Gemini CLI
+- Poe
+
+
+このリポジトリには LMArena によって生成されたコードや成果物は一切含まれていません。  
+
+このリポジトリには
+
+# ライセンス
+
+
+
+
 
