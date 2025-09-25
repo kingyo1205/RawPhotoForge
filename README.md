@@ -20,10 +20,10 @@ cd RawPhotoForge
 - sam2.1_hiera_large.pt
 - sam2.1_hiera_l.yaml
 
-をダウンロードしてRawPhotoForge ディレクトリ内に配置 ("RawPhotoForge\sam2.1_hiera_l.yaml", "RawPhotoForge\sam2.1_hiera_large.pt")
+をダウンロードして`RawPhotoForge`ディレクトリ内に配置 (`RawPhotoForge\sam2.1_hiera_l.yaml`, `RawPhotoForge\sam2.1_hiera_large.pt`)
 
 ## 4. 依存関係のexiftoolをダウンロード
-[exiftool](https://exiftool.org/)をダウンロードして環境変数PATHに登録 (コマンドが実行できるようにする)
+[exiftool](https://exiftool.org/)をダウンロードして環境変数`PATH`に登録 (コマンドが実行できるようにする)
 
 
 
