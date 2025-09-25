@@ -70,7 +70,7 @@ LMArena等の制約付き生成物は一切含まれていません。
 | **chardet** | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) |
 | tqdm | MIT | - |
 
-> 注：上記は要約です。各ライブラリの正式なライセンスは PyPI や公式リポジトリで確認してください。
+
 
 ### LGPL ライブラリについて
 
