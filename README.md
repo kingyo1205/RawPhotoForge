@@ -49,8 +49,6 @@ python raw_photo_forge\raw_photo_forge.py
 
 このリポジトリには LMArena によって生成されたコードや成果物は一切含まれていません。  
 
-このリポジトリには
-
 # ライセンス
 
 
