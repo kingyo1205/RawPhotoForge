@@ -47,6 +47,36 @@ LMArena等の制約付き生成物は一切含まれていません。
  
 
 # ライセンス
+このリポジトリは**MIT License** の下で配布しています。  
+## 依存ライブラリとそのライセンス
+
+本ソフトウェアは複数のライブラリに依存しています。  
+以下は主要ライブラリとライセンスの一覧です（2025年確認）。
+
+| ライブラリ | ライセンス | 備考 |
+|------------|------------|------|
+| numpy | BSD | - |
+| pyopencl | MIT | - |
+| pillow | MIT-CMU | - |
+| opencv-python | Apache-2.0 | - |
+| scipy | BSD | - |
+| numba | BSD | - |
+| lensfunpy | MIT | - |
+| rawpy | MIT | - |
+| torch | BSD | - |
+| sam2 (SAMモデル周辺) | Apache-2.0 | - |
+| matplotlib | Python Software Foundation License | - |
+| **PySide6** | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.qt.io/licensing/](https://www.qt.io/licensing/) |
+| **chardet** | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) |
+| tqdm | MIT | - |
+
+> 注：上記は要約です。各ライブラリの正式なライセンスは PyPI や公式リポジトリで確認してください。
+
+### LGPL ライブラリについて
+
+PySide6 や chardet のような LGPL ライブラリは、利用者が自由に改変・差し替えできる状態で配布しています。  
+Releasesの`pyinstaller`の`--onedir`でビルドしたexeは`--collect-all`オプションを使って LGPL ライブラリのファイルをすべて含めています。
+
 
 
 
