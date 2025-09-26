@@ -42,7 +42,7 @@ python raw_photo_forge\raw_photo_forge.py
 
 # AIによるコード生成について
 本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。  
-LMArena等の制約付き生成物は一切含まれていません。
+LMArena等のOSSにできない可能性がある生成物は一切含まれていません。
 
  
 
