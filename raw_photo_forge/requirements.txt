@@ -13,3 +13,4 @@ PySide6
 chardet
 tqdm
 pyinstaller
+photo-metadata
