@@ -55,20 +55,19 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 
 | ライブラリ | ライセンス | 備考 |
 |------------|------------|------|
-| numpy | BSD | - |
-| pyopencl | MIT | - |
-| pillow | MIT-CMU | - |
-| opencv-python | Apache-2.0 | - |
-| scipy | BSD | - |
-| numba | BSD | - |
-| lensfunpy | MIT | - |
-| rawpy | MIT | - |
-| torch | BSD | - |
-| sam2 (SAMモデル周辺) | Apache-2.0 | - |
-| matplotlib | Python Software Foundation License | - |
-| **PySide6** | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.qt.io/licensing/](https://www.qt.io/licensing/) |
-| **chardet** | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) |
-| tqdm | MIT | - |
+| [numpy](https://pypi.org/project/numpy/) | BSD | - |
+| [pyopencl](https://pypi.org/project/pyopencl/) | MIT | - |
+| [pillow](https://pypi.org/project/Pillow/) | MIT-CMU | - |
+| [opencv-python](https://pypi.org/project/opencv-python/) | Apache-2.0 | - |
+| [scipy](https://pypi.org/project/scipy/) | BSD | - |
+| [numba](https://pypi.org/project/numba/) | BSD | - |
+| [lensfunpy](https://pypi.org/project/lensfunpy/) | MIT | - |
+| [rawpy](https://pypi.org/project/rawpy/) | MIT | - |
+| [torch](https://pypi.org/project/torch/) | BSD | - |
+| [matplotlib](https://pypi.org/project/matplotlib/) | Python Software Foundation License | - |
+| [PySide6](https://pypi.org/project/PySide6/) | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.qt.io/licensing/](https://www.qt.io/licensing/) |
+| [chardet](https://pypi.org/project/chardet/) | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) |
+| [tqdm](https://pypi.org/project/tqdm/) | MIT | - |
 
 
 
