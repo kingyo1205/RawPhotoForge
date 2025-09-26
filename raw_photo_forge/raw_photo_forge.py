@@ -922,10 +922,12 @@ class RAWDevelopmentGUI(QMainWindow):
         # raw_image_editorの初期化
         if RAW_EDITOR_AVAILABLE:
             try:
-                raw_image_editor.photo_metadata.set_exiftool_path(self.settings_manager.exiftool_path)
                 raw_image_editor.init(device=self.device)
+                raw_image_editor.photo_metadata.set_exiftool_path(self.settings_manager.exiftool_path)
+                
             except Exception as e:
                 print(f"raw_image_editor の初期化に失敗: {e}")
+                traceback.print_exc()
                 QMessageBox.warning(self, self.tr("初期化エラー"), f"{self.tr('画像処理エンジンの初期化に失敗しました。')}\n{e}")
         
         # 編集パラメータ（マスクごと）
