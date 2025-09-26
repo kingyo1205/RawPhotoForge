@@ -75,7 +75,7 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 ### LGPL ライブラリについて
 
 PySide6 や chardet のような LGPL ライブラリは、利用者が自由に改変・差し替えできる状態で配布しています。  
-Releasesの`pyinstaller`の`--onedir`でビルドしたexeは`--collect-all`オプションを使って LGPL ライブラリのファイルをすべて含めています。
+Releasesの`pyinstaller`の`--onedir`でビルドしたexeは`--collect-all`オプションを使って LGPL ライブラリのファイルをすべて、exeに埋め込まず、外に出して置き換えられるようにしています。
 
 
 
