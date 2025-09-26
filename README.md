@@ -15,7 +15,7 @@ git clone https://github.com/kingyo1205/RawPhotoForge.git
 cd RawPhotoForge
 ```
 
-## 3. 依存関係のaiモデルをダウンロード
+## 3. 依存関係のAIモデルをダウンロード
 [sam2.1-hiera-largeのダウンロードページ](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)から
 - sam2.1_hiera_large.pt
 - sam2.1_hiera_l.yaml
