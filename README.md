@@ -65,7 +65,7 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 | [rawpy](https://pypi.org/project/rawpy/) | MIT | - |
 | [torch](https://pypi.org/project/torch/) | BSD | - |
 | [matplotlib](https://pypi.org/project/matplotlib/) | Python Software Foundation License | - |
-| [PySide6](https://pypi.org/project/PySide6/) | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.qt.io/licensing/](https://www.qt.io/licensing/) |
+| [PySide6](https://pypi.org/project/PySide6/) | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/lgpl-3.0.html](https://www.gnu.org/licenses/lgpl-3.0.html) |
 | [chardet](https://pypi.org/project/chardet/) | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.en](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.en) |
 | [tqdm](https://pypi.org/project/tqdm/) | MIT | - |
 
