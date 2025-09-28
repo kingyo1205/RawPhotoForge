@@ -37,6 +37,21 @@ pip install -r raw_photo_forge\requirements.txt
 python raw_photo_forge\raw_photo_forge.py
 ```
 
+# ビルド方法 (exe化)
+
+## 1. pyinstallerをインストール
+```bash
+pip install pyinstaller
+```
+
+## 2. ビルド
+```bash
+pyinstaller --collect-all photo_metadata --collect-all raw_image_editor --onedir --add-data "raw_image_editor\opencl_kernel.cl;raw_image_editor" --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
+```
+
+## 3. exiftoolを配置
+`dist\raw_photo_forge`に`exiftool_dir`を作成して、`exiftool.exe`を配置。こうなるように`dist\raw_photo_forgeにexiftool_dir\exiftool.exe`
+
 
 
 
