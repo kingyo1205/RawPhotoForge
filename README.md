@@ -63,6 +63,9 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 
 # ライセンス
 このリポジトリは**MIT License** の下で配布しています。  
+
+## 依存AIモデル
+- [sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) (Apache 2.0)
 ## 依存ライブラリとそのライセンス
 
 本ソフトウェアは複数のライブラリに依存しています。  
