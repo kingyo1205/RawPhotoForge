@@ -51,7 +51,8 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 ## 依存ライブラリとそのライセンス
 
 本ソフトウェアは複数のライブラリに依存しています。  
-以下は主要ライブラリとライセンスの一覧です（2025年確認）。
+以下は主要ライブラリとライセンスの一覧です（2025年確認）。  
+ライセンスはpypiから見たものです。  
 
 | ライブラリ | ライセンス | 備考 |
 |------------|------------|------|
@@ -65,16 +66,11 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 | [rawpy](https://pypi.org/project/rawpy/) | MIT | - |
 | [torch](https://pypi.org/project/torch/) | BSD | - |
 | [matplotlib](https://pypi.org/project/matplotlib/) | Python Software Foundation License | - |
-| [PySide6](https://pypi.org/project/PySide6/) | LGPL-3.0-only | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/lgpl-3.0.en.html](https://www.gnu.org/licenses/lgpl-3.0.en.html) |
-| [chardet](https://pypi.org/project/chardet/) | LGPL-2.1+ | 差し替え可能。全文はこちら: [https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.en](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.en) |
-| [tqdm](https://pypi.org/project/tqdm/) | MIT | - |
+| [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT | 私の自作ライブラリ
 
 
 
-### LGPL ライブラリについて
 
-PySide6 や chardet のような LGPL ライブラリは、利用者が自由に改変・差し替えできる状態で配布しています。  
-Releasesの`pyinstaller`の`--onedir`でビルドしたexeは`--collect-all`オプションを使って LGPL ライブラリのファイルをすべて、exeに埋め込まず、外に出して置き換えられるようにしています。
 
 
 
