@@ -23,14 +23,19 @@ Linux で使用する場合はコマンドやパスを適宜変更してくだ�
 
 # 使い方
 
-## 1. リポジトリを取得
-```bash
-git clone https://github.com/kingyo1205/RawPhotoForge.git
-cd RawPhotoForge
-````
+## 1. ソースコードを取得
 
-* `git clone`：GitHub からソースコードをコピーします
-* `cd RawPhotoForge`：コピーしたフォルダに移動します
+ソースコードは GitHub のリリースページから **zip ファイル** をダウンロードしてください。  
+ダウンロード数を集計したいため、可能な限り **git clone ではなくリリースから取得** を推奨します。
+
+[Releases ページ](https://github.com/kingyo1205/RawPhotoForge/releases)
+
+1. zip ファイルをダウンロードして解凍し、任意の場所に `RawPhotoForge` フォルダを置きます
+2. カレントディレクトリを `RawPhotoForge` に移動します：
+
+```bash
+cd RawPhotoForge
+```
 
 ---
 
