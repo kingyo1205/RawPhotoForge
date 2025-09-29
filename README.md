@@ -55,7 +55,7 @@ pyinstaller --collect-all raw_image_editor --collect-all numpy --collect-all pyo
 ```
 
 ## 4. exiftoolを配置
-`dist\raw_photo_forge`に`exiftool_dir`を作成して、`exiftool.exe`を配置。こうなるように`dist\raw_photo_forgeにexiftool_dir\exiftool.exe`
+`dist\raw_photo_forge`に`exiftool_dir`を作成して、`exiftool.exe`を配置。こうなるように`dist\raw_photo_forge\exiftool_dir\exiftool.exe`
 
 
 
