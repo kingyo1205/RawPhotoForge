@@ -39,7 +39,6 @@ OpenCL と NumPy バックエンド対応の高速画像処理エンジンで、
 cd RawPhotoForge
 ````
 
-> ※ git clone で取得する場合も同様にカレントディレクトリを移動してください
 
 ---
 
