@@ -44,12 +44,17 @@ python raw_photo_forge\raw_photo_forge.py
 pip install pyinstaller
 ```
 
-## 2. ビルド
+## 2. PYTHONPATHに追加
 ```bash
-pyinstaller --collect-all raw_image_editor --collect-all numpy --collect-all pyopencl --collect-all pillow --collect-all opencv-python --collect-all scipy --collect-all numba --collect-all lensfunpy --collect-all rawpy --collect-all torch --collect-all sam2 --collect-all matplotlib --collect-all photo-metadata --onedir --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
+set PYTHONPATH=.;%PYTHONPATH%
 ```
 
-## 3. exiftoolを配置
+## 3. ビルド
+```bash
+pyinstaller --collect-all raw_image_editor --collect-all numpy --collect-all pyopencl --collect-all PIL --collect-all cv2 --collect-all scipy --collect-all numba --collect-all lensfunpy --collect-all rawpy --collect-all torch --collect-all sam2 --collect-all matplotlib --collect-all photo_metadata --onedir --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
+```
+
+## 4. exiftoolを配置
 `dist\raw_photo_forge`に`exiftool_dir`を作成して、`exiftool.exe`を配置。こうなるように`dist\raw_photo_forgeにexiftool_dir\exiftool.exe`
 
 
