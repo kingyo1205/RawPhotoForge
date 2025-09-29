@@ -1,109 +1,124 @@
 # RawPhotoForge
+
 RAW Photo Editor Written in Python
 
+シンプルで高機能な **RAW現像ソフトウェア**   
+RawPhotoForgeはPythonで書かれたRAW現像ソフトです。  
+OpenClとNumPyバックエンド対応で高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
+明るさ、色相、彩度、輝度のトーンカーブで、色や明るさを細かく調整可能です。
+AI マスク（SAM）による部分補正、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
+
+
+
+**対応OS:** **Windows**, **Linux** 
+
+**注意:** 本 README のコマンド例は Windows 用に書かれています。  
+Linux で使用する場合はコマンドやパスを適宜変更してください。
+
+
+本ソフトウェアは **ソースコード配布のみ** です。  
+実行には Python 3.11 以上が必要です。
+
+---
 
 # 使い方
 
-## 1. git clone
-
+## 1. リポジトリを取得
 ```bash
 git clone https://github.com/kingyo1205/RawPhotoForge.git
-```
-
-## 2. カレントディレクトリにする
-```bash
 cd RawPhotoForge
+````
+
+* `git clone`：GitHub からソースコードをコピーします
+* `cd RawPhotoForge`：コピーしたフォルダに移動します
+
+---
+
+## 2. AIモデルを配置
+
+[sam2.1-hiera-large のダウンロードページ](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)から以下を取得し、**RawPhotoForge フォルダ直下**に置いてください:
+
+* `sam2.1_hiera_large.pt`
+* `sam2.1_hiera_l.yaml`
+
+> こんな感じです。`RawPhotoForge\sam2.1_hiera_large.pt`
+
+---
+
+## 3. ExifTool の導入
+
+[ExifTool 公式サイト](https://exiftool.org/)からダウンロードして、環境変数 `PATH` に登録してください。
+
+* Windows の場合、「環境変数を編集」で ExifTool のフォルダを追加
+* コマンドプロンプトで以下を入力して確認できます：
+
+```bash
+exiftool -ver
 ```
 
-## 3. 依存関係のAIモデルをダウンロード
-[sam2.1-hiera-largeのダウンロードページ](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)から
-- sam2.1_hiera_large.pt
-- sam2.1_hiera_l.yaml
+バージョン番号が表示されれば OK です
 
-をダウンロードして`RawPhotoForge`ディレクトリ内に配置 (`RawPhotoForge\sam2.1_hiera_l.yaml`, `RawPhotoForge\sam2.1_hiera_large.pt`)
+---
 
-## 4. 依存関係のexiftoolをダウンロード
-[exiftool](https://exiftool.org/)をダウンロードして環境変数`PATH`に登録 (コマンドが実行できるようにする)
+## 4. 依存ライブラリのインストール
 
-
-
-## 5. ライブラリをインストール
 ```bash
 pip install -r raw_photo_forge\requirements.txt
 ```
 
-## 6. 実行
+* Python のライブラリを一括でインストールします
+* エラーが出た場合は、Python が正しくインストールされているか確認してください
+
+---
+
+## 5. RawPhotoForge を起動
+
 ```bash
 python raw_photo_forge\raw_photo_forge.py
 ```
 
-# ビルド方法 (exe化)
+* これでソフトが起動します
+* もし「コマンドが見つかりません」などのエラーが出た場合は、Python のパスや ExifTool の PATH 設定を確認してください
 
-## 1. pyinstallerをインストール
-```bash
-pip install pyinstaller
-```
-
-## 2. PYTHONPATHに追加
-```bash
-set PYTHONPATH=.;%PYTHONPATH%
-```
-
-## 3. ビルド
-```bash
-pyinstaller --collect-all raw_image_editor --collect-all numpy --collect-all pyopencl --collect-all PIL --collect-all cv2 --collect-all scipy --collect-all numba --collect-all lensfunpy --collect-all rawpy --collect-all torch --collect-all sam2 --collect-all matplotlib --collect-all photo_metadata --onedir --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
-```
-
-## 4. exiftoolを配置
-`dist\raw_photo_forge`に`exiftool_dir`を作成して、`exiftool.exe`を配置。こうなるように`dist\raw_photo_forge\exiftool_dir\exiftool.exe`
-
-
-
+---
 
 # AIによるコード生成について
-本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。  
-LMArena等のOSSにできない可能性がある生成物は一切含まれていません。
 
- 
+本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。
+LMArena 等の OSS にできない可能性がある生成物は一切含まれていません。
+
+---
 
 # ライセンス
-このリポジトリは**MIT License** の下で配布しています。  
 
-## 依存AIモデル
-- [sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) (Apache 2.0)
+このリポジトリは **MIT License** の下で配布しています。
+
+## 依存 AI モデル
+
+* [sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) (Apache 2.0)
 
 ## 依存関係の ExifTool
-このソフトウェアでは、Phil Harvey 氏による ExifTool を使用しています。
-ExifTool は Artistic License に基づいてライセンスされています（GPL ではなく、Artistic License を選択しています）。
-詳細については、[Artistic License の公式ページ](https://dev.perl.org/licenses/artistic.html)をご覧ください。
 
-## 依存ライブラリとそのライセンス
+このソフトウェアでは Phil Harvey 氏による ExifTool を使用しています。
+ExifTool は Artistic License に基づいてライセンスされています（GPL ではなく Artistic License を選択）。
+詳細は [公式ページ](https://dev.perl.org/licenses/artistic.html) をご覧ください。
 
-本ソフトウェアは複数のライブラリに依存しています。  
-以下は主要ライブラリとライセンスの一覧です（2025年確認）。  
-ライセンスはpypiに書いてあるものです。  
+## 主要な依存ライブラリとライセンス
 
-| ライブラリ | ライセンス | 備考 |
-|------------|------------|------|
-| [numpy](https://pypi.org/project/numpy/) | BSD | - |
-| [pyopencl](https://pypi.org/project/pyopencl/) | MIT | - |
-| [pillow](https://pypi.org/project/Pillow/) | MIT-CMU | - |
-| [opencv-python](https://pypi.org/project/opencv-python/) | Apache-2.0 | - |
-| [scipy](https://pypi.org/project/scipy/) | BSD | - |
-| [numba](https://pypi.org/project/numba/) | BSD | - |
-| [lensfunpy](https://pypi.org/project/lensfunpy/) | MIT | - |
-| [rawpy](https://pypi.org/project/rawpy/) | MIT | - |
-| [torch](https://pypi.org/project/torch/) | BSD | - |
-| [sam2](https://pypi.org/project/sam2/) | Apache 2.0  | - |
-| [matplotlib](https://pypi.org/project/matplotlib/) | Python Software Foundation License | - |
-| [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT | 私の自作ライブラリ |
+（2025年確認 / PyPI 記載情報）
 
-
-
-
-
-
-
-
-
+| ライブラリ                                                      | ライセンス       | 備考      |
+| ---------------------------------------------------------- | ----------- | ------- |
+| [numpy](https://pypi.org/project/numpy/)                   | BSD         | -       |
+| [pyopencl](https://pypi.org/project/pyopencl/)             | MIT         | -       |
+| [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU     | -       |
+| [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0  | -       |
+| [scipy](https://pypi.org/project/scipy/)                   | BSD         | -       |
+| [numba](https://pypi.org/project/numba/)                   | BSD         | -       |
+| [lensfunpy](https://pypi.org/project/lensfunpy/)           | MIT         | -       |
+| [rawpy](https://pypi.org/project/rawpy/)                   | MIT         | -       |
+| [torch](https://pypi.org/project/torch/)                   | BSD         | -       |
+| [sam2](https://pypi.org/project/sam2/)                     | Apache 2.0  | -       |
+| [matplotlib](https://pypi.org/project/matplotlib/)         | PSF License | -       |
+| [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT         | 自作ライブラリ |
 
