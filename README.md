@@ -46,7 +46,7 @@ pip install pyinstaller
 
 ## 2. ビルド
 ```bash
-pyinstaller --collect-all photo_metadata --collect-all raw_image_editor --onedir --add-data "raw_image_editor\opencl_kernel.cl;raw_image_editor" --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
+pyinstaller --collect-all raw_image_editor --collect-all numpy --collect-all pyopencl --collect-all pillow --collect-all opencv-python --collect-all scipy --collect-all numba --collect-all lensfunpy --collect-all rawpy --collect-all torch --collect-all sam2 --collect-all matplotlib --collect-all photo-metadata --onedir --add-data "sam2.1_hiera_large.pt;raw_image_editor" --add-data "sam2.1_hiera_l.yaml;raw_image_editor" raw_photo_forge\raw_photo_forge.py
 ```
 
 ## 3. exiftoolを配置
