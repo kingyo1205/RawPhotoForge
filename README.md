@@ -71,6 +71,12 @@ LMArena等のOSSにできない可能性がある生成物は一切含まれて�
 
 ## 依存AIモデル
 - [sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) (Apache 2.0)
+
+## 依存関係の ExifTool
+このソフトウェアでは、Phil Harvey 氏による ExifTool を使用しています。
+ExifTool は Artistic License に基づいてライセンスされています（GPL ではなく、Artistic License を選択しています）。
+詳細については、[Artistic License の公式ページ](https://dev.perl.org/licenses/artistic.html)をご覧ください。
+
 ## 依存ライブラリとそのライセンス
 
 本ソフトウェアは複数のライブラリに依存しています。  
