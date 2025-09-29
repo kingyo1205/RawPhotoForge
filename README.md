@@ -128,7 +128,7 @@ ExifTool は Phil Harvey 氏によるツールで、**Artistic License** に基�
 | [rawpy](https://pypi.org/project/rawpy/)                   | MIT         | -       |
 | [torch](https://pypi.org/project/torch/)                   | BSD         | -       |
 | [sam2](https://pypi.org/project/sam2/)                     | Apache 2.0  | -       |
-| [matplotlib](https://pypi.org/project/matplotlib/)         | PSF License | -       |
+| [matplotlib](https://pypi.org/project/matplotlib/)         | Python Software Foundation License | -       |
 | [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT         | 自作ライブラリ |
 
 
