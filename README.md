@@ -32,10 +32,21 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 
 ## 1. ソースコードを取得
 
+
+**必ず自作Asset（zipファイル）をダウンロードしてください。**
+
+- ファイル名フォーマット：  
+  `RawPhotoForge-v<バージョン>.zip`  
+  例：`RawPhotoForge-v0.1.0.zip`
+
+- 最新リリースはこちらから直接ダウンロード可能：  
+  [最新版ダウンロード](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.1.0/RawPhotoForge-v0.1.0.zip)
+
+※ GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず上記の自作Assetを使用してください。
+
 ソースコードは GitHub のリリースページから **zip ファイル** をダウンロードしてください。  
 ダウンロード数を集計したいため、可能な限り **git clone ではなくリリースから取得** を推奨します。
 
-[Releases ページ](https://github.com/kingyo1205/RawPhotoForge/releases)
 
 1. zip ファイルをダウンロードして解凍し、任意の場所に `RawPhotoForge` フォルダを置きます
 2. カレントディレクトリを `RawPhotoForge` に移動します：
