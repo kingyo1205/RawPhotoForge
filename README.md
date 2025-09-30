@@ -1,23 +1,24 @@
+# **RawPhotoForge**
 
-# RawPhotoForge
-Python で書かれた 高速 RAW 現像ソフトウェア
+RAW Photo Editor Written in Python
 
-RawPhotoForge はシンプルで高機能な RAW 現像ソフトです。  
-OpenCL と NumPy バックエンド対応の高速画像処理エンジンで、RAW 写真をリアルタイムにプレビューしながら編集できます。  
-明るさ、色相、彩度、輝度のトーンカーブで色や輝度を細かく調整可能です。  
-さらに、AI マスク（SAM）による部分補正、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
+---
+**シンプルで高機能なRAW現像ソフトウェア**   
+RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。  
+**OpenClとNumPyバックエンド対応**で高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
+明るさ、色相、彩度、輝度のトーンカーブで、**色や明るさを細かく調整可能**です。  
+**AIマスク（SAM）による部分補正**、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
 
 ---
 
-## 対応 OS
+## 対応OS
 
-- Windows
-- Linux
+- **Windows**
+- **Linux**
 
-**注意:**
-
-- 本 README のコマンド例は Windows 向けです。Linux では適宜コマンドやパスを変更してください
-- 本ソフトウェアは **ソースコード配布のみ** です。Python 3.11 以上が必要です
+## 注意
+本 README のコマンド例は Windows 用に書かれています。Linux で使用する場合はコマンドやパスを適宜変更してください。  
+本ソフトウェアは **ソースコード配布のみ** です。実行には Python 3.11 以上が必要です。
 
 ---
 
@@ -30,15 +31,12 @@ OpenCL と NumPy バックエンド対応の高速画像処理エンジンで、
 
 [Releases ページ](https://github.com/kingyo1205/RawPhotoForge/releases)
 
-**手順:**
-
 1. zip ファイルをダウンロードして解凍し、任意の場所に `RawPhotoForge` フォルダを置きます
-2. カレントディレクトリを `RawPhotoForge` に移動します
+2. カレントディレクトリを `RawPhotoForge` に移動します：
 
 ```bash
 cd RawPhotoForge
-````
-
+```
 
 ---
 
@@ -90,9 +88,9 @@ python raw_photo_forge\raw_photo_forge.py
 
 ---
 
-# AI によるコード生成について
+# AIによるコード生成について
 
-本リポジトリの一部コードは ChatGPT、Claude、Gemini CLI、Poe を用いて生成・補助しました。
+本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。
 LMArena 等の OSS にできない可能性がある生成物は一切含まれていません。
 
 ---
@@ -107,12 +105,11 @@ LMArena 等の OSS にできない可能性がある生成物は一切含まれ�
 
 ## 依存関係の ExifTool
 
-ExifTool は Phil Harvey 氏によるツールで、**Artistic License** に基づいています。
-詳細は [公式ページ](https://dev.perl.org/licenses/artistic.html) をご覧ください
+このソフトウェアでは Phil Harvey 氏による ExifTool を使用しています。
+ExifTool は Artistic License に基づいてライセンスされています（GPL ではなく Artistic License を選択）。
+詳細は [公式ページ](https://dev.perl.org/licenses/artistic.html) をご覧ください。
 
----
-
-## 主要な依存ライブラリとライセンス
+## 依存ライブラリとライセンス
 
 （2025年確認 / PyPI 記載情報）
 
@@ -130,6 +127,4 @@ ExifTool は Phil Harvey 氏によるツールで、**Artistic License** に基�
 | [sam2](https://pypi.org/project/sam2/)                     | Apache 2.0  | -       |
 | [matplotlib](https://pypi.org/project/matplotlib/)         | Python Software Foundation License | -       |
 | [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT         | 自作ライブラリ |
-
-
-
+　
