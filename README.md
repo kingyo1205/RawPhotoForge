@@ -16,6 +16,12 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 - **Windows**
 - **Linux**
 
+## 対応言語 (UI)
+
+- English
+- 日本語
+
+
 ## 注意
 本 README のコマンド例は Windows 用に書かれています。Linux で使用する場合はコマンドやパスを適宜変更してください。  
 本ソフトウェアは **ソースコード配布のみ** です。実行には Python 3.11 以上が必要です。
