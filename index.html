@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RawPhotoForge - RAW Photo Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background: radial-gradient(ellipse at top, rgba(255, 120, 0, 0.15), transparent),
+                        radial-gradient(ellipse at bottom, rgba(255, 80, 20, 0.1), transparent);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255, 120, 0, 0.03) 100px, rgba(255, 120, 0, 0.03) 102px),
+                repeating-linear-gradient(0deg, transparent, transparent 100px, rgba(255, 120, 0, 0.03) 100px, rgba(255, 120, 0, 0.03) 102px);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff7800 0%, #ffb347 50%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(255, 120, 0, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 20px rgba(255, 120, 0, 0.4));
+            }
+            to {
+                filter: drop-shadow(0 0 40px rgba(255, 120, 0, 0.6));
+            }
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #ff9f66;
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff7800, #ff6b35);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 120, 0, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 120, 0, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 120, 0, 0.1);
+            color: #ff9f66;
+            border: 2px solid #ff7800;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 120, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .section {
+            padding: 5rem 2rem;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff7800, transparent);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #ff9f66;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff7800, transparent);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(255, 120, 0, 0.05), rgba(255, 107, 53, 0.05));
+            border: 1px solid rgba(255, 120, 0, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 120, 0, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(255, 120, 0, 0.2);
+            border-color: #ff7800;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            color: #ff9f66;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .tech-badge {
+            background: rgba(255, 120, 0, 0.1);
+            border: 2px solid rgba(255, 120, 0, 0.3);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #ff9f66;
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: rgba(255, 120, 0, 0.2);
+            border-color: #ff7800;
+            transform: scale(1.05);
+        }
+
+        .usage-section {
+            background: rgba(255, 120, 0, 0.02);
+            border-radius: 30px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            margin-bottom: 3rem;
+            padding-left: 3rem;
+            position: relative;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #ff7800, #ff6b35);
+        }
+
+        .step-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ff7800;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.8rem;
+            color: #ff9f66;
+            margin-bottom: 1rem;
+        }
+
+        .step-content {
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 120, 0, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            color: #ff9f66;
+            overflow-x: auto;
+        }
+
+        .warning-box {
+            background: rgba(255, 200, 0, 0.1);
+            border-left: 4px solid #ffc800;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .info-box {
+            background: rgba(100, 150, 255, 0.1);
+            border-left: 4px solid #6496ff;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+
+        .btn-small {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #ff7800, #ff6b35);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 120, 0, 0.3);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 120, 0, 0.5);
+        }
+
+        .btn-releases {
+            background: rgba(255, 120, 0, 0.1);
+            color: #ff9f66;
+            border: 2px solid #ff7800;
+        }
+
+        .btn-releases:hover {
+            background: rgba(255, 120, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+            
+            .subtitle {
+                font-size: 1.3rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .step {
+                padding-left: 1.5rem;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-20px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        .scroll-indicator span {
+            display: block;
+            width: 30px;
+            height: 50px;
+            border: 3px solid #ff7800;
+            border-radius: 25px;
+            position: relative;
+        }
+
+        .scroll-indicator span::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #ff7800;
+            border-radius: 50%;
+            animation: scroll 2s infinite;
+        }
+
+        @keyframes scroll {
+            0% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>RawPhotoForge</h1>
+            <div class="subtitle">RAW Photo Editor Written in Python</div>
+            <p class="description">
+                シンプルで高機能なRAW現像ソフトウェア。OpenCLとNumPyバックエンド対応で高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-primary" target="_blank">GitHub で見る</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.1.0/RawPhotoForge-v0.1.0.zip" class="btn btn-secondary">最新版ダウンロード</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span></span>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">特徴</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">⚡</span>
+                    <h3 class="feature-title">高速処理</h3>
+                    <p class="feature-description">OpenCLとNumPyバックエンドによる高速な画像処理エンジンで、リアルタイムプレビューを実現</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🎨</span>
+                    <h3 class="feature-title">細かい色調整</h3>
+                    <p class="feature-description">明るさ、色相、彩度、輝度のトーンカーブで色や明るさを自由自在にコントロール</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🤖</span>
+                    <h3 class="feature-title">AIマスク対応</h3>
+                    <p class="feature-description">SAM（Segment Anything Model）による高精度な部分補正機能を搭載</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📸</span>
+                    <h3 class="feature-title">レンズ補正</h3>
+                    <p class="feature-description">Lensfunライブラリによる自動レンズ補正機能で歪みや色収差を修正</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3 class="feature-title">メタデータ表示</h3>
+                    <p class="feature-description">ExifToolによる詳細なメタデータ表示で撮影情報を一目で確認</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🐍</span>
+                    <h3 class="feature-title">Python製</h3>
+                    <p class="feature-description">Pythonで書かれたオープンソースソフトウェアで、カスタマイズも簡単</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">技術スタック</h2>
+            <div class="tech-stack">
+                <div class="tech-badge">Python 3.11+</div>
+                <div class="tech-badge">OpenCL</div>
+                <div class="tech-badge">NumPy</div>
+                <div class="tech-badge">SAM 2.1</div>
+                <div class="tech-badge">Lensfun</div>
+                <div class="tech-badge">ExifTool</div>
+            </div>
+            <div class="tech-stack" style="margin-top: 2rem;">
+                <div class="tech-badge">Windows</div>
+                <div class="tech-badge">Linux</div>
+                <div class="tech-badge">English</div>
+                <div class="tech-badge">日本語</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">使い方</h2>
+            <div class="usage-section">
+                <div class="warning-box">
+                    <strong>⚠️ 注意事項</strong><br>
+                    本ソフトウェアは<strong>ソースコード配布のみ</strong>です。実行にはPython 3.11以上が必要です。<br>
+                    コマンド例はWindows用に書かれています。Linuxで使用する場合は適宜変更してください。
+                </div>
+
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <h3 class="step-title">ソースコードを取得</h3>
+                    <div class="step-content">
+                        <p>GitHubのリリースページから<strong>自作Asset（zipファイル）</strong>をダウンロードしてください。</p>
+                        <div class="download-buttons">
+                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.1.0/RawPhotoForge-v0.1.0.zip" class="btn-small btn-download" target="_blank">📥 最新版ダウンロード (v0.1.0)</a>
+                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn-small btn-releases" target="_blank">📋 全リリースを見る</a>
+                        </div>
+                        <div class="warning-box">
+                            <strong>重要:</strong> GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず自作Assetを使用してください。<br>
+                            ファイル名フォーマット: <code>RawPhotoForge-v&lt;バージョン&gt;.zip</code>
+                        </div>
+                        <p>ダウンロード後、zipファイルを解凍し、任意の場所に配置します。</p>
+                        <div class="code-block">cd RawPhotoForge</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <h3 class="step-title">AIモデルを配置</h3>
+                    <div class="step-content">
+                        <p><a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large ダウンロードページ</a>から以下のファイルを取得し、<strong>RawPhotoForgeフォルダ直下</strong>に配置します。</p>
+                        <ul style="list-style: none; padding-left: 1rem; margin-top: 1rem;">
+                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_large.pt</li>
+                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_l.yaml</li>
+                        </ul>
+                        <div class="info-box">
+                            配置例: <code>RawPhotoForge\sam2.1_hiera_large.pt</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <h3 class="step-title">ExifToolの導入</h3>
+                    <div class="step-content">
+                        <p><a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool 公式サイト</a>からダウンロードして、環境変数PATHに追加してください。</p>
+                        <p style="margin-top: 1rem;"><strong>確認手順:</strong></p>
+                        <div class="code-block">exiftool -ver</div>
+                        <p>バージョン番号が表示されればOKです。</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">04</div>
+                    <h3 class="step-title">依存ライブラリのインストール</h3>
+                    <div class="step-content">
+                        <div class="code-block">pip install -r raw_photo_forge\requirements.txt</div>
+                        <p>Pythonライブラリを一括でインストールします。エラーが出る場合は、Pythonのインストールやバージョンを確認してください。</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">05</div>
+                    <h3 class="step-title">RawPhotoForgeを起動</h3>
+                    <div class="step-content">
+                        <div class="code-block">python raw_photo_forge\raw_photo_forge.py</div>
+                        <p>ソフトが起動します。起動できない場合は、PythonやExifToolのPATH設定を確認してください。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="text-align: center; padding: 5rem 2rem;">
+        <div class="container">
+            <h2 class="section-title">始めよう</h2>
+            <p style="font-size: 1.2rem; color: #b0b0b0; margin-bottom: 2rem;">
+                今すぐRawPhotoForgeをダウンロードして、RAW現像の新しい体験を始めましょう
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-primary" target="_blank">リリースページへ</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank">GitHubで詳細を見る</a>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

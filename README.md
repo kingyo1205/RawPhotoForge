@@ -109,6 +109,7 @@ python raw_photo_forge\raw_photo_forge.py
 
 本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。
 LMArena 等の OSS にできない可能性がある生成物は一切含まれていません。
+index.html (ページ)はClaudeで生成しました。
 
 ---
 
