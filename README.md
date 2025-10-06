@@ -1,13 +1,12 @@
-
 # RawPhotoForge
 
 RAW Photo Editor Written in Python
 
-**This README is available in English and Japanese.**  
+**This README is available in English and Japanese.**
 **このREADMEは英語版と日本語版があります。**
 
-- [English README](#english-readme)  
-- [日本語 README](#日本語-readme)  
+* [English README](#english-readme)
+* [日本語 README](#日本語-readme)
 
 ---
 
@@ -16,30 +15,31 @@ RAW Photo Editor Written in Python
 RAW Photo Editor Written in Python
 
 ---
-**Simple yet Powerful RAW Photo Editor**  
-RawPhotoForge is a **RAW photo editor written in Python**.  
-With support for **OpenCL and NumPy backends**, it provides a fast image processing engine that enables real-time preview while editing RAW photos.  
-You can finely adjust **color and brightness using tone curves** for brightness, hue, saturation, and luminance.  
+
+**Simple yet Powerful RAW Photo Editor**
+RawPhotoForge is a **RAW photo editor written in Python**.
+With a fast image processing engine that runs on **OpenCL**, you can edit RAW photos with real-time preview.
+You can finely adjust **color and brightness using tone curves** for brightness, hue, saturation, and luminance.
 It also supports **AI masks (SAM) for partial adjustments**, lens correction via Lensfun, and metadata display using ExifTool.
 
 ---
 
 ## Supported OS
 
-- **Windows**
-- **Linux**
+* **Windows**
+* **Linux**
 
-## Supported Languages (UI)
+## Supported languages (UI)
 
-- English
-- Japanese
+* English
+* Japanese
 
 ---
 
 ## Note
-All command examples in this README are written for Windows.  
-If you use Linux, please modify commands and paths accordingly.  
-This software is **distributed as source code only** and requires Python 3.11 or higher.
+
+All command examples in this README are written for Windows. If you use Linux, please modify commands and paths accordingly.
+This software is **distributed as source code only**. Python 3.11 or higher is required to run it.
 
 ---
 
@@ -49,17 +49,16 @@ This software is **distributed as source code only** and requires Python 3.11 or
 
 **Be sure to download the custom Asset (zip file).**
 
-- File name format:  
-  `RawPhotoForge-v<version>.zip`  
+* File name format:
+  `RawPhotoForge-v<version>.zip`
   Example: `RawPhotoForge-v0.1.0.zip`
 
-- The latest release can be downloaded directly here:  
+* The latest release can be downloaded directly here:
   [Download Latest](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.2.0/RawPhotoForge-v0.2.0.zip)
 
-※ Do **NOT** use GitHub’s auto-generated “Source code (zip/tar.gz)”.  
-Always use the custom Asset above.
+※ Do **NOT** use GitHub’s auto-generated “Source code (zip/tar.gz)”. Always use the custom Asset above.
 
-Please download the **zip file** from the GitHub Release page.  
+Please download the **zip file** from the GitHub Release page.
 Since download counts are tracked, we recommend **using release downloads instead of git clone**.
 
 1. Download and extract the zip file, place the `RawPhotoForge` folder anywhere
@@ -73,8 +72,7 @@ cd RawPhotoForge
 
 ## 2. Place the AI model
 
-Download the following files from [sam2.1-hiera-large page](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)
-and place them **in the RawPhotoForge folder root**:
+Download the following files from [sam2.1-hiera-large page](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) and place them **in the RawPhotoForge folder root**:
 
 * `sam2.1_hiera_large.pt`
 * `sam2.1_hiera_l.yaml`
@@ -163,6 +161,7 @@ Details: [Artistic License official page](https://dev.perl.org/licenses/artistic
 
 ---
 
+
 # 日本語 README
 
 # **RawPhotoForge**
@@ -172,7 +171,7 @@ RAW Photo Editor Written in Python
 ---
 **シンプルで高機能なRAW現像ソフトウェア**   
 RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。  
-**OpenClとNumPyバックエンド対応**で高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
+**OpenClで動作**する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
 明るさ、色相、彩度、輝度のトーンカーブで、**色や明るさを細かく調整可能**です。  
 **AIマスク（SAM）による部分補正**、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
 
