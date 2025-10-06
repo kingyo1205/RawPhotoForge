@@ -51,7 +51,7 @@ This software is **distributed as source code only**. Python 3.11 or higher is r
 
 * File name format:
   `RawPhotoForge-v<version>.zip`
-  Example: `RawPhotoForge-v0.1.0.zip`
+  Example: `RawPhotoForge-v0.2.0.zip`
 
 * The latest release can be downloaded directly here:
   [Download Latest](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.2.0/RawPhotoForge-v0.2.0.zip)
@@ -203,7 +203,7 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 
 - ファイル名フォーマット：  
   `RawPhotoForge-v<バージョン>.zip`  
-  例：`RawPhotoForge-v0.1.0.zip`
+  例：`RawPhotoForge-v0.2.0.zip`
 
 - 最新リリースはこちらから直接ダウンロード可能：  
   [最新版ダウンロード](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.2.0/RawPhotoForge-v0.2.0.zip)
