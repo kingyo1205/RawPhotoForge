@@ -81,7 +81,7 @@ class EditParameters:
 @dataclass
 class SettingsManager:
     """設定とパスを管理するデータクラス"""
-    device: str = "cpu"
+    device_index: int = 0
     language: str = "日本語"
     
     # パス関連（初期化後に設定）
@@ -111,22 +111,22 @@ class SettingsManager:
                 settings = json.load(f)
             
             # デバイス設定の読み込みと検証
-            device_setting = settings.get("device", self.device)
+            device_setting = settings.get("device", f"opencl:{self.device_index}")
             if device_setting.startswith("opencl:"):
                 if RAW_EDITOR_AVAILABLE and raw_image_editor.OPENCL_AVAILABLE:
                     try:
                         opencl_contexts = raw_image_editor.get_opencl_ctxs()
-                        device_index = int(device_setting.split(":")[1])
-                        if device_index < len(opencl_contexts):
-                            self.device = device_setting
+                        index = int(device_setting.split(":")[1])
+                        if index < len(opencl_contexts):
+                            self.device_index = index
                         else:
-                            self.device = "cpu"  # インデックスが範囲外
+                            self.device_index = 0  # インデックスが範囲外
                     except (ValueError, IndexError, Exception):
-                        self.device = "cpu"  # パースエラーやOpenCLエラー
+                        self.device_index = 0  # パースエラーやOpenCLエラー
                 else:
-                    self.device = "cpu"  # OpenCLが利用不可
-            else:
-                self.device = device_setting  # "cpu"
+                    self.device_index = 0  # OpenCLが利用不可
+            else: # "cpu"や他の古い値を処理
+                self.device_index = 0
 
             self.language = settings.get("language", self.language)
         except (json.JSONDecodeError, FileNotFoundError) as e:
@@ -135,7 +135,7 @@ class SettingsManager:
     def save(self):
         """現在の設定をJSONファイルに保存する"""
         settings = {
-            "device": self.device,
+            "device": f"opencl:{self.device_index}",
             "language": self.language
         }
         try:
@@ -851,19 +851,27 @@ class SettingsDialog:
         self.device_combo = ttk.Combobox(device_frame, textvariable=self.device_var, 
                                         state="readonly", width=40)
         
-        device_options = ["CPU (numpy)"]
-        device_values = ["cpu"]
+        device_options = []
+        self.device_indices = []
         
         # OpenCLデバイス一覧を取得
         if RAW_EDITOR_AVAILABLE and raw_image_editor.OPENCL_AVAILABLE:
             try:
                 opencl_contexts = raw_image_editor.get_opencl_ctxs()
-                for i, ctx in enumerate(opencl_contexts):
-                    device_name = ctx.devices[0].name
-                    device_options.append(f"OpenCL: {device_name}")
-                    device_values.append(f"opencl:{i}")
+                if not opencl_contexts:
+                    device_options.append("OpenCLデバイスが見つかりません")
+                    self.device_indices.append(0)
+                else:
+                    for i, ctx in enumerate(opencl_contexts):
+                        device_name = ctx.devices[0].name
+                        device_options.append(f"OpenCL: {device_name}")
+                        self.device_indices.append(i)
             except Exception:
-                pass
+                device_options.append("OpenCLデバイスの取得中にエラー")
+                self.device_indices.append(0)
+        else:
+            device_options.append("raw_image_editorが利用できません")
+            self.device_indices.append(0)
         
         self.device_combo['values'] = device_options
         self.device_combo.pack(anchor='w', padx=10, pady=5)
@@ -885,30 +893,32 @@ class SettingsDialog:
         
         # 設定を読み込み
         self.load_settings()
-        self.device_values = device_values
     
     def load_settings(self):
         """設定を読み込みUIに反映"""
-        device = self.settings_manager.device
-        if device.startswith("opencl:"):
-            try:
-                index = int(device.split(":")[1])
-                if 0 <= index < len(self.device_combo['values']) - 1:
-                    self.device_var.set(self.device_combo['values'][index + 1])
-            except (ValueError, IndexError):
-                self.device_var.set("CPU (numpy)")
-        else:
-            self.device_var.set("CPU (numpy)")
+        device_idx = self.settings_manager.device_index
+        try:
+            # 保存されているデバイスインデックスが、利用可能なデバイスインデックスリストのどこにあるか探す
+            combo_box_index = self.device_indices.index(device_idx)
+            self.device_var.set(self.device_combo['values'][combo_box_index])
+        except ValueError:
+            # 保存されたインデックスが見つからない場合（例：GPUが取り外された）、最初の選択肢にフォールバック
+            if self.device_combo['values']:
+                self.device_var.set(self.device_combo['values'][0])
         
         self.language_var.set(self.settings_manager.language)
     
     def save_settings(self):
         """UIから設定を取得し保存"""
-        device_text = self.device_var.get()
-        device_index = list(self.device_combo['values']).index(device_text)
-        device = self.device_values[device_index] if device_index < len(self.device_values) else "cpu"
-        
-        self.settings_manager.device = device
+        try:
+            device_text = self.device_var.get()
+            combo_box_index = list(self.device_combo['values']).index(device_text)
+            device_idx = self.device_indices[combo_box_index]
+        except (ValueError, IndexError):
+            # 選択が無効な場合は最初のデバイスにフォールバック
+            device_idx = self.device_indices[0] if self.device_indices else 0
+
+        self.settings_manager.device_index = device_idx
         self.settings_manager.language = self.language_var.get()
         
         try:
@@ -938,7 +948,7 @@ class RAWDevelopmentGUI:
         self.medium_editor = None
         self.small_editor = None
         self.current_file_path = None
-        self.device = self.settings_manager.device
+        self.device_index = self.settings_manager.device_index
         self.dragging = False
         self.mask_display_enabled = False
         self.drag_timer_id = None
@@ -946,7 +956,7 @@ class RAWDevelopmentGUI:
         # raw_image_editorの初期化
         if RAW_EDITOR_AVAILABLE:
             try:
-                raw_image_editor.init(device=self.device)
+                raw_image_editor.init(device_index=self.device_index)
                 raw_image_editor.photo_metadata.set_exiftool_path(self.settings_manager.exiftool_path)
                 
             except Exception as e:
@@ -1594,7 +1604,7 @@ class RAWDevelopmentGUI:
         def load_worker():
             try:
                 # 画像を読み込み
-                editor = raw_image_editor.RAWImageEditor(file_path=file_path, apply_clahe=True, lens_correction=True, gamma=(2.222, 4.5))
+                editor = raw_image_editor.RAWImageEditor(file_path=file_path, apply_clahe=False, lens_correction=True, gamma=(2.222, 4.5))
                 
                 # デフォルトクロップを適用
                 if "EXIF:DefaultCropOrigin" in editor.metadata.metadata:
@@ -1692,6 +1702,8 @@ class RAWDevelopmentGUI:
         if self.editor is None:
             return
         
+        time_start = time.time()
+        
         # 表示するエディターを選択
         if self.dragging and not force_full:
             display_editor = self.small_editor
@@ -1745,6 +1757,10 @@ class RAWDevelopmentGUI:
             else:
                 # マスク表示が無効な場合は通常の画像を表示
                 self.image_widget.set_image(image_array)
+
+            time_end = time.time()
+            
+            print(f"update_image_display: {time_end - time_start:.2f} seconds")
                 
         except Exception as e:
             print(f"画像表示の更新でエラー: {e}")
@@ -2044,6 +2060,7 @@ class RAWDevelopmentGUI:
 
         # エクスポート処理
         def export_worker():
+            time_start = time.time()
             try:
                 # エディターの現在の状態を完全にリセット
                 self.editor.reset()
@@ -2051,6 +2068,9 @@ class RAWDevelopmentGUI:
                 # 最終的なパラメータを適用
                 self.apply_parameters_to_editor(self.editor)
                 self.editor.apply_adjustments()
+
+                time_end = time.time()
+                print(f"Exported in {time_end - time_start:.2f} seconds")
 
                 # エクスポート実行
                 self.editor.save(file_path, quality=dialog.get_quality())
@@ -2061,6 +2081,8 @@ class RAWDevelopmentGUI:
             except Exception as e:
                 # UIスレッドでエラーを処理
                 self.root.after(0, lambda: self.on_export_error(str(e), progress))
+            
+            
         
         # 別スレッドで実行
         threading.Thread(target=export_worker, daemon=True).start()

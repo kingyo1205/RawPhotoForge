@@ -14,18 +14,15 @@ except Exception:
     OPENCL_AVAILABLE = False
 
 
-DEVICE: str = 'cpu'
+DEVICE: str = ''
 is_initialized = False
     
-from .numpy_backend import RAWImageEditorNumpy
+from .editor import RAWImageEditor, OpenCLCLAHE
 
 
 
 
 
-
-
-RAWImageEditor: Type[RAWImageEditorNumpy] = None
 
 
 def get_opencl_ctxs() -> List["cl.Context"] :
@@ -51,17 +48,14 @@ def get_device() -> str :
     
 
 
-def init(device: str = 'cpu'):
+def init(device_index: int = 0):
     """
     raw_image_editorを初期化します。
 
     Parameters
     ----------
-    device : str, optional
-        使用するバックエンドを指定します。デフォルトは 'cpu' です。
-        'cpu': NumPyを使用したCPUバックエンド。
-        'opencl:{index}': OpenCLを使用したGPUバックエンド。
-                           indexにはget_opencl_ctxs()で得られるデバイスのインデックスを指定します。
+    device_index : int, optional
+        使用するOpenCLデバイスのインデックスを指定します。デフォルトは 0 です。
     """
     global DEVICE
     global RAWImageEditor
@@ -70,65 +64,38 @@ def init(device: str = 'cpu'):
     if is_initialized:
         raise RuntimeError("Already initialized")
 
-    device = device.lower()
+    if not OPENCL_AVAILABLE:
+        raise ImportError("pyopencl is not installed or no OpenCL platforms found. Please install it to use the opencl backend.")
     
+    try:
+        ctx = get_opencl_ctxs()[device_index]
+    except IndexError:
+        raise ValueError(f"OpenCL device index {device_index} is out of range.")
+
+
+    with open(os.path.join(os.path.dirname(__file__), "opencl_kernel.cl"), "r", encoding="utf-8") as f:
+        ocl_kernel_code = f.read()
     
-    if device == 'cpu':
-        RAWImageEditor = RAWImageEditorNumpy
+    RAWImageEditor.ctx = ctx
+    RAWImageEditor.queue = cl.CommandQueue(ctx)
+    ocl_kernel_program = cl.Program(ctx, ocl_kernel_code).build()
 
-
-    elif device.startswith('opencl:'):
-        if not OPENCL_AVAILABLE:
-            raise ImportError("pyopencl is not installed or no OpenCL platforms found. Please install it to use the opencl backend.")
-        
-        parts = device.split(':')
-        if len(parts) != 2 or not parts[1].isdigit():
-            raise ValueError(f"Invalid opencl device format: '{device}'. Expected 'opencl:{{index}}'.")
-        
-        index = int(parts[1])
-        
-        import raw_image_editor.opencl_backend as opencl_backend
-
-        try:
-            opencl_backend.ctx = get_opencl_ctxs()[index]
-        except IndexError:
-            raise ValueError(f"OpenCL device index {index} is out of range.")
-
-
-        with open(os.path.join(os.path.dirname(__file__), "opencl_kernel.cl"), "r", encoding="utf-8") as f:
-            ocl_kernel_code = f.read()
-        
-        from .opencl_backend import RAWImageEditorOpenCL
-        RAWImageEditor = RAWImageEditorOpenCL
-        RAWImageEditor.ctx = opencl_backend.ctx
-        RAWImageEditor.queue = opencl_backend.cl.CommandQueue(opencl_backend.ctx)
-        ocl_kernel_program = cl.Program(opencl_backend.ctx, ocl_kernel_code).build()
-
-        RAWImageEditor.clahe = opencl_backend.OpenCLCLAHE(opencl_backend.ctx, RAWImageEditor.queue)
-        
-
-        RAWImageEditor.clip_0_1_kernel = cl.Kernel(ocl_kernel_program, "clip_0_1")
-        RAWImageEditor.tone_curve_lut_kernel = cl.Kernel(ocl_kernel_program, "tone_curve_lut")
-        RAWImageEditor.rgb_to_hls_kernel = cl.Kernel(ocl_kernel_program, "rgb_to_hls")
-        RAWImageEditor.hls_to_rgb_kernel = cl.Kernel(ocl_kernel_program, "hls_to_rgb")
-        RAWImageEditor.to_linear_kernel = cl.Kernel(ocl_kernel_program, "to_linear")
-        RAWImageEditor.to_srgb_kernel = cl.Kernel(ocl_kernel_program, "to_srgb")
-        RAWImageEditor.tone_curve_by_hue_kernel = cl.Kernel(ocl_kernel_program, "tone_curve_by_hue")
-        RAWImageEditor.white_balance_kernel = cl.Kernel(ocl_kernel_program, "white_balance")
-    else:
-        raise ValueError(f"Invalid device: '{device}'. Supported devices are 'cpu', 'opencl:{{index}}'.")
+    RAWImageEditor.clahe = OpenCLCLAHE(ctx, RAWImageEditor.queue)
     
-    DEVICE = device
+
+    RAWImageEditor.clip_0_1_kernel = cl.Kernel(ocl_kernel_program, "clip_0_1")
+    RAWImageEditor.tone_curve_lut_kernel = cl.Kernel(ocl_kernel_program, "tone_curve_lut")
+    RAWImageEditor.rgb_to_hls_kernel = cl.Kernel(ocl_kernel_program, "rgb_to_hls")
+    RAWImageEditor.hls_to_rgb_kernel = cl.Kernel(ocl_kernel_program, "hls_to_rgb")
+    RAWImageEditor.to_linear_kernel = cl.Kernel(ocl_kernel_program, "to_linear")
+    RAWImageEditor.to_srgb_kernel = cl.Kernel(ocl_kernel_program, "to_srgb")
+    RAWImageEditor.tone_curve_by_hue_kernel = cl.Kernel(ocl_kernel_program, "tone_curve_by_hue")
+    RAWImageEditor.white_balance_kernel = cl.Kernel(ocl_kernel_program, "white_balance")
+
+    DEVICE = f'opencl:{device_index}'
     is_initialized = True
 
 
 def get_is_initialized():
     """RAWImageEditorが初期化されているかどうかを返します。"""
     return is_initialized
-    
-    
-
-
-
-
-
