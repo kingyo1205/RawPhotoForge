@@ -130,7 +130,7 @@ The `index.html` page was generated using Claude.
 
 # License
 
-This repository is distributed under the **MIT License**.
+This repository is distributed under the **GNU AGPLv3**.
 
 ## Dependent AI Model
 
@@ -282,7 +282,7 @@ index.html (ページ)はClaudeで生成しました。
 
 # ライセンス
 
-このリポジトリは **MIT License** で配布しています。
+このリポジトリは **GNU AGPLv3** で配布しています。
 
 ## 依存 AI モデル
 
