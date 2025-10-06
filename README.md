@@ -50,7 +50,7 @@ This software is **distributed as source code only**. Python 3.11 or higher is r
 **Be sure to download the custom Asset (zip file).**
 
 * File name format:
-  `RawPhotoForge-v<version>.zip`
+  `RawPhotoForge-v<version>.zip`  
   Example: `RawPhotoForge-v0.2.0.zip`
 
 * The latest release can be downloaded directly here:
