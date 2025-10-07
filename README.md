@@ -36,10 +36,12 @@ It also supports **AI masks (SAM) for partial adjustments**, lens correction via
 
 ---
 
-## Note
+### Note
 
-All command examples in this README are written for Windows. If you use Linux, please modify commands and paths accordingly.
-This software is **distributed as source code only**. Python 3.11 or higher is required to run it.
+All command examples in this README are written for **Windows environments**.
+If you are using Linux, please adjust the commands and paths accordingly.
+This software is distributed as **source code only**. To run it, you need **Python 3.11 or higher** and an environment where **OpenCL is available**.
+
 
 ---
 
@@ -188,9 +190,12 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 - Japanese
 
 
-## 注意
-本 README のコマンド例は Windows 用に書かれています。Linux で使用する場合はコマンドやパスを適宜変更してください。  
-本ソフトウェアは **ソースコード配布のみ** です。実行には Python 3.11 以上が必要です。
+
+### 注意
+
+本 README に記載しているコマンド例は **Windows 環境向け** です。Linux をご利用の場合は、コマンドやパスを適宜読み替えてください。
+本ソフトウェアは **ソースコードのみを配布** しています。実行には **Python 3.11 以上** および **OpenCL が利用可能な環境** が必要です。
+
 
 ---
 
