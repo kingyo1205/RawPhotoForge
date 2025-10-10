@@ -1613,29 +1613,31 @@ class RAWImageEditor(RAWImageEditorBase):
             mask=None
         )
 
-        self._clip_0_1(self.image_array_cl)
+        
 
-        # 2. メインの輝度トーンカーブ調整
+        # 2. メイン明るさトーンカーブ調整
         self._adjustment_tone_curve(
             self.image_array_cl,
             self.main_adjustments_values["brightness_tone_curve"]
         )
 
-        # 3. Linear -> sRGB (in-place)
-        self.to_srgb(self.image_array_cl)
-        
-        # 4. ホワイトバランス調整
+        # 3. ホワイトバランス調整
         self._adjustment_whitebalance(
             self.image_array_cl,
             temperature=self.main_adjustments_values["wb_temperature"],
             tint=self.main_adjustments_values["wb_tint"]
         )
-        
-        # 5. RGB -> HLS (in-place)
+
+        # 4. LinearRGB -> HLS (in-place)
+        self.to_srgb(self.image_array_cl)
         self.rgb_to_hls_image(self.image_array_cl)
-        self._clip_0_1(self.image_array_cl)
         
-        # 6. メインのHLSトーンカーブ調整
+        
+        
+        
+        
+        
+        # 5. メインのHLSトーンカーブ調整
         self._adjustment_hls_hue_tone_curve(
             self.image_array_cl,
             self.main_adjustments_values["hue_tone_curve"]
@@ -1649,15 +1651,50 @@ class RAWImageEditor(RAWImageEditorBase):
             self.main_adjustments_values["lightness_tone_curve"]
         )
 
-        # 7. 各マスク領域に対するHLSトーンカーブ調整
+        # 6. マスク用に、HLS -> LinearRGB 
+        self.hls_to_rgb_image(self.image_array_cl)
+        self.to_linear(self.image_array_cl)
+
+    
+
+        # 7. マスクごとのLinearRGB空間での調整
         for mask_data in self.mask_adjustments_values.values():
             bool_mask = mask_data["ndarray"] > mask_data["mask_range_value"]
+            self._adjustment_tone(
+                self.image_array_cl,
+                exposure=mask_data["exposure"],
+                contrast=mask_data["contrast"],
+                shadow=mask_data["shadow"],
+                highlight=mask_data["highlight"],
+                black=mask_data["black"],
+                white=mask_data["white"],
+                mask=bool_mask)
+            
+    
             
             self._adjustment_tone_curve(
                 self.image_array_cl,
                 mask_data["brightness_tone_curve"],
                 mask=bool_mask
             )
+
+            self._adjustment_whitebalance(
+                self.image_array_cl,
+                temperature=mask_data["wb_temperature"],
+                tint=mask_data["wb_tint"],
+                mask=bool_mask
+            )
+
+        
+        # 8. LinearRGB -> HLS (in-place)
+        self.to_srgb(self.image_array_cl)
+        self.rgb_to_hls_image(self.image_array_cl)
+
+        # 9. 各マスク領域に対するHLSトーンカーブ調整
+        for mask_data in self.mask_adjustments_values.values():
+            bool_mask = mask_data["ndarray"] > mask_data["mask_range_value"]
+            
+            
             self._adjustment_hls_hue_tone_curve(
                 self.image_array_cl,
                 mask_data["hue_tone_curve"],
@@ -1673,30 +1710,18 @@ class RAWImageEditor(RAWImageEditorBase):
                 mask_data["lightness_tone_curve"],
                 mask=bool_mask
             )
+        
+        
 
-        # 8. HLS -> RGB (in-place)
+
+       
+        
+        # 10. HLS -> RGB (in-place)
         self.hls_to_rgb_image(self.image_array_cl)
+        
+    
 
-        # 9. マスクごとのRGB空間での調整
-        for mask_data in self.mask_adjustments_values.values():
-            bool_mask = mask_data["ndarray"] > mask_data["mask_range_value"]
-            self._adjustment_tone(
-                self.image_array_cl,
-                exposure=mask_data["exposure"],
-                contrast=mask_data["contrast"],
-                shadow=mask_data["shadow"],
-                highlight=mask_data["highlight"],
-                black=mask_data["black"],
-                white=mask_data["white"],
-                mask=bool_mask)
-            self._adjustment_whitebalance(
-                self.image_array_cl,
-                temperature=mask_data["wb_temperature"],
-                tint=mask_data["wb_tint"],
-                mask=bool_mask
-            )
-
-        # 10. 最終的なクリップ
+        # 11. 最終的なクリップ
         self._clip_0_1(self.image_array_cl)
         
         # OpenCL -> numpy

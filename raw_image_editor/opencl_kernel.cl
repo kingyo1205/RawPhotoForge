@@ -6,10 +6,12 @@ __kernel void to_linear(__global float *image, int num_elements) {
     if (i >= num_elements) return;
 
     float x = clamp(image[i], 0.0f, 1.0f);
+    float result;
     if (x <= 0.04045f)
-        image[i] = x / 12.92f;
+        result = x / 12.92f;
     else
-        image[i] = pow((x + 0.055f) / 1.055f, 2.4f);
+        result = pow((x + 0.055f) / 1.055f, 2.4f);
+    image[i] = clamp(result, 0.0f, 1.0f);
 }
 
 __kernel void clip_0_1(__global float *arr, int num_elements) {
@@ -24,10 +26,12 @@ __kernel void to_srgb(__global float *image, int num_elements) {
     if (i >= num_elements) return;
 
     float x = clamp(image[i], 0.0f, 1.0f);
+    float result;
     if (x <= 0.0031308f)
-        image[i] = x * 12.92f;
+        result = x * 12.92f;
     else
-        image[i] = 1.055f * pow(x, 1.0f / 2.4f) - 0.055f;
+        result = 1.055f * pow(x, 1.0f / 2.4f) - 0.055f;
+    image[i] = clamp(result, 0.0f, 1.0f);
 }
 
 // image: (num_pixels*3), flatten RGB [0,1]
@@ -55,7 +59,8 @@ __kernel void tone_curve_lut(
             float val = clamp(image[base_idx + c], 0.0f, 1.0f);
             int lut_idx = (int)(val * 65535.0f);
             lut_idx = clamp(lut_idx, 0, 65535);
-            image[base_idx + c] = curve[lut_idx] / 65535.0f;
+            float result = curve[lut_idx] / 65535.0f;
+            image[base_idx + c] = clamp(result, 0.0f, 1.0f);
         }
     }
 }
@@ -99,9 +104,9 @@ __kernel void rgb_to_hls(
     if (i >= num_pixels) return;
 
     int idx = i * 3;
-    float r = img[idx + 0];
-    float g = img[idx + 1];
-    float b = img[idx + 2];
+    float r = clamp(img[idx + 0], 0.0f, 1.0f);
+    float g = clamp(img[idx + 1], 0.0f, 1.0f);
+    float b = clamp(img[idx + 2], 0.0f, 1.0f);
 
     float maxc = fmax(fmax(r, g), b);
     float minc = fmin(fmin(r, g), b);
@@ -129,9 +134,9 @@ __kernel void rgb_to_hls(
         H /= 6.0f;
     }
 
-    img[idx + 0] = H;
-    img[idx + 1] = L;
-    img[idx + 2] = S;
+    img[idx + 0] = clamp(H, 0.0f, 1.0f);
+    img[idx + 1] = clamp(L, 0.0f, 1.0f);
+    img[idx + 2] = clamp(S, 0.0f, 1.0f);
 }
 
 inline float hue2rgb(float p, float q, float t) {
@@ -152,9 +157,9 @@ __kernel void hls_to_rgb(
     if (i >= num_pixels) return;
 
     int idx = i * 3;
-    float H = img[idx + 0];
-    float L = img[idx + 1];
-    float S = img[idx + 2];
+    float H = clamp(img[idx + 0], 0.0f, 1.0f);
+    float L = clamp(img[idx + 1], 0.0f, 1.0f);
+    float S = clamp(img[idx + 2], 0.0f, 1.0f);
 
     float R, G, B;
     if (S == 0.0f) {
@@ -188,8 +193,16 @@ __kernel void white_balance(
     int idx = i * 3;
 
     if (mask[i]) {
-        image[idx + 0] *= r_gain;
-        image[idx + 1] *= g_gain;
-        image[idx + 2] *= b_gain;
+        float r = clamp(image[idx + 0], 0.0f, 1.0f);
+        float g = clamp(image[idx + 1], 0.0f, 1.0f);
+        float b = clamp(image[idx + 2], 0.0f, 1.0f);
+
+        r *= r_gain;
+        g *= g_gain;
+        b *= b_gain;
+
+        image[idx + 0] = clamp(r, 0.0f, 1.0f);
+        image[idx + 1] = clamp(g, 0.0f, 1.0f);
+        image[idx + 2] = clamp(b, 0.0f, 1.0f);
     }
 }
