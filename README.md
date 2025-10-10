@@ -55,10 +55,10 @@ This software is distributed as **source code only**. To run it, you need **Pyth
   `RawPhotoForge-v<version>.zip`  
   Example: `RawPhotoForge-v0.2.0.zip`
 
-* The latest release can be downloaded directly here:
-  [Download Latest](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.2.0/RawPhotoForge-v0.2.0.zip)
+* Download from the releases page:
+  [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)
 
-※ Do **NOT** use GitHub’s auto-generated “Source code (zip/tar.gz)”. Always use the custom Asset above.
+※ Do **NOT** use GitHub's auto-generated "Source code (zip/tar.gz)". Always use the custom Asset above.
 
 Please download the **zip file** from the GitHub Release page.
 Since download counts are tracked, we recommend **using release downloads instead of git clone**.
@@ -210,8 +210,8 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
   `RawPhotoForge-v<バージョン>.zip`  
   例：`RawPhotoForge-v0.2.0.zip`
 
-- 最新リリースはこちらから直接ダウンロード可能：  
-  [最新版ダウンロード](https://github.com/kingyo1205/RawPhotoForge/releases/download/v0.2.0/RawPhotoForge-v0.2.0.zip)
+- リリースページからダウンロード：  
+  [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)
 
 ※ GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず上記の自作Assetを使用してください。
 
