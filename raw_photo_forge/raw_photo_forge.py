@@ -42,8 +42,7 @@ except Exception:
     print("Warning: raw_image_editor or photo_metadata not available")
 
 # 定数
-DRAG_IMAGE_SIZE = 900  # ドラッグ中の画像サイズ（長辺）
-NORMAL_IMAGE_SIZE = 900  # 通常時の画像サイズ（長辺）
+
 
 @dataclass
 class EditParameters:
@@ -86,6 +85,8 @@ class SettingsManager:
     """設定とパスを管理するデータクラス"""
     device_index: int = 0
     language: str = "日本語"
+    preview_size: int = 1000
+    dragging_preview_size: int = 300
     
     # パス関連（初期化後に設定）
     app_dir: Path = None
@@ -132,6 +133,8 @@ class SettingsManager:
             
 
             self.language = settings.get("language", self.language)
+            self.preview_size = settings.get("preview_size", self.preview_size)
+            self.dragging_preview_size = settings.get("dragging_preview_size", self.dragging_preview_size)
         except Exception as e:
             traceback.print_exc()
             print(f"設定ファイルの読み込みに失敗しました: {e}")
@@ -140,7 +143,9 @@ class SettingsManager:
         """現在の設定をJSONファイルに保存する"""
         settings = {
             "device": self.device_index,
-            "language": self.language
+            "language": self.language,
+            "preview_size": self.preview_size,
+            "dragging_preview_size": self.dragging_preview_size
         }
         try:
             with open(self.settings_path, "w", encoding="utf-8") as f:
@@ -484,11 +489,12 @@ class ToneCurveWidget:
 class SliderWithSpinBox:
     """スライダーと数値入力ボックスを組み合わせたウィジェット"""
     
-    def __init__(self, parent, min_val, max_val, step, decimals=0, initial_value=0, callback=None):
+    def __init__(self, parent, min_val, max_val, step, *, dtype, decimals=0, initial_value=0, callback=None):
         self.parent = parent
         self.min_val = min_val
         self.max_val = max_val
         self.step = step
+        self.dtype = dtype
         self.decimals = decimals
         self.callback = callback
         self.updating = False
@@ -499,23 +505,34 @@ class SliderWithSpinBox:
         self.var = DoubleVar()
         self.var.set(initial_value)
         
-        # スライダーのresolutionを設定してステップごとに動かす
         self.slider = ttk.Scale(self.frame, from_=min_val, to=max_val, variable=self.var, 
                                orient=tk.HORIZONTAL, command=self.on_slider_changed)
-        # tkinter.Scaleではないので、代わりに値を丸める処理を行う
         self.slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         
         # 数値入力ボックス
-        if decimals > 0:
+        if self.dtype is float:
             self.spinbox = ttk.Spinbox(self.frame, from_=min_val, to=max_val, increment=step,
-                                      textvariable=self.var, width=10, format=f"%.{decimals}f")
-        else:
+                                      textvariable=self.var, width=10, format=f"%.{self.decimals}f")
+        else: # int
+            vcmd = (self.frame.register(self.validate_int_input), '%P')
             self.spinbox = ttk.Spinbox(self.frame, from_=min_val, to=max_val, increment=step,
-                                      textvariable=self.var, width=10)
+                                      textvariable=self.var, width=10,
+                                      validate='key', validatecommand=vcmd)
         
         self.spinbox.pack(side=tk.RIGHT)
         self.spinbox.bind('<Return>', self.on_spinbox_enter)
+        self.spinbox.bind('<FocusOut>', self.on_spinbox_enter)
         self.spinbox.bind('<KeyRelease>', self.on_spinbox_key_release)
+
+    def validate_int_input(self, P):
+        """整数入力のみを許可するバリデーション関数 ('%P' は変更後のテキスト全体)"""
+        if P == "" or P == "-":
+            return True  # 入力途中（空やマイナス記号のみ）を許可
+        try:
+            int(P)
+            return True
+        except ValueError:
+            return False # 整数に変換できない入力は拒否
     
     def on_slider_changed(self, value):
         """スライダー値変更"""
@@ -523,12 +540,12 @@ class SliderWithSpinBox:
             return
         self.updating = True
         try:
-            # ステップごとに丸める
             val = float(value)
             stepped_val = round(val / self.step) * self.step
-            if self.decimals > 0:
+            
+            if self.dtype is float:
                 stepped_val = round(stepped_val, self.decimals)
-            else:
+            else: # int
                 stepped_val = int(stepped_val)
             
             self.var.set(stepped_val)
@@ -538,35 +555,33 @@ class SliderWithSpinBox:
             self.updating = False
     
     def on_spinbox_enter(self, event):
-        """スピンボックスでEnter押下時（正規化処理）"""
+        """スピンボックスでEnter押下時やフォーカスアウト時に値を正規化"""
         if self.updating:
             return
         self.updating = True
         try:
-            # 入力値を取得して正規化
-            try:
-                value_str = self.spinbox.get()
-                if not value_str:  # 空文字列の場合
-                    val = 0
-                else:
-                    val = float(value_str)
-                
-                # 範囲外をクリップ
-                val = max(self.min_val, min(self.max_val, val))
-                # ステップに合わせて丸める
-                val = round(val / self.step) * self.step
-                # 小数点以下の桁数を調整
-                if self.decimals > 0:
-                    val = round(val, self.decimals)
-                else:
-                    val = int(val)
-                
-                self.var.set(val)
-                if self.callback:
-                    self.callback(val)
-            except ValueError:
-                # 無効な入力の場合、元の値に戻す
-                pass
+            value_str = self.spinbox.get()
+            
+            if value_str == "" or value_str == "-":
+                val = 0
+            else:
+                try:
+                    val = self.dtype(value_str)
+                except ValueError:
+                    self.var.set(self.var.get())
+                    return
+
+            val = max(self.min_val, min(self.max_val, val))
+            
+            stepped_val = round(val / self.step) * self.step
+            if self.dtype is float:
+                stepped_val = round(stepped_val, self.decimals)
+            else: # int
+                stepped_val = int(stepped_val)
+            
+            self.var.set(stepped_val)
+            if self.callback:
+                self.callback(stepped_val)
         finally:
             self.updating = False
     
@@ -586,8 +601,8 @@ class SliderWithSpinBox:
             self.updating = False
     
     def get_value(self):
-        """現在の値を取得"""
-        return self.var.get()
+        """現在の値を取得して、指定されたdtypeに変換して返す"""
+        return self.dtype(self.var.get())
     
     def pack(self, **kwargs):
         """フレームをpack"""
@@ -834,7 +849,7 @@ class SettingsDialog:
         
         self.dialog = Toplevel(parent)
         self.dialog.title(main_window.tr("設定"))
-        self.dialog.geometry("500x300")
+        self.dialog.geometry("500x350")
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -893,6 +908,22 @@ class SettingsDialog:
         language_combo = ttk.Combobox(language_frame, textvariable=self.language_var, 
                                      values=["English", "日本語"], state="readonly", width=50)
         language_combo.pack(anchor='w', padx=10, pady=5)
+
+        # 画像設定タブ
+        image_frame = Frame(notebook)
+        notebook.add(image_frame, text=main_window.tr("画像"))
+
+        Label(image_frame, text=main_window.tr("画像設定")).pack(anchor='w', padx=10, pady=10)
+
+        # UIプレビューサイズ
+        Label(image_frame, text=main_window.tr("UIプレビューサイズ(長辺):")).pack(anchor='w', padx=10, pady=(10, 0))
+        self.preview_size_slider = SliderWithSpinBox(image_frame, 500, 2000, 50, dtype=int, initial_value=1000)
+        self.preview_size_slider.pack(fill=tk.X, padx=10, pady=2)
+
+        # ドラッグ中プレビューサイズ
+        Label(image_frame, text=main_window.tr("ドラッグ中プレビューサイズ(長辺):")).pack(anchor='w', padx=10, pady=(10, 0))
+        self.dragging_preview_size_slider = SliderWithSpinBox(image_frame, 100, 2000, 50, dtype=int, initial_value=300)
+        self.dragging_preview_size_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # 保存ボタン
         Button(self.dialog, text=main_window.tr("設定を保存"), 
@@ -915,9 +946,19 @@ class SettingsDialog:
                 self.device_var.set(self.device_combo['values'][0])
         
         self.language_var.set(self.settings_manager.language)
+        self.preview_size_slider.set_value(self.settings_manager.preview_size)
+        self.dragging_preview_size_slider.set_value(self.settings_manager.dragging_preview_size)
     
     def save_settings(self):
         """UIから設定を取得し保存"""
+        # 画像設定のバリデーション
+        preview_size = self.preview_size_slider.get_value()
+        dragging_preview_size = self.dragging_preview_size_slider.get_value()
+        if dragging_preview_size >= preview_size:
+            messagebox.showerror(self.main_window.tr("警告"), 
+                               self.main_window.tr("ドラッグ中のプレビューサイズは、UIプレビューサイズより小さくしてください。"))
+            return
+
         try:
             device_text = self.device_var.get()
             combo_box_index = list(self.device_combo['values']).index(device_text)
@@ -929,6 +970,8 @@ class SettingsDialog:
 
         self.settings_manager.device_index = device_idx
         self.settings_manager.language = self.language_var.get()
+        self.settings_manager.preview_size = preview_size
+        self.settings_manager.dragging_preview_size = dragging_preview_size
         
         try:
             self.settings_manager.save()
@@ -1101,7 +1144,12 @@ class RAWDevelopmentGUI:
                 "マスク作成完了": "Mask Creation Complete",
                 "初期化エラー": "Initialization Error",
                 "画像処理エンジンの初期化に失敗しました。": "Failed to initialize image processing engine.",
-                "「ファイル」→「写真を開く」で写真を開いて編集しましょう！": "'File' -> 'Open Photo' to open a photo and start editing!"
+                "「ファイル」→「写真を開く」で写真を開いて編集しましょう！": "'File' -> 'Open Photo' to open a photo and start editing!",
+                "画像": "Image",
+                "画像設定": "Image Settings",
+                "UIプレビューサイズ(長辺):": "UI Preview Size (long edge):",
+                "ドラッグ中プレビューサイズ(長辺):": "Dragging Preview Size (long edge):",
+                "ドラッグ中のプレビューサイズは、UIプレビューサイズより小さくしてください。": "Dragging preview size must be smaller than UI preview size."
             },
             "日本語": {
                 "RAW現像ソフト": "RAW現像ソフト",
@@ -1195,7 +1243,12 @@ class RAWDevelopmentGUI:
                 "マスク作成完了": "マスク作成完了",
                 "初期化エラー": "初期化エラー",
                 "画像処理エンジンの初期化に失敗しました。": "画像処理エンジンの初期化に失敗しました。",
-                "「ファイル」→「写真を開く」で写真を開いて編集しましょう！": "「ファイル」→「写真を開く」で写真を開いて編集しましょう！"
+                "「ファイル」→「写真を開く」で写真を開いて編集しましょう！": "「ファイル」→「写真を開く」で写真を開いて編集しましょう！",
+                "画像": "画像",
+                "画像設定": "画像設定",
+                "UIプレビューサイズ(長辺):": "UIプレビューサイズ(長辺):",
+                "ドラッグ中プレビューサイズ(長辺):": "ドラッグ中プレビューサイズ(長辺):",
+                "ドラッグ中のプレビューサイズは、UIプレビューサイズより小さくしてください。": "ドラッグ中のプレビューサイズは、UIプレビューサイズより小さくしてください。"
             }
         }
         self.translations = translations_data
@@ -1320,38 +1373,38 @@ class RAWDevelopmentGUI:
         
         # 露出
         Label(scrollable_frame, text=self.tr("露出:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.exposure_slider = SliderWithSpinBox(scrollable_frame, -6.0, 6.0, 0.05, 2, 0.0, 
-                                                self.on_exposure_changed)
+        self.exposure_slider = SliderWithSpinBox(scrollable_frame, -6.0, 6.0, 0.05, dtype=float, decimals=2, initial_value=0.0, 
+                                                callback=self.on_exposure_changed)
         self.exposure_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # コントラスト
         Label(scrollable_frame, text=self.tr("コントラスト:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.contrast_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                                self.on_contrast_changed)
+        self.contrast_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                                callback=self.on_contrast_changed)
         self.contrast_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # シャドウ
         Label(scrollable_frame, text=self.tr("シャドウ:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.shadow_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                              self.on_shadow_changed)
+        self.shadow_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                              callback=self.on_shadow_changed)
         self.shadow_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # ハイライト
         Label(scrollable_frame, text=self.tr("ハイライト:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.highlight_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                                 self.on_highlight_changed)
+        self.highlight_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                                 callback=self.on_highlight_changed)
         self.highlight_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # 黒レベル
         Label(scrollable_frame, text=self.tr("黒レベル:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.black_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                             self.on_black_changed)
+        self.black_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                             callback=self.on_black_changed)
         self.black_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # 白レベル
         Label(scrollable_frame, text=self.tr("白レベル:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.white_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                             self.on_white_changed)
+        self.white_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                             callback=self.on_white_changed)
         self.white_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # リセットボタン
@@ -1462,14 +1515,14 @@ class RAWDevelopmentGUI:
         
         # 色温度
         Label(scrollable_frame, text=self.tr("色温度:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.wb_temperature_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                                      self.on_wb_temperature_changed)
+        self.wb_temperature_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                                      callback=self.on_wb_temperature_changed)
         self.wb_temperature_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # 色かぶり補正
         Label(scrollable_frame, text=self.tr("色かぶり補正:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.wb_tint_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                               self.on_wb_tint_changed)
+        self.wb_tint_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                               callback=self.on_wb_tint_changed)
         self.wb_tint_slider.pack(fill=tk.X, padx=10, pady=2)
         
         # リセットボタン
@@ -1501,8 +1554,8 @@ class RAWDevelopmentGUI:
         Label(scrollable_frame, text=self.tr("周辺減光を調整します")).pack(pady=5)
         
         Label(scrollable_frame, text=self.tr("周辺減光:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.vignette_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, 0, 0, 
-                                                  self.on_vignette_changed)
+        self.vignette_slider = SliderWithSpinBox(scrollable_frame, -100, 100, 1, dtype=int, initial_value=0, 
+                                                  callback=self.on_vignette_changed)
         self.vignette_slider.pack(fill=tk.X, padx=10, pady=2)
         
         Button(scrollable_frame, text=self.tr("このタブをリセット"), 
@@ -1574,8 +1627,8 @@ class RAWDevelopmentGUI:
         
         # マスク範囲の微調整
         Label(scrollable_frame, text=self.tr("マスク範囲の微調整:")).pack(anchor='w', padx=10, pady=(10, 0))
-        self.mask_range_slider = SliderWithSpinBox(scrollable_frame, -4.0, 4.0, 0.02, 2, 0.0, 
-                                                  self.on_mask_range_changed)
+        self.mask_range_slider = SliderWithSpinBox(scrollable_frame, -4.0, 4.0, 0.02, dtype=float, decimals=2, initial_value=0.0, 
+                                                  callback=self.on_mask_range_changed)
         self.mask_range_slider.slider.config(state='disabled')
         self.mask_range_slider.spinbox.config(state='disabled')
         self.mask_range_slider.pack(fill=tk.X, padx=10, pady=2)
@@ -1684,8 +1737,8 @@ class RAWDevelopmentGUI:
                 editor.apply_adjustments()
                 
                 # リサイズ用のエディターを作成
-                medium_editor = self.create_resized_editor(editor, NORMAL_IMAGE_SIZE)
-                small_editor = self.create_resized_editor(editor, DRAG_IMAGE_SIZE)
+                medium_editor = self.create_resized_editor(editor, self.settings_manager.preview_size)
+                small_editor = self.create_resized_editor(editor, self.settings_manager.dragging_preview_size)
                 
                 # UIスレッドで結果を処理
                 self.root.after(0, lambda: self.on_image_loaded(editor, medium_editor, small_editor, progress))
