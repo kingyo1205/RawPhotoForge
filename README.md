@@ -156,7 +156,7 @@ Details: [Artistic License official page](https://dev.perl.org/licenses/artistic
 | Library                                                    | License                            | Notes         |
 | ---------------------------------------------------------- | ---------------------------------- | ------------- |
 | [numpy](https://pypi.org/project/numpy/)                   | BSD                                | -             |
-| [wgpu](https://pypi.org/project/wgpu/)                     | MIT                                | -             |
+| [wgpu](https://pypi.org/project/wgpu/)                     | BSD                                | -             |
 | [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU                            | -             |
 | [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0                         | -             |
 | [scipy](https://pypi.org/project/scipy/)                   | BSD                                | -             |
@@ -312,7 +312,7 @@ ExifTool は Artistic License に基づいてライセンスされています�
 | ライブラリ                                                      | ライセンス       | 備考      |
 | ---------------------------------------------------------- | ----------- | ------- |
 | [numpy](https://pypi.org/project/numpy/)                   | BSD         | -       |
-| [wgpu](https://pypi.org/project/wgpu/)                     | MIT         | -       |
+| [wgpu](https://pypi.org/project/wgpu/)                     | BSD         | -       |
 | [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU     | -       |
 | [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0  | -       |
 | [scipy](https://pypi.org/project/scipy/)                   | BSD         | -       |
