@@ -3,7 +3,7 @@
 RAW Photo Editor Written in Python  
 
 RawPhotoForge is a **RAW photo editor written in Python**.
-With a fast image processing engine that runs on **OpenCL**, you can edit RAW photos with real-time preview.
+With a fast image processing engine that runs on **WebGPU (wgpu-py)**, you can edit RAW photos with real-time preview.
 You can finely adjust **color and brightness using tone curves** for brightness, hue, saturation, and luminance.
 It also supports **AI masks (SAM) for partial adjustments**, lens correction via Lensfun, and metadata display using ExifTool.
 
@@ -25,7 +25,7 @@ RAW Photo Editor Written in Python
 
 **Simple yet Powerful RAW Photo Editor**
 RawPhotoForge is a **RAW photo editor written in Python**.
-With a fast image processing engine that runs on **OpenCL**, you can edit RAW photos with real-time preview.
+With a fast image processing engine that runs on **WebGPU (wgpu-py)**, you can edit RAW photos with real-time preview.
 You can finely adjust **color and brightness using tone curves** for brightness, hue, saturation, and luminance.
 It also supports **AI masks (SAM) for partial adjustments**, lens correction via Lensfun, and metadata display using ExifTool.
 
@@ -47,7 +47,7 @@ It also supports **AI masks (SAM) for partial adjustments**, lens correction via
 
 All command examples in this README are written for **Windows environments**.
 If you are using Linux, please adjust the commands and paths accordingly.
-This software is distributed as **source code only**. To run it, you need **Python 3.11 or higher** and an environment where **OpenCL is available**.
+This software is distributed as **source code only**. To run it, you need **Python 3.11 or higher** and an environment where **WebGPU (wgpu-py) is available**.
 
 
 ---
@@ -156,7 +156,7 @@ Details: [Artistic License official page](https://dev.perl.org/licenses/artistic
 | Library                                                    | License                            | Notes         |
 | ---------------------------------------------------------- | ---------------------------------- | ------------- |
 | [numpy](https://pypi.org/project/numpy/)                   | BSD                                | -             |
-| [pyopencl](https://pypi.org/project/pyopencl/)             | MIT                                | -             |
+| [pyWebGPU (wgpu-py) ](https://pypi.org/project/pyWebGPU (wgpu-py) /)             | MIT                                | -             |
 | [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU                            | -             |
 | [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0                         | -             |
 | [scipy](https://pypi.org/project/scipy/)                   | BSD                                | -             |
@@ -180,7 +180,7 @@ RAW Photo Editor Written in Python
 ---
 **シンプルで高機能なRAW現像ソフトウェア**   
 RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。  
-**OpenCLで動作**する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
+**WebGPU (wgpu-py) で動作**する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
 明るさ、色相、彩度、輝度のトーンカーブで、**色や明るさを細かく調整可能**です。  
 **AIマスク（SAM）による部分補正**、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
 
@@ -201,7 +201,7 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 ### 注意
 
 本 README に記載しているコマンド例は **Windows 環境向け** です。Linux をご利用の場合は、コマンドやパスを適宜読み替えてください。
-本ソフトウェアは **ソースコードのみを配布** しています。実行には **Python 3.11 以上** および **OpenCL が利用可能な環境** が必要です。
+本ソフトウェアは **ソースコードのみを配布** しています。実行には **Python 3.11 以上** および **WebGPU (wgpu-py) が利用可能な環境** が必要です。
 
 
 ---
@@ -312,7 +312,7 @@ ExifTool は Artistic License に基づいてライセンスされています�
 | ライブラリ                                                      | ライセンス       | 備考      |
 | ---------------------------------------------------------- | ----------- | ------- |
 | [numpy](https://pypi.org/project/numpy/)                   | BSD         | -       |
-| [pyopencl](https://pypi.org/project/pyopencl/)             | MIT         | -       |
+| [pyWebGPU (wgpu-py) ](https://pypi.org/project/pyWebGPU (wgpu-py) /)             | MIT         | -       |
 | [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU     | -       |
 | [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0  | -       |
 | [scipy](https://pypi.org/project/scipy/)                   | BSD         | -       |
