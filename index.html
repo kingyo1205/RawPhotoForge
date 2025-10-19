@@ -447,7 +447,7 @@
             <h1>RawPhotoForge</h1>
             <div class="subtitle">RAW Photo Editor Written in Python</div>
             <p class="description">
-                シンプルで高機能なRAW現像ソフトウェア。OpenCLで動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。
+                シンプルで高機能なRAW現像ソフトウェア。WebGPU (wgpu-py) で動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。
             </p>
             <div class="cta-buttons">
                 <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-primary" target="_blank">GitHub で見る</a>
@@ -466,7 +466,7 @@
                 <div class="feature-card">
                     <span class="feature-icon">⚡</span>
                     <h3 class="feature-title">高速処理</h3>
-                    <p class="feature-description">OpenCLとNumPyバックエンドによる高速な画像処理エンジンで、リアルタイムプレビューを実現</p>
+                    <p class="feature-description">WebGPU (wgpu-py) バックエンドによる高速な画像処理エンジンで、リアルタイムプレビューを実現</p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">🎨</span>
@@ -502,8 +502,8 @@
             <h2 class="section-title">技術スタック</h2>
             <div class="tech-stack">
                 <div class="tech-badge">Python 3.11+</div>
-                <div class="tech-badge">OpenCL</div>
-                <div class="tech-badge">NumPy</div>
+                <div class="tech-badge">WebGPU (wgpu-py)</div>
+                <div class="tech-badge">Tkinter</div>
                 <div class="tech-badge">SAM 2.1</div>
                 <div class="tech-badge">Lensfun</div>
                 <div class="tech-badge">ExifTool</div>
@@ -524,7 +524,7 @@
                 <div class="warning-box">
                     <strong>⚠️ 注意事項</strong><br>
                     本READMEに記載しているコマンド例は<strong>Windows環境向け</strong>です。Linuxを利用する場合は、コマンドやパスを適宜読み替えてください。<br>
-                    本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>OpenCLが利用可能な環境</strong>が必要です。
+                    本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>WebGPU (wgpu-py) が利用可能な環境</strong>が必要です。
                 </div>
 
 
