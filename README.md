@@ -191,7 +191,7 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 - **Windows**
 - **Linux**
 
-## Supported languages (UI)
+## 対応言語 (UI)
 
 - English
 - Japanese
