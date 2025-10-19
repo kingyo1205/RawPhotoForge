@@ -41,8 +41,6 @@ except Exception:
     RAW_EDITOR_AVAILABLE = False
     print("Warning: raw_image_editor or photo_metadata not available")
 
-# 定数
-
 
 @dataclass
 class EditParameters:
