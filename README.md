@@ -169,6 +169,8 @@ Details: [Artistic License official page](https://dev.perl.org/licenses/artistic
 | [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT                                | Custom (self) |
 
 ---
+# If you find this library useful, please consider giving it a ⭐ on GitHub!
+---
 
 
 # 日本語 README
@@ -325,4 +327,6 @@ ExifTool は Artistic License に基づいてライセンスされています�
 | [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT         | 自作ライブラリ |
 
 
+---
+# このライブラリが気に入ったら、ぜひGitHubで⭐をお願いします！
 ---
