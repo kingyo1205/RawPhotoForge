@@ -169,7 +169,7 @@ Details: [Artistic License official page](https://dev.perl.org/licenses/artistic
 | [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT                                | Custom (self) |
 
 ---
-# If you find this library useful, please consider giving it a ⭐ on GitHub!
+# If you find this software useful, please consider giving it a ⭐ on GitHub!
 ---
 
 
@@ -289,7 +289,7 @@ python raw_photo_forge\raw_photo_forge.py
 
 本リポジトリの一部コードは ChatGPT, Claude, Gemini CLI, Poe を用いて生成・補助しました。
 LMArena 等の OSS にできない可能性がある生成物は一切含まれていません。
-index.html (ページ)はClaudeで生成しました。
+index.html (ページ) はClaudeで生成しました。
 
 ---
 
@@ -328,5 +328,5 @@ ExifTool は Artistic License に基づいてライセンスされています�
 
 
 ---
-# このライブラリが気に入ったら、ぜひGitHubで⭐をお願いします！
+# このソフトウェアが気に入ったら、ぜひGitHubで⭐をお願いします！
 ---
