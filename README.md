@@ -13,12 +13,6 @@ It also supports **AI masks (SAM) for partial adjustments**, lens correction via
 
 ---
 
-# English README
-
-RAW Photo Editor Written in Python
-
----
-
 **Simple yet Powerful RAW Photo Editor**
 RawPhotoForge is a **RAW photo editor written in Python**.
 With a fast image processing engine that runs on **WebGPU (wgpu-py)**, you can edit RAW photos with real-time preview.
