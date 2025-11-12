@@ -121,7 +121,7 @@ python raw_photo_forge\raw_photo_forge.py
 
 Some parts of this repository were generated/assisted using ChatGPT, Claude, Gemini CLI, and Poe.
 No code from projects that cannot be released under OSS (e.g. LMArena) is included.
-The `index.html` page was generated using Claude.
+The `index.html` page was generated using Claude, Gemini CLI.
 
 ---
 
