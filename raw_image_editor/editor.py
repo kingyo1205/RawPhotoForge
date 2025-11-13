@@ -2,6 +2,7 @@
 
 import numpy as np
 import rawpy
+from pathlib import Path
 from PIL import Image
 from scipy import interpolate
 import scipy
@@ -9,7 +10,6 @@ from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.colors as mcolors
 import photo_metadata
-import os
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.build_sam import build_sam2
 import torch
@@ -28,12 +28,17 @@ from scipy.stats import skew, entropy
 
 matplotlib.use('Agg')
 if getattr(sys, 'frozen', False):
-    WEIGHTS = os.path.join(os.path.dirname(__file__), "sam2.1_hiera_large.pt")
-    CONFIG = os.path.join(os.path.dirname(__file__), "sam2.1_hiera_l.yaml")
+    base_path = Path(__file__).parent.resolve()
+    WEIGHTS = str(base_path / "sam2.1_hiera_large.pt")
+    CONFIG = str(base_path / "sam2.1_hiera_l.yaml")
 else:
-    WEIGHTS = os.path.join(os.getcwd(), "sam2.1_hiera_large.pt")
-    CONFIG = os.path.join(os.getcwd(), "sam2.1_hiera_l.yaml")
+    base_path = Path.cwd().resolve()
+    WEIGHTS = str((base_path / "sam2.1_hiera_large.pt").resolve())
+    CONFIG = str((base_path / "sam2.1_hiera_l.yaml").resolve())
 DEVICE = "cpu"
+
+if sys.platform.startswith("linux"):
+    CONFIG = "/" + CONFIG
 
 sam2 = build_sam2(CONFIG, WEIGHTS, device=DEVICE, apply_postprocessing=True)
 predictor = SAM2ImagePredictor(sam2)
@@ -209,7 +214,7 @@ class RAWImageEditorBase:
         if quality < 0 or quality > 100:
             raise ValueError("quality must be between 0 and 100")
 
-        ext = os.path.splitext(file_path)[1].lower()
+        ext = Path(file_path).suffix.lower()
         if ext not in save_extension:
             raise ValueError(f"file_path must be {' or '.join(save_extension)}")
         

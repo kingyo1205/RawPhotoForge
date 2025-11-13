@@ -7,8 +7,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.resolve()
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
     
-import os
 import json
 import copy
 import cv2
@@ -19,7 +19,7 @@ from dataclasses import dataclass, asdict
 import traceback
 import threading
 import time
-
+import os
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk, filedialog, messagebox, Canvas, Frame, Label, Button, Checkbutton, BooleanVar
@@ -31,6 +31,7 @@ from matplotlib.figure import Figure
 import matplotlib.colors as mcolors
 from scipy.interpolate import PchipInterpolator
 import colorsys
+
 
 try:
     import raw_image_editor
@@ -63,9 +64,11 @@ class EditParameters:
     saturation_curve_points: List[Tuple[float, float]] = None
     lightness_curve_points: List[Tuple[float, float]] = None
 
+    # 周辺減光
+    vignette: int = 0
+
     # マスク範囲
     mask_range: float = 0.0
-    vignette: int = 0
     
     
     def __post_init__(self):
@@ -750,7 +753,7 @@ class ProgressDialog:
         self.dialog.geometry("300x100")
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
-        self.dialog.grab_set()
+        
         
         # 中央に配置
         self.dialog.geometry(f"+{parent.winfo_rootx() + 50}+{parent.winfo_rooty() + 50}")
@@ -781,7 +784,7 @@ class ExportDialog:
         self.dialog.geometry("300x150")
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
-        self.dialog.grab_set()
+        
         
         # 中央に配置
         self.dialog.geometry(f"+{parent.winfo_rootx() + 100}+{parent.winfo_rooty() + 100}")
@@ -850,7 +853,6 @@ class SettingsDialog:
         self.dialog.geometry("500x350")
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
-        self.dialog.grab_set()
         
         # 中央に配置
         self.dialog.geometry(f"+{parent.winfo_rootx() + 100}+{parent.winfo_rooty() + 100}")
@@ -1743,9 +1745,9 @@ class RAWDevelopmentGUI:
                 
             except Exception as e:
                 traceback.print_exc()
-                e = str(e)
+                err = str(e)
                 # UIスレッドでエラーを処理
-                self.root.after(0, lambda: self.on_load_error(str(e), progress))
+                self.root.after(0, lambda: self.on_load_error(err, progress))
                 traceback.print_exc()
         
         # 別スレッドで実行

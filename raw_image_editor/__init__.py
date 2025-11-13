@@ -1,6 +1,5 @@
 # __init__.py
 
-import os
 import wgpu
 from typing import Optional, Type, Union, List, Dict, Tuple, Any
 from pathlib import Path
@@ -80,7 +79,7 @@ def init(device_index: int = 0) -> None:
         raise ValueError(f"wgpu device index {device_index} is out of range.")
 
 
-    with open(os.path.join(os.path.dirname(__file__), "wgpu_kernel.wgsl"), "r", encoding="utf-8") as f:
+    with open(Path(__file__).parent.resolve() / "wgpu_kernel.wgsl", "r", encoding="utf-8") as f:
         wgpu_kernel_code = f.read()
     
     RAWImageEditor.device = device
