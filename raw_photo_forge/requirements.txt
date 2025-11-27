@@ -1,0 +1,11 @@
+numpy
+slangpy
+pillow
+opencv-python
+scipy
+lensfunpy
+rawpy
+torch
+sam2
+matplotlib
+photo-metadata

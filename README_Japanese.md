@@ -5,7 +5,7 @@ RAW Photo Editor Written in Python
 ---
 **シンプルで高機能なRAW現像ソフトウェア**   
 RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。  
-**WebGPU (wgpu-py) で動作**する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
+**slang (slangpy) で動作**する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。  
 明るさ、色相、彩度、輝度のトーンカーブで、**色や明るさを細かく調整可能**です。  
 **AIマスク（SAM）による部分補正**、Lensfun によるレンズ補正、ExifTool によるメタデータ表示もサポートしています。
 
@@ -21,12 +21,12 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 - English
 - Japanese
 
-
+---
 
 ### 注意
 
-本 README に記載しているコマンド例は **Windows 環境向け** です。Linux をご利用の場合は、コマンドやパスを適宜読み替えてください。
-本ソフトウェアは **ソースコードのみを配布** しています。実行には **Python 3.11 以上** および **WebGPU (wgpu-py) が利用可能な環境** が必要です。
+本 README に記載しているコマンド例は **Liunx 環境向け** です。Windows をご利用の場合は、コマンドやパスを適宜読み替えてください。
+本ソフトウェアは **ソースコードのみを配布** しています。実行には **Python 3.11 以上** および **slang (slangpy) が利用可能な環境** が必要です。
 
 
 ---
@@ -40,7 +40,7 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 
 - ファイル名フォーマット：  
   `RawPhotoForge-v<バージョン>.zip`  
-  例：`RawPhotoForge-v0.2.0.zip`
+  例：`RawPhotoForge-v0.4.0.zip`
 
 - リリースページからダウンロード：  
   [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)
@@ -67,7 +67,7 @@ cd RawPhotoForge
 * `sam2.1_hiera_large.pt`
 * `sam2.1_hiera_l.yaml`
 
-例: `RawPhotoForge\sam2.1_hiera_large.pt`
+例: `./sam2.1_hiera_large.pt`
 
 ---
 
@@ -75,7 +75,7 @@ cd RawPhotoForge
 
 [ExifTool 公式サイト](https://exiftool.org/) からダウンロードして、環境変数 `PATH` に追加してください。
 
-**確認手順 (Windows):**
+**確認手順:**
 
 ```bash
 exiftool -ver
@@ -89,7 +89,7 @@ exiftool -ver
 ## 4. 依存ライブラリのインストール
 
 ```bash
-pip install -r raw_photo_forge\requirements.txt
+pip install -r raw_photo_forge/requirements.txt
 ```
 
 * Python ライブラリを一括でインストール
@@ -100,11 +100,10 @@ pip install -r raw_photo_forge\requirements.txt
 ## 5. RawPhotoForge を起動
 
 ```bash
-python raw_photo_forge\raw_photo_forge.py
+python raw_photo_forge/raw_photo_forge.py
 ```
 
 * ソフトが起動します
-* 起動できない場合は Python や ExifTool の PATH 設定を確認してください
 
 ---
 
@@ -134,19 +133,18 @@ ExifTool は Artistic License に基づいてライセンスされています�
 
 （2025年確認 / PyPI 記載情報）
 
-| ライブラリ                                                      | ライセンス                          | 備考          |
-| -------------------------------------------------------------- | ---------------------------------- | ------------ |
-| [numpy](https://pypi.org/project/numpy/)                       | BSD                                | -            |
-| [wgpu](https://pypi.org/project/wgpu/)                         | BSD                                | -            |
-| [pillow](https://pypi.org/project/Pillow/)                     | MIT-CMU                            | -            |
-| [opencv-python](https://pypi.org/project/opencv-python/)       | Apache-2.0                         | -            |
-| [scipy](https://pypi.org/project/scipy/)                       | BSD                                | -            |
-| [numba](https://pypi.org/project/numba/)                       | BSD                                | -            |
-| [lensfunpy](https://pypi.org/project/lensfunpy/)               | MIT                                | -            |
-| [rawpy](https://pypi.org/project/rawpy/)                       | MIT                                | -            |
-| [torch](https://pypi.org/project/torch/)                       | BSD                                | -            |
-| [sam2](https://pypi.org/project/sam2/)                         | Apache 2.0                         | -            |
-| [matplotlib](https://pypi.org/project/matplotlib/)             | Python Software Foundation License | -            |
+| ライブラリ                                                     | ライセンス                         | 備考           |
+| -------------------------------------------------------------- | ---------------------------------- | -------------- |
+| [numpy](https://pypi.org/project/numpy/)                       | BSD                                | -              |
+| [slangpy](https://pypi.org/project/slangpy/)                   | Apache-2.0                         | -              |
+| [pillow](https://pypi.org/project/Pillow/)                     | MIT-CMU                            | -              |
+| [opencv-python](https://pypi.org/project/opencv-python/)       | Apache-2.0                         | -              |
+| [scipy](https://pypi.org/project/scipy/)                       | BSD                                | -              |
+| [lensfunpy](https://pypi.org/project/lensfunpy/)               | MIT                                | -              |
+| [rawpy](https://pypi.org/project/rawpy/)                       | MIT                                | -              |
+| [torch](https://pypi.org/project/torch/)                       | BSD                                | -              |
+| [sam2](https://pypi.org/project/sam2/)                         | Apache 2.0                         | -              |
+| [matplotlib](https://pypi.org/project/matplotlib/)             | Python Software Foundation License | -              |
 | [photo-metadata](https://pypi.org/project/photo-metadata/)     | MIT                                | 自作ライブラリ |
 
 
