@@ -13,11 +13,11 @@ It also supports **AI masks (SAM) for partial adjustments**, lens correction via
 
 ---
 
-**A simple and powerful RAW development software**
-RawPhotoForge is a **RAW photo editor written in Python**.
-With a fast image-processing engine powered by **slang (slangpy)**, you can edit RAW photos with **real-time preview**.
-Brightness, hue, saturation, and luminance tone curves allow **fine-grained color and light adjustments**.
-It also supports **AI masking (SAM)** for partial corrections, lens correction via Lensfun, and metadata display via ExifTool.
+**Simple and powerful RAW development software**
+RawPhotoForge is a RAW photo editor **written in Python**.
+With its high-speed image processing engine powered by **slang (slangpy)**, you can edit RAW photos with **real-time preview**.
+You can finely adjust **brightness, hue, saturation, and luminance tone curves**.
+It also supports **AI masking (SAM) for selective adjustments**, lens correction via Lensfun, and metadata display via ExifTool.
 
 ---
 
@@ -31,38 +31,38 @@ It also supports **AI masking (SAM)** for partial corrections, lens correction v
 * English
 * Japanese
 
-
 ---
 
 ### Note
 
 All command examples in this README are for **Linux environments**.
-If you are using Windows, please adjust paths and commands accordingly.
-This software is distributed as **source code only**.
-To run it, you need **Python 3.11 or later** and an environment where **slang (slangpy) is available**.
+If you are using Windows, please adapt the commands and paths accordingly.
+This software is distributed **as source code only**.
+To run it, you need **Python 3.11 or later** and an environment where **slang (slangpy)** is available.
 
 ---
 
 # Usage
 
-## 1. Download the Source Code
+## 1. Obtain the source code
 
-**Be sure to download the custom asset (zip file)**.
+**Be sure to download the custom Asset (zip file) created by the author.**
 
 * File name format:
   `RawPhotoForge-v<version>.zip`
   Example: `RawPhotoForge-v0.4.0.zip`
 
-* Download from the release page:
+* Download from the Release page:
   [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)
 
-※ Do **not** use GitHub’s auto-generated “Source code (zip/tar.gz)”. Always use the custom asset above.
+※ Do **not** use GitHub’s auto-generated “Source code (zip/tar.gz)”.
+Please make sure to use the custom Asset above.
 
-Please download the source code as a **zip file** from the GitHub release page.
-To track download counts, using **releases instead of git clone** is recommended.
+Download the zip file from the GitHub release page, extract it, and place the `RawPhotoForge` folder anywhere you like.
+Since I want to count downloads, **using the release zip instead of git clone is recommended**.
 
-1. Download and extract the zip file, then place the `RawPhotoForge` folder anywhere you like
-2. Move to the directory:
+1. Download and extract the zip file, then place the `RawPhotoForge` folder anywhere.
+2. Move into the `RawPhotoForge` directory:
 
 ```bash
 cd RawPhotoForge
@@ -70,11 +70,11 @@ cd RawPhotoForge
 
 ---
 
-## 2. Place the AI Model
+## 2. Place the AI model files
 
-Download the following files from the
+Download the following files from
 [sam2.1-hiera-large download page](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main)
-and place them **directly inside the RawPhotoForge folder**.
+and place them **directly under the RawPhotoForge folder**.
 
 * `sam2.1_hiera_large.pt`
 * `sam2.1_hiera_l.yaml`
@@ -85,29 +85,27 @@ Example: `./sam2.1_hiera_large.pt`
 
 ## 3. Install ExifTool
 
-Download ExifTool from the
-[official website](https://exiftool.org/)
-and add it to your system `PATH`.
+Download ExifTool from the [official website](https://exiftool.org/) and add it to your `PATH` environment variable.
 
-**Check installation:**
+**Verification:**
 
 ```bash
 exiftool -ver
 ```
 
-* If a version number appears, it’s installed correctly
-* If not, verify your PATH settings
+* If a version number appears, everything is OK.
+* If nothing appears, check your PATH settings.
 
 ---
 
-## 4. Install Dependencies
+## 4. Install dependency libraries
 
 ```bash
 pip install -r raw_photo_forge/requirements.txt
 ```
 
-* Installs required Python libraries
-* If errors occur, check your Python version and environment
+* Installs all required Python libraries.
+* If errors occur, check your Python installation or version.
 
 ---
 
@@ -117,55 +115,54 @@ pip install -r raw_photo_forge/requirements.txt
 python raw_photo_forge/raw_photo_forge.py
 ```
 
-* The software will start
+* The software will start.
 
 ---
 
-# About AI-generated Code
+# About AI-generated code
 
-Some of the code in this repository was generated or assisted using
-ChatGPT, Claude, Gemini CLI, and Poe.
-No output that would prevent OSS licensing (such as LMArena-incompatible outputs) is included.
-`index.html` (the page) was generated using Claude and Gemini CLI.
+Some parts of this repository were created or assisted using ChatGPT, Claude, Gemini CLI, and Poe.
+No content that would prevent it from being open-source (e.g., content restricted by LMArena rules) is included.
+`index.html` (the webpage) was generated using Claude and Gemini CLI.
 
 ---
 
 # License
 
-This repository is distributed under **GNU AGPLv3**.
+This repository is distributed under the **GNU AGPLv3** license.
 
-## Included AI Model
+## Dependent AI model
 
 * [sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large/tree/main) (Apache 2.0)
 
-## ExifTool
+## ExifTool dependency
 
 This software uses ExifTool by Phil Harvey.
-ExifTool is licensed under the Artistic License (not GPL).
-See the official page for details:
-[https://dev.perl.org/licenses/artistic.html](https://dev.perl.org/licenses/artistic.html)
+ExifTool is licensed under the Artistic License (not GPL; the Artistic License is chosen).
+See the [official page](https://dev.perl.org/licenses/artistic.html) for details.
 
-## Dependencies and Licenses
+## Dependency libraries and licenses
 
-(Checked in 2025 / based on PyPI)
+(Confirmed in 2025 / based on PyPI information)
 
-| Library        | License                            | Notes          |
-| -------------- | ---------------------------------- | -------------- |
-| numpy          | BSD                                | -              |
-| slangpy        | Apache-2.0                         | -              |
-| pillow         | MIT-CMU                            | -              |
-| opencv-python  | Apache-2.0                         | -              |
-| scipy          | BSD                                | -              |
-| lensfunpy      | MIT                                | -              |
-| rawpy          | MIT                                | -              |
-| torch          | BSD                                | -              |
-| sam2           | Apache-2.0                         | -              |
-| matplotlib     | Python Software Foundation License | -              |
-| photo-metadata | MIT                                | Custom library |
+| Library                                                    | License                            | Notes          |
+| ---------------------------------------------------------- | ---------------------------------- | -------------- |
+| [numpy](https://pypi.org/project/numpy/)                   | BSD                                | -              |
+| [slangpy](https://pypi.org/project/slangpy/)               | Apache-2.0                         | -              |
+| [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU                            | -              |
+| [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0                         | -              |
+| [scipy](https://pypi.org/project/scipy/)                   | BSD                                | -              |
+| [lensfunpy](https://pypi.org/project/lensfunpy/)           | MIT                                | -              |
+| [rawpy](https://pypi.org/project/rawpy/)                   | MIT                                | -              |
+| [torch](https://pypi.org/project/torch/)                   | BSD                                | -              |
+| [sam2](https://pypi.org/project/sam2/)                     | Apache 2.0                         | -              |
+| [matplotlib](https://pypi.org/project/matplotlib/)         | Python Software Foundation License | -              |
+| [photo-metadata](https://pypi.org/project/photo-metadata/) | MIT                                | Custom library |
 
 ---
 
 # If you like this software, please consider giving it a ⭐ on GitHub!
 
 ---
+
 
