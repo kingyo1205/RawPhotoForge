@@ -30,7 +30,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.colors as mcolors
 from scipy.interpolate import PchipInterpolator
-import colorsys
 
 
 try:
@@ -42,6 +41,76 @@ except Exception:
     RAW_EDITOR_AVAILABLE = False
     print("Warning: raw_image_editor or photo_metadata not available")
 
+# OKLCH変換用の定数と関数
+oklab_to_lms_m = np.array([
+    [1.0, 0.3963377774, 0.2158037573],
+    [1.0, -0.1055613458, -0.0638541728],
+    [1.0, -0.0894841775, -1.2914855480]
+])
+
+lms_to_srgb = np.array([
+    [4.0767245293, -3.3072168827, 0.2307590544],
+    [-1.2681437731, 2.6093323231, -0.3411344290],
+    [-0.0041119885, -0.7034763098, 1.7068625689]
+])
+
+def oklab_to_lms(lab):
+    lms_ = np.dot(oklab_to_lms_m, lab)
+    return lms_ ** 3
+
+def lms_to_linear_srgb(lms):
+    return np.dot(lms_to_srgb, lms)
+
+def oklch_to_rgb(l, c, h):
+    h_rad = h * 2 * np.pi
+    a = c * np.cos(h_rad)
+    b = c * np.sin(h_rad)
+    
+    lms = oklab_to_lms(np.array([l, a, b]))
+    
+    rgb_linear = lms_to_linear_srgb(lms)
+    
+    # np.powerに負の値が入らないようにクリップ
+    rgb_linear_clipped = np.maximum(0, rgb_linear)
+    
+    # sRGBにガンマ補正
+    rgb = np.where(
+        rgb_linear_clipped <= 0.0031308,
+        rgb_linear_clipped * 12.92,
+        1.055 * np.power(rgb_linear_clipped, 1.0/2.4) - 0.055
+    )
+    return np.clip(rgb, 0, 1)
+
+def oklch_to_rgb_vectorized(L, C, H):
+    """OKLCHからsRGBに変換するベクトル化された関数。
+    L, C, Hは同じ形状のNumPy配列を想定。
+    """
+    h_rad = H * (2 * np.pi)
+    a = C * np.cos(h_rad)
+    b = C * np.sin(h_rad)
+
+    # (height, width, 3) のLab配列を作成
+    lab = np.stack([L, a, b], axis=-1)
+
+    # Oklab -> LMS
+    # (h, w, 3) @ (3, 3) -> (h, w, 3)
+    lms_ = np.matmul(lab, oklab_to_lms_m.T)
+    lms = lms_ ** 3
+
+    # LMS -> linear sRGB
+    # (h, w, 3) @ (3, 3) -> (h, w, 3)
+    rgb_linear = np.matmul(lms, lms_to_srgb.T)
+
+    # sRGBにガンマ補正
+    # np.powerに負の値が入らないようにクリップ
+    rgb_linear_clipped = np.maximum(0, rgb_linear)
+
+    rgb = np.where(
+        rgb_linear_clipped <= 0.0031308,
+        rgb_linear_clipped * 12.92,
+        1.055 * np.power(rgb_linear_clipped, 1.0/2.4) - 0.055
+    )
+    return np.clip(rgb, 0, 1)
 
 @dataclass
 class EditParameters:
@@ -60,9 +129,9 @@ class EditParameters:
     
     # トーンカーブ（制御点として保存）
     brightness_curve_points: List[Tuple[float, float]] = None
-    hue_curve_points: List[Tuple[float, float]] = None
-    saturation_curve_points: List[Tuple[float, float]] = None
-    lightness_curve_points: List[Tuple[float, float]] = None
+    oklch_h_curve_points: List[Tuple[float, float]] = None
+    oklch_c_curve_points: List[Tuple[float, float]] = None
+    oklch_l_curve_points: List[Tuple[float, float]] = None
 
     # 周辺減光
     vignette: int = 0
@@ -74,12 +143,12 @@ class EditParameters:
     def __post_init__(self):
         if self.brightness_curve_points is None:
             self.brightness_curve_points = [(0, 0), (65535, 65535)]
-        if self.hue_curve_points is None:
-            self.hue_curve_points = [(0, 0), (65535, 65535)]
-        if self.saturation_curve_points is None:
-            self.saturation_curve_points = [(0, 32767.5), (65535, 32767.5)]
-        if self.lightness_curve_points is None:
-            self.lightness_curve_points = [(0, 32767.5), (65535, 32767.5)]
+        if self.oklch_h_curve_points is None:
+            self.oklch_h_curve_points = [(0, 0), (65535, 65535)]
+        if self.oklch_c_curve_points is None:
+            self.oklch_c_curve_points = [(0, 32767.5), (65535, 32767.5)]
+        if self.oklch_l_curve_points is None:
+            self.oklch_l_curve_points = [(0, 32767.5), (65535, 32767.5)]
 
 @dataclass
 class SettingsManager:
@@ -181,9 +250,9 @@ class ToneCurveWidget:
         self.setup_plot()
         
         # 初期制御点
-        if curve_type == "brightness" or curve_type == "hue":
+        if curve_type == "brightness" or curve_type == "oklch_h":
             self.control_points = [(0, 0), (65535, 65535)]
-        else:  # saturation, lightness
+        else:  # oklch_c, oklch_l
             self.control_points = [(0, 32767.5), (65535, 32767.5)]
             
         self.selected_point = None
@@ -206,7 +275,7 @@ class ToneCurveWidget:
         container_width = self.container_frame.winfo_width()
         container_height = self.container_frame.winfo_height()
         
-        if container_width > 1 and container_height > 1:
+        if container_width > 1 and container_height > 1:  # キャンバスが初期化済み
             # 正方形のサイズを計算（小さい方に合わせる）
             square_size = min(container_width, container_height)
             
@@ -248,7 +317,7 @@ class ToneCurveWidget:
                 
                 # ヒストグラムを線で描画
                 if 'white' in self.histogram_data and self.histogram_data['white'] is not None:
-                    self.ax.plot(x_values, self.histogram_data['white'] * scale, color='white', alpha=0.6, linewidth=1)
+                    self.ax.plot(x_values, self.histogram_data['white'] * scale, color='white', alpha=0.6, linewidth=3)
                 if 'r' in self.histogram_data and self.histogram_data['r'] is not None:
                     self.ax.plot(x_values, self.histogram_data['r'] * scale, color='red', alpha=0.6, linewidth=1)
                 if 'g' in self.histogram_data and self.histogram_data['g'] is not None:
@@ -256,52 +325,49 @@ class ToneCurveWidget:
                 if 'b' in self.histogram_data and self.histogram_data['b'] is not None:
                     self.ax.plot(x_values, self.histogram_data['b'] * scale, color='blue', alpha=0.6, linewidth=1)
             
-        elif self.curve_type == "hue":
+        elif self.curve_type == "oklch_h":
             # 色相のグラデーション背景とカラーライン
-            hue_gradient = np.linspace(0, 1, 256).reshape(1, 256)
-            hue_gradient = np.repeat(hue_gradient, 256, axis=0)
-            colors = plt.cm.hsv(hue_gradient)
-            self.ax.imshow(colors, extent=[0, 65535, 0, 65535], aspect='auto', alpha=0.6)
+            x = np.linspace(0, 1, 256)
+            y = np.linspace(0, 1, 256)
+            X, Y = np.meshgrid(x, y)
+            
+            L = np.full_like(X, 0.75)
+            C = np.full_like(X, 0.2)
+            H = X
+            
+            colors = oklch_to_rgb_vectorized(L, C, H)
+
+            self.ax.imshow(colors, extent=[0, 65535, 0, 65535], aspect='auto', alpha=0.7, origin='lower')
             
             # カラーライン
             y_pos = np.linspace(0, 65535, 7)
             colors_line = ['red', 'yellow', 'green', 'cyan', 'blue', 'magenta', 'red']
             for y, color in zip(y_pos, colors_line):
                 self.ax.axhline(y=y, color=color, linewidth=2, alpha=0.8)
-                
-        elif self.curve_type == "saturation":
-            # 彩度のグラデーション背景
+
+        elif self.curve_type == "oklch_c":
             x = np.linspace(0, 1, 256)
             y = np.linspace(0, 1, 256)
             X, Y = np.meshgrid(x, y)
             
-            # HSLカラースペースで彩度グラデーション
-            H = X  # 色相は横方向
-            S = Y  # 彩度は縦方向
-            L = np.full_like(X, 0.5)  # 輝度は固定
+            L = np.full_like(X, 0.75)
+            C = Y * 0.4 
+            H = X
             
-            colors = np.zeros((256, 256, 3))
-            for i in range(256):
-                for j in range(256):
-                    colors[i, j] = colorsys.hls_to_rgb(H[i, j], L[i, j], S[i, j])
-            
+            colors = oklch_to_rgb_vectorized(L, C, H)
+
             self.ax.imshow(colors, extent=[0, 65535, 0, 65535], aspect='auto', alpha=0.7, origin='lower')
-            
-        elif self.curve_type == "lightness":
-            # 輝度のグラデーション背景
+
+        elif self.curve_type == "oklch_l":
             x = np.linspace(0, 1, 256)
             y = np.linspace(0, 1, 256)
             X, Y = np.meshgrid(x, y)
             
-            # HSLカラースペースで輝度グラデーション
-            H = X  # 色相は横方向
-            L = Y  # 輝度は縦方向
-            S = np.full_like(X, 0.8)  # 彩度は固定
+            L = Y
+            C = np.full_like(X, 0.2)
+            H = X
             
-            colors = np.zeros((256, 256, 3))
-            for i in range(256):
-                for j in range(256):
-                    colors[i, j] = colorsys.hls_to_rgb(H[i, j], L[i, j], S[i, j])
+            colors = oklch_to_rgb_vectorized(L, C, H)
             
             self.ax.imshow(colors, extent=[0, 65535, 0, 65535], aspect='auto', alpha=0.7, origin='lower')
     
@@ -328,9 +394,9 @@ class ToneCurveWidget:
                 # 直線でない場合は参照線を表示
                 is_straight = self.is_straight_line()
                 if not is_straight:
-                    if self.curve_type == "brightness" or self.curve_type == "hue":
+                    if self.curve_type == "brightness" or self.curve_type == "oklch_h":
                         self.ax.plot([0, 65535], [0, 65535], 'b--', alpha=0.5, linewidth=1)
-                    else:  # saturation, lightness
+                    else:  # oklch_c, oklch_l
                         self.ax.plot([0, 65535], [32767.5, 32767.5], 'b--', alpha=0.5, linewidth=1)
         
         # 制御点をプロット
@@ -342,9 +408,9 @@ class ToneCurveWidget:
     def is_straight_line(self):
         """直線かどうかを判定"""
         if len(self.control_points) <= 2:
-            if self.curve_type == "brightness" or self.curve_type == "hue":
+            if self.curve_type == "brightness" or self.curve_type == "oklch_h":
                 return self.control_points == [(0, 0), (65535, 65535)]
-            else:  # saturation, lightness
+            else:  # oklch_c, oklch_l
                 return self.control_points == [(0, 32767.5), (65535, 32767.5)]
         return False
     
@@ -438,12 +504,12 @@ class ToneCurveWidget:
         if self.main_window:
             if self.curve_type == "brightness":
                 self.main_window.on_brightness_curve_changed(self.control_points.copy())
-            elif self.curve_type == "hue":
-                self.main_window.on_hue_curve_changed(self.control_points.copy())
-            elif self.curve_type == "saturation":
-                self.main_window.on_saturation_curve_changed(self.control_points.copy())
-            elif self.curve_type == "lightness":
-                self.main_window.on_lightness_curve_changed(self.control_points.copy())
+            elif self.curve_type == "oklch_h":
+                self.main_window.on_oklch_h_curve_changed(self.control_points.copy())
+            elif self.curve_type == "oklch_c":
+                self.main_window.on_oklch_c_curve_changed(self.control_points.copy())
+            elif self.curve_type == "oklch_l":
+                self.main_window.on_oklch_l_curve_changed(self.control_points.copy())
 
     def set_histogram(self, hist_data):
         """ヒストグラムデータを設定する"""
@@ -459,17 +525,17 @@ class ToneCurveWidget:
             self.control_points = [tuple(p) for p in points]
         else:
             # pointsがNoneや空リストの場合、デフォルトにリセットする
-            if self.curve_type == "brightness" or self.curve_type == "hue":
+            if self.curve_type == "brightness" or self.curve_type == "oklch_h":
                 self.control_points = [(0, 0), (65535, 65535)]
-            else:  # saturation, lightness
+            else:  # oklch_c, oklch_l
                 self.control_points = [(0, 32767.5), (65535, 32767.5)]
         self.update_plot()
     
     def reset_curve(self):
         """カーブをリセット"""
-        if self.curve_type == "brightness" or self.curve_type == "hue":
+        if self.curve_type == "brightness" or self.curve_type == "oklch_h":
             self.control_points = [(0, 0), (65535, 65535)]
-        else:  # saturation, lightness
+        else:  # oklch_c, oklch_l
             self.control_points = [(0, 32767.5), (65535, 32767.5)]
         self.update_plot()
         self.emit_curve_changed()
@@ -1079,12 +1145,12 @@ class RAWDevelopmentGUI:
                 "明るさカーブ": "Brightness Curve",
                 "明るさのトーンカーブを調整します": "Adjust the brightness tone curve.",
                 "トーンカーブをリセット": "Reset Tone Curve",
-                "色相カーブ": "Hue Curve",
-                "色相のトーンカーブを調整します": "Adjust the hue tone curve.",
-                "彩度カーブ": "Saturation Curve",
-                "彩度のトーンカーブを調整します": "Adjust the saturation tone curve.",
-                "輝度カーブ": "Lightness Curve",
-                "輝度のトーンカーブを調整します": "Adjust the lightness tone curve.",
+                "OKLCH Hカーブ": "OKLCH H Curve",
+                "OKLCHの色相(H)を調整します": "Adjust the hue (H) of OKLCH.",
+                "OKLCH Cカーブ": "OKLCH C Curve",
+                "OKLCHの彩度(C)を調整します": "Adjust the chroma (C) of OKLCH.",
+                "OKLCH Lカーブ": "OKLCH L Curve",
+                "OKLCHの輝度(L)を調整します": "Adjust the lightness (L) of OKLCH.",
                 "WB": "WB",
                 "効果": "Effects",
                 "周辺減光": "Vignette",
@@ -1190,12 +1256,12 @@ class RAWDevelopmentGUI:
                 "明るさカーブ": "明るさカーブ",
                 "明るさのトーンカーブを調整します": "明るさのトーンカーブを調整します",
                 "トーンカーブをリセット": "トーンカーブをリセット",
-                "色相カーブ": "色相カーブ",
-                "色相のトーンカーブを調整します": "色相のトーンカーブを調整します",
-                "彩度カーブ": "彩度カーブ",
-                "彩度のトーンカーブを調整します": "彩度のトーンカーブを調整します",
-                "輝度カーブ": "輝度カーブ",
-                "輝度のトーンカーブを調整します": "輝度のトーンカーブを調整します",
+                "OKLCH Hカーブ": "OKLCH Hカーブ",
+                "OKLCHの色相(H)を調整します": "OKLCHの色相(H)を調整します",
+                "OKLCH Cカーブ": "OKLCH Cカーブ",
+                "OKLCHの彩度(C)を調整します": "OKLCHの彩度(C)を調整します",
+                "OKLCH Lカーブ": "OKLCH Lカーブ",
+                "OKLCHの輝度(L)を調整します": "OKLCHの輝度(L)を調整します",
                 "WB": "WB",
                 "効果": "効果",
                 "周辺減光": "周辺減光",
@@ -1429,17 +1495,10 @@ class RAWDevelopmentGUI:
     
     def create_tone_curve_tabs(self):
         """トーンカーブタブ群作成"""
-        # 明るさカーブ
         self.create_brightness_curve_tab()
-        
-        # 色相カーブ
-        self.create_hue_curve_tab()
-        
-        # 彩度カーブ
-        self.create_saturation_curve_tab()
-        
-        # 輝度カーブ
-        self.create_lightness_curve_tab()
+        self.create_oklch_h_curve_tab()
+        self.create_oklch_c_curve_tab()
+        self.create_oklch_l_curve_tab()
     
     def create_brightness_curve_tab(self):
         """明るさカーブタブ作成"""
@@ -1448,60 +1507,58 @@ class RAWDevelopmentGUI:
         
         Label(tab, text=self.tr("明るさのトーンカーブを調整します")).pack(pady=5)
         
-        # トーンカーブウィジェット用フレーム
         curve_frame = Frame(tab)
         curve_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         self.brightness_curve = ToneCurveWidget(curve_frame, "brightness", self)
         
-        # リセットボタン
         Button(tab, text=self.tr("トーンカーブをリセット"), 
                command=self.brightness_curve.reset_curve).pack(pady=5)
     
-    def create_hue_curve_tab(self):
-        """色相カーブタブ作成"""
+    def create_oklch_h_curve_tab(self):
+        """OKLCH Hカーブタブ作成"""
         tab = Frame(self.tab_widget)
-        self.tab_widget.add(tab, text=self.tr("色相カーブ"))
+        self.tab_widget.add(tab, text=self.tr("OKLCH Hカーブ"))
         
-        Label(tab, text=self.tr("色相のトーンカーブを調整します")).pack(pady=5)
+        Label(tab, text=self.tr("OKLCHの色相(H)を調整します")).pack(pady=5)
         
         curve_frame = Frame(tab)
         curve_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.hue_curve = ToneCurveWidget(curve_frame, "hue", self)
+        self.oklch_h_curve = ToneCurveWidget(curve_frame, "oklch_h", self)
         
         Button(tab, text=self.tr("トーンカーブをリセット"), 
-               command=self.hue_curve.reset_curve).pack(pady=5)
+               command=self.oklch_h_curve.reset_curve).pack(pady=5)
     
-    def create_saturation_curve_tab(self):
-        """彩度カーブタブ作成"""
+    def create_oklch_c_curve_tab(self):
+        """OKLCH Cカーブタブ作成"""
         tab = Frame(self.tab_widget)
-        self.tab_widget.add(tab, text=self.tr("彩度カーブ"))
+        self.tab_widget.add(tab, text=self.tr("OKLCH Cカーブ"))
         
-        Label(tab, text=self.tr("彩度のトーンカーブを調整します")).pack(pady=5)
+        Label(tab, text=self.tr("OKLCHの彩度(C)を調整します")).pack(pady=5)
         
         curve_frame = Frame(tab)
         curve_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.saturation_curve = ToneCurveWidget(curve_frame, "saturation", self)
+        self.oklch_c_curve = ToneCurveWidget(curve_frame, "oklch_c", self)
         
         Button(tab, text=self.tr("トーンカーブをリセット"), 
-               command=self.saturation_curve.reset_curve).pack(pady=5)
+               command=self.oklch_c_curve.reset_curve).pack(pady=5)
     
-    def create_lightness_curve_tab(self):
-        """輝度カーブタブ作成"""
+    def create_oklch_l_curve_tab(self):
+        """OKLCH Lカーブタブ作成"""
         tab = Frame(self.tab_widget)
-        self.tab_widget.add(tab, text=self.tr("輝度カーブ"))
+        self.tab_widget.add(tab, text=self.tr("OKLCH Lカーブ"))
         
-        Label(tab, text=self.tr("輝度のトーンカーブを調整します")).pack(pady=5)
+        Label(tab, text=self.tr("OKLCHの輝度(L)を調整します")).pack(pady=5)
         
         curve_frame = Frame(tab)
         curve_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.lightness_curve = ToneCurveWidget(curve_frame, "lightness", self)
+        self.oklch_l_curve = ToneCurveWidget(curve_frame, "oklch_l", self)
         
         Button(tab, text=self.tr("トーンカーブをリセット"), 
-               command=self.lightness_curve.reset_curve).pack(pady=5)
+               command=self.oklch_l_curve.reset_curve).pack(pady=5)
     
     def create_wb_tab(self):
         """ホワイトバランスタブ作成"""
@@ -1841,9 +1898,9 @@ class RAWDevelopmentGUI:
         
         # 表示するエディターを選択
         is_curve_dragging = (hasattr(self, 'brightness_curve') and self.brightness_curve.dragging) or \
-                            (hasattr(self, 'hue_curve') and self.hue_curve.dragging) or \
-                            (hasattr(self, 'saturation_curve') and self.saturation_curve.dragging) or \
-                            (hasattr(self, 'lightness_curve') and self.lightness_curve.dragging)
+                            (hasattr(self, 'oklch_h_curve') and self.oklch_h_curve.dragging) or \
+                            (hasattr(self, 'oklch_c_curve') and self.oklch_c_curve.dragging) or \
+                            (hasattr(self, 'oklch_l_curve') and self.oklch_l_curve.dragging)
 
         if (self.dragging or is_curve_dragging) and not force_full:
             display_editor = self.small_editor
@@ -1953,12 +2010,16 @@ class RAWDevelopmentGUI:
                 )
                 brightness_curve = self._get_curve_array_from_points(params.brightness_curve_points)
                 editor.set_tone_curve(curve=brightness_curve, mask_name=None)
-                hue_curve = self._get_curve_array_from_points(params.hue_curve_points)
-                editor.set_hls_hue_tone_curve(curve=hue_curve, mask_name=None)
-                saturation_curve = self._get_curve_array_from_points(params.saturation_curve_points)
-                editor.set_hls_saturation_tone_curve(curve=(saturation_curve * 2), mask_name=None)
-                lightness_curve = self._get_curve_array_from_points(params.lightness_curve_points)
-                editor.set_hls_lightness_tone_curve(curve=(lightness_curve * 2), mask_name=None)
+                
+                oklch_h_curve = self._get_curve_array_from_points(params.oklch_h_curve_points)
+                editor.set_oklch_h_tone_curve(curve=oklch_h_curve, mask_name=None)
+                
+                oklch_c_curve = self._get_curve_array_from_points(params.oklch_c_curve_points)
+                editor.set_oklch_c_tone_curve(curve=(oklch_c_curve * 2), mask_name=None)
+
+                oklch_l_curve = self._get_curve_array_from_points(params.oklch_l_curve_points)
+                editor.set_oklch_l_tone_curve(curve=(oklch_l_curve * 2), mask_name=None)
+
                 editor.set_vignette(strength=params.vignette, mask_name=None)
 
             # 2. 各マスクに対して個別に処理を適用
@@ -1991,12 +2052,16 @@ class RAWDevelopmentGUI:
                 # カーブを適用
                 brightness_curve = self._get_curve_array_from_points(params.brightness_curve_points)
                 editor.set_tone_curve(curve=brightness_curve, mask_name=mask_name)
-                hue_curve = self._get_curve_array_from_points(params.hue_curve_points)
-                editor.set_hls_hue_tone_curve(curve=hue_curve, mask_name=mask_name)
-                saturation_curve = self._get_curve_array_from_points(params.saturation_curve_points)
-                editor.set_hls_saturation_tone_curve(curve=(saturation_curve * 2), mask_name=mask_name)
-                lightness_curve = self._get_curve_array_from_points(params.lightness_curve_points)
-                editor.set_hls_lightness_tone_curve(curve=(lightness_curve * 2), mask_name=mask_name)
+
+                oklch_h_curve = self._get_curve_array_from_points(params.oklch_h_curve_points)
+                editor.set_oklch_h_tone_curve(curve=oklch_h_curve, mask_name=mask_name)
+                
+                oklch_c_curve = self._get_curve_array_from_points(params.oklch_c_curve_points)
+                editor.set_oklch_c_tone_curve(curve=(oklch_c_curve * 2), mask_name=mask_name)
+
+                oklch_l_curve = self._get_curve_array_from_points(params.oklch_l_curve_points)
+                editor.set_oklch_l_tone_curve(curve=(oklch_l_curve * 2), mask_name=mask_name)
+                
                 editor.set_vignette(strength=params.vignette, mask_name=mask_name)
                 
                 # マスク範囲を更新
@@ -2059,40 +2124,40 @@ class RAWDevelopmentGUI:
     # 露出パラメータ変更ハンドラー
     def on_exposure_changed(self, value):
         self.edit_params.exposure = value
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_contrast_changed(self, value):
         self.edit_params.contrast = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_shadow_changed(self, value):
         self.edit_params.shadow = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_highlight_changed(self, value):
         self.edit_params.highlight = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_black_changed(self, value):
         self.edit_params.black = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_white_changed(self, value):
         self.edit_params.white = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     # ホワイトバランス変更ハンドラー
     def on_wb_temperature_changed(self, value):
         self.edit_params.wb_temperature = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_wb_tint_changed(self, value):
         self.edit_params.wb_tint = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     def on_vignette_changed(self, value):
         self.edit_params.vignette = int(value)
-        self.start_drag_timer()
+        self.update_image_display()
     
     # トーンカーブ変更ハンドラー
     def on_brightness_curve_changed(self, points):
@@ -2100,25 +2165,25 @@ class RAWDevelopmentGUI:
         self.edit_params.brightness_curve_points = points
         self.update_image_display()
 
-    def on_hue_curve_changed(self, points):
-        """色相カーブ変更"""
-        self.edit_params.hue_curve_points = points
+    def on_oklch_h_curve_changed(self, control_points):
+        """OKLCH Hカーブ変更"""
+        self.edit_params.oklch_h_curve_points = control_points
         self.update_image_display()
 
-    def on_saturation_curve_changed(self, points):
-        """彩度カーブ変更"""
-        self.edit_params.saturation_curve_points = points
+    def on_oklch_c_curve_changed(self, control_points):
+        """OKLCH Cカーブ変更"""
+        self.edit_params.oklch_c_curve_points = control_points
         self.update_image_display()
 
-    def on_lightness_curve_changed(self, points):
-        """輝度カーブ変更"""
-        self.edit_params.lightness_curve_points = points
+    def on_oklch_l_curve_changed(self, control_points):
+        """OKLCH Lカーブ変更"""
+        self.edit_params.oklch_l_curve_points = control_points
         self.update_image_display()
     
     def on_mask_range_changed(self, value):
         """マスク範囲の微調整"""
         self.edit_params.mask_range = value
-        self.start_drag_timer()
+        self.update_image_display()
     
     def start_drag_timer(self):
         """ドラッグタイマーを開始"""
@@ -2138,38 +2203,39 @@ class RAWDevelopmentGUI:
         self.update_image_display(force_full=True)
     
     def reset_exposure_tab(self):
-        """露出タブリセット"""
-        self.edit_params.exposure = 0.0
-        self.edit_params.contrast = 0
-        self.edit_params.shadow = 0
-        self.edit_params.highlight = 0
-        self.edit_params.black = 0
-        self.edit_params.white = 0
-        
-        self.exposure_slider.set_value(0.0)
-        self.contrast_slider.set_value(0)
-        self.shadow_slider.set_value(0)
-        self.highlight_slider.set_value(0)
-        self.black_slider.set_value(0)
-        self.white_slider.set_value(0)
-        
-        self.update_image_display()
+        """露出タブをリセット"""
+        params = self.edit_params
+        params.exposure = 0.0
+        params.contrast = 0
+        params.shadow = 0
+        params.highlight = 0
+        params.black = 0
+        params.white = 0
+        self.update_ui_from_parameters()
+        self.update_image_display(force_full=True)
     
     def reset_wb_tab(self):
-        """ホワイトバランスタブリセット"""
-        self.edit_params.wb_temperature = 0
-        self.edit_params.wb_tint = 0
-        
-        self.wb_temperature_slider.set_value(0)
-        self.wb_tint_slider.set_value(0)
-        
-        self.update_image_display()
+        """ホワイトバランスタブをリセット"""
+        params = self.edit_params
+        params.wb_temperature = 0
+        params.wb_tint = 0
+        self.update_ui_from_parameters()
+        self.update_image_display(force_full=True)
 
+    def reset_tone_curve_tab(self):
+        """トーンカーブタブをリセット"""
+        self.brightness_curve.reset_curve()
+        self.oklch_h_curve.reset_curve()
+        self.oklch_c_curve.reset_curve()
+        self.oklch_l_curve.reset_curve()
+        self.update_image_display(force_full=True)
+    
     def reset_effects_tab(self):
-        """効果タブリセット"""
-        self.edit_params.vignette = 0
-        self.vignette_slider.set_value(0)
-        self.start_drag_timer()
+        """効果タブをリセット"""
+        params = self.edit_params
+        params.vignette = 0
+        self.update_ui_from_parameters()
+        self.update_image_display(force_full=True)
     
     def reset_all_edits(self):
         """すべての編集をリセット"""
@@ -2301,7 +2367,27 @@ class RAWDevelopmentGUI:
         
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                preset_data = json.load(f)
+                preset_data = {}
+                for key, value in json.load(f).items():
+                    if key == "hue_curve_points":
+                        preset_data["oklch_h_curve_points"] = value
+                        continue
+
+                    elif key == "saturation_curve_points":
+                        preset_data["oklch_c_curve_points"] = value
+                        continue
+
+                    elif key == "lightness_curve_points":
+                        preset_data["oklch_l_curve_points"] = value
+                        continue
+
+                    preset_data[key] = value
+
+
+
+            
+            
+             
             
             # 「マスクなし」のEditParametersオブジェクトを更新
             no_mask_key = self.tr("マスクなし")
@@ -2320,6 +2406,7 @@ class RAWDevelopmentGUI:
             messagebox.showinfo(self.tr("情報"), self.tr("プリセットを読み込みました"))
             
         except Exception as e:
+            traceback.print_exc()
             messagebox.showerror(self.tr("エラー"), f"{self.tr('プリセットの読み込みに失敗しました')}: {str(e)}")
     
     def update_ui_from_parameters(self):
@@ -2340,21 +2427,18 @@ class RAWDevelopmentGUI:
         self.wb_tint_slider.set_value(self.edit_params.wb_tint)
         
         # トーンカーブ
-        if hasattr(self, 'brightness_curve'):
-            self.brightness_curve.set_control_points(self.edit_params.brightness_curve_points)
-        if hasattr(self, 'hue_curve'):
-            self.hue_curve.set_control_points(self.edit_params.hue_curve_points)
-        if hasattr(self, 'saturation_curve'):
-            self.saturation_curve.set_control_points(self.edit_params.saturation_curve_points)
-        if hasattr(self, 'lightness_curve'):
-            self.lightness_curve.set_control_points(self.edit_params.lightness_curve_points)
+        self.brightness_curve.set_control_points(self.edit_params.brightness_curve_points)
+        self.oklch_h_curve.set_control_points(self.edit_params.oklch_h_curve_points)
+        self.oklch_c_curve.set_control_points(self.edit_params.oklch_c_curve_points)
+        self.oklch_l_curve.set_control_points(self.edit_params.oklch_l_curve_points)
 
         # マスク範囲
         self.mask_range_slider.set_value(self.edit_params.mask_range)
     
     def show_settings(self):
         """設定ダイアログを表示"""
-        dialog = SettingsDialog(self.root, self.settings_manager, self)
+        settings_dialog = SettingsDialog(self.root, self.settings_manager, self)
+        self.root.wait_window(settings_dialog.dialog)
     
     # マスク関連メソッド
     def start_ai_mask_creation(self):
@@ -2606,7 +2690,6 @@ class RAWDevelopmentGUI:
                 self.root.after(100, lambda: self.load_image(file_path))
         
         self.root.mainloop()
-
 
 
 def main():

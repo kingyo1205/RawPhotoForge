@@ -50,7 +50,7 @@ To run it, you need **Python 3.11 or later** and an environment where **slang (s
 
 * File name format:
   `RawPhotoForge-v<version>.zip`
-  Example: `RawPhotoForge-v0.4.0.zip`
+  Example: `RawPhotoForge-v0.5.0.zip`
 
 * Download from the Release page:
   [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)

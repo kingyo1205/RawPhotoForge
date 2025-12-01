@@ -84,7 +84,7 @@ void tone_curve_lut(
 
 [shader("compute")]
 [numthreads(256, 1, 1)]
-void tone_curve_by_hue(
+void tone_curve_by_oklch_h(
     uint3 tid : SV_DispatchThreadID,
     uniform uint ch_hue,
     uniform uint ch_target,
@@ -101,7 +101,8 @@ void tone_curve_by_hue(
     let idx = i * 3;
 
     if (mask[i] != 0) {
-        let hue = clamp(image[idx + ch_hue], 0.0, 1.0);
+        // ch_hue is 2 for Oklch H
+        let hue = clamp(image[idx + ch_hue], 0.0, 1.0); 
         let val = clamp(image[idx + ch_target], 0.0, 1.0);
 
         uint hue_idx = (uint)(hue * 65535.0);
@@ -114,9 +115,68 @@ void tone_curve_by_hue(
     }
 }
 
+// --- OKLCH Conversion Intrinsics ---
+
+// Matrix to convert from Linear sRGB to LMS cone space
+static const float3x3 srgb_to_lms = float3x3(
+    0.4121656120, 0.5362752080, 0.0514575653,
+    0.2118591070, 0.6807189584, 0.1074065553,
+    0.0883097947, 0.2818474174, 0.6302613616
+);
+
+// Matrix to convert from LMS to Oklab
+static const float3x3 lms_to_oklab_m = float3x3(
+    0.2104542553,  0.7936177850, -0.0040720468,
+    1.9779984951, -2.4285922050,  0.4505937099,
+    0.0259040371,  0.7827717662, -0.8086757660
+);
+
+// Matrix to convert from Oklab to LMS
+static const float3x3 oklab_to_lms_m = float3x3(
+    1.0,  0.3963377774,  0.2158037573,
+    1.0, -0.1055613458, -0.0638541728,
+    1.0, -0.0894841775, -1.2914855480
+);
+
+// Matrix to convert from LMS to Linear sRGB
+static const float3x3 lms_to_srgb = float3x3(
+    4.0767245293, -3.3072168827,  0.2307590544,
+   -1.2681437731,  2.6093323231, -0.3411344290,
+   -0.0041119885, -0.7034763098,  1.7068625689
+);
+
+
+float3 linear_srgb_to_lms(float3 c) {
+    return mul(srgb_to_lms, c);
+}
+
+float3 lms_to_oklab(float3 c) {
+    let l = pow(c.x, 1.0/3.0);
+    let m = pow(c.y, 1.0/3.0);
+    let s = pow(c.z, 1.0/3.0);
+    return mul(lms_to_oklab_m, float3(l, m, s));
+}
+
+float3 oklab_to_lms(float3 c) {
+    let l_ = c.x;
+    let m_ = c.y;
+    let s_ = c.z;
+    let lms_ = mul(oklab_to_lms_m, float3(l_, m_, s_));
+    return float3(
+        lms_.x * lms_.x * lms_.x,
+        lms_.y * lms_.y * lms_.y,
+        lms_.z * lms_.z * lms_.z
+    );
+}
+
+float3 lms_to_linear_srgb(float3 c) {
+    return mul(lms_to_srgb, c);
+}
+
+
 [shader("compute")]
 [numthreads(256, 1, 1)]
-void rgb_to_hls(
+void linear_srgb_to_oklch(
     uint3 tid : SV_DispatchThreadID,
     uniform uint num_pixels,
     RWStructuredBuffer<float> image
@@ -127,65 +187,37 @@ void rgb_to_hls(
     }
 
     let idx = i * 3;
-    let r = clamp(image[idx + 0], 0.0, 1.0);
-    let g = clamp(image[idx + 1], 0.0, 1.0);
-    let b = clamp(image[idx + 2], 0.0, 1.0);
+    let r = image[idx + 0];
+    let g = image[idx + 1];
+    let b = image[idx + 2];
 
-    let maxc = max(max(r, g), b);
-    let minc = min(min(r, g), b);
-    let delta = maxc - minc;
+    let lms = linear_srgb_to_lms(float3(r, g, b));
 
-    let L = (maxc + minc) * 0.5;
+    // LMS to Lab
+    let lab = lms_to_oklab(lms);
+    let L = lab.x;
+    let a = lab.y;
+    let b_ = lab.z;
 
-    var S = 0.0;
-    if (delta > 0.0) {
-        if (L > 0.5) {
-            S = delta / (2.0 - maxc - minc);
-        } else {
-            S = delta / (maxc + minc);
-        }
+    // Lab to LCH
+    let C = sqrt(a * a + b_ * b_);
+    var H = atan2(b_, a);
+
+    // Normalize H to 0-1 range
+    H = H * (1.0 / (2.0 * 3.14159265359));
+    if (H < 0.0) {
+        H += 1.0;
     }
 
-    var H = 0.0;
-    if (delta > 0.0) {
-        if (maxc == r) {
-            H = (g - b) / delta;
-            if (g < b) {
-                H = H + 6.0;
-            }
-        } else if (maxc == g) {
-            H = (b - r) / delta + 2.0;
-        } else {
-            H = (r - g) / delta + 4.0;
-        }
-        H = H / 6.0;
-    }
-
-    image[idx + 0] = clamp(H, 0.0, 1.0);
-    image[idx + 1] = clamp(L, 0.0, 1.0);
-    image[idx + 2] = clamp(S, 0.0, 1.0);
+    image[idx + 0] = L;       // L: 0..1
+    image[idx + 1] = C;       // C: 0..~0.4, will be normalized later if needed
+    image[idx + 2] = H;       // H: 0..1
 }
 
-float hue2rgb(float p, float q, float t_in) {
-    var t = t_in;
-    t = t % 1.0;
-    if (t < 0.0) {
-        t = t + 1.0;
-    }
-    if (t < 1.0 / 6.0) {
-        return p + (q - p) * 6.0 * t;
-    } else if (t < 1.0 / 2.0) {
-        return q;
-    } else if (t < 2.0 / 3.0) {
-        return p + (q - p) * (4.0 - 6.0 * t);
-    } else {
-        return p;
-    }
-}
 
 [shader("compute")]
 [numthreads(256, 1, 1)]
-void hls_to_rgb(
+void oklch_to_linear_srgb(
     uint3 tid : SV_DispatchThreadID,
     uniform uint num_pixels,
     RWStructuredBuffer<float> image
@@ -194,30 +226,29 @@ void hls_to_rgb(
     if (i >= num_pixels) {
         return;
     }
-
+    
     let idx = i * 3;
-    let H = clamp(image[idx + 0], 0.0, 1.0);
-    let L = clamp(image[idx + 1], 0.0, 1.0);
-    let S = clamp(image[idx + 2], 0.0, 1.0);
+    let L = image[idx + 0];
+    let C = image[idx + 1];
+    let H = image[idx + 2];
 
-    float R, G, B;
-    if (S == 0.0) {
-        R = L;
-        G = L;
-        B = L;
-    } else {
-        var q = (L < 0.5) ? (L * (1.0 + S)) : (L + S - L * S);
-        let p = 2.0 * L - q;
-        R = hue2rgb(p, q, H + 1.0 / 3.0);
-        G = hue2rgb(p, q, H);
-        B = hue2rgb(p, q, H - 1.0 / 3.0);
-    }
+    // LCH to Lab
+    let h_rad = H * (2.0 * 3.14159265359);
+    let a = C * cos(h_rad);
+    let b_ = C * sin(h_rad);
 
-    image[idx + 0] = clamp(R, 0.0, 1.0);
-    image[idx + 1] = clamp(G, 0.0, 1.0);
-    image[idx + 2] = clamp(B, 0.0, 1.0);
+    let lab = float3(L, a, b_);
+
+    // Lab to LMS
+    let lms = oklab_to_lms(lab);
+    
+    // LMS to linear sRGB
+    let rgb = lms_to_linear_srgb(lms);
+
+    image[idx + 0] = rgb.x;
+    image[idx + 1] = rgb.y;
+    image[idx + 2] = rgb.z;
 }
-
 
 [shader("compute")]
 [numthreads(256, 1, 1)]

@@ -40,7 +40,7 @@ RawPhotoForgeは**Pythonで書かれた**RAW現像ソフトです。
 
 - ファイル名フォーマット：  
   `RawPhotoForge-v<バージョン>.zip`  
-  例：`RawPhotoForge-v0.4.0.zip`
+  例：`RawPhotoForge-v0.5.0.zip`
 
 - リリースページからダウンロード：  
   [GitHub Releases](https://github.com/kingyo1205/RawPhotoForge/releases)

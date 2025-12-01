@@ -79,7 +79,7 @@ def init(device_index: int = 0) -> None:
         shader_path = Path(__file__).parent / "slang_kernel.slang"
         entry_points = [
             "to_linear", "clip_0_1", "to_srgb", "tone_curve_lut",
-            "tone_curve_by_hue", "rgb_to_hls", "hls_to_rgb",
+            "tone_curve_by_oklch_h", "linear_srgb_to_oklch", "oklch_to_linear_srgb",
             "white_balance", "vignette_effect"
         ]
         for name in entry_points:
