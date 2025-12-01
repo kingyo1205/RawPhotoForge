@@ -148,7 +148,7 @@ See the [official page](https://dev.perl.org/licenses/artistic.html) for details
 | Library                                                    | License                            | Notes          |
 | ---------------------------------------------------------- | ---------------------------------- | -------------- |
 | [numpy](https://pypi.org/project/numpy/)                   | BSD                                | -              |
-| [slangpy](https://pypi.org/project/slangpy/)               | Apache-2.0                         | -              |
+| [slangpy](https://pypi.org/project/slangpy/)               | Apache-2.0 WITH LLVM-exception     | -              |
 | [pillow](https://pypi.org/project/Pillow/)                 | MIT-CMU                            | -              |
 | [opencv-python](https://pypi.org/project/opencv-python/)   | Apache-2.0                         | -              |
 | [scipy](https://pypi.org/project/scipy/)                   | BSD                                | -              |
