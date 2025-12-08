@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="icon.png">
+    <title>RawPhotoForge - RAW Photo Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background: radial-gradient(ellipse at top, rgba(255, 120, 0, 0.15), transparent),
+                        radial-gradient(ellipse at bottom, rgba(255, 80, 20, 0.1), transparent);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255, 120, 0, 0.03) 100px, rgba(255, 120, 0, 0.03) 102px),
+                repeating-linear-gradient(0deg, transparent, transparent 100px, rgba(255, 120, 0, 0.03) 100px, rgba(255, 120, 0, 0.03) 102px);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff7800 0%, #ffb347 50%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(255, 120, 0, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 20px rgba(255, 120, 0, 0.4));
+            }
+            to {
+                filter: drop-shadow(0 0 40px rgba(255, 120, 0, 0.6));
+            }
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #ff9f66;
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff7800, #ff6b35);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 120, 0, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 120, 0, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 120, 0, 0.1);
+            color: #ff9f66;
+            border: 2px solid #ff7800;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 120, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .section {
+            padding: 5rem 2rem;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff7800, transparent);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #ff9f66;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff7800, transparent);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(255, 120, 0, 0.05), rgba(255, 107, 53, 0.05));
+            border: 1px solid rgba(255, 120, 0, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 120, 0, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(255, 120, 0, 0.2);
+            border-color: #ff7800;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            color: #ff9f66;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .tech-badge {
+            background: rgba(255, 120, 0, 0.1);
+            border: 2px solid rgba(255, 120, 0, 0.3);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            color: #ff9f66;
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: rgba(255, 120, 0, 0.2);
+            border-color: #ff7800;
+            transform: scale(1.05);
+        }
+
+        .usage-section {
+            background: rgba(255, 120, 0, 0.02);
+            border-radius: 30px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            margin-bottom: 3rem;
+            padding-left: 3rem;
+            position: relative;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #ff7800, #ff6b35);
+        }
+
+        .step-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ff7800;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.8rem;
+            color: #ff9f66;
+            margin-bottom: 1rem;
+        }
+
+        .step-content {
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 120, 0, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            color: #ff9f66;
+            overflow-x: auto;
+        }
+
+        .warning-box {
+            background: rgba(255, 200, 0, 0.1);
+            border-left: 4px solid #ffc800;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .info-box {
+            background: rgba(100, 150, 255, 0.1);
+            border-left: 4px solid #6496ff;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+
+        .btn-small {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #ff7800, #ff6b35);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 120, 0, 0.3);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 120, 0, 0.5);
+        }
+
+        .btn-releases {
+            background: rgba(255, 120, 0, 0.1);
+            color: #ff9f66;
+            border: 2px solid #ff7800;
+        }
+
+        .btn-releases:hover {
+            background: rgba(255, 120, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+            
+            .subtitle {
+                font-size: 1.3rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .step {
+                padding-left: 1.5rem;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-20px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        .scroll-indicator span {
+            display: block;
+            width: 30px;
+            height: 50px;
+            border: 3px solid #ff7800;
+            border-radius: 25px;
+            position: relative;
+        }
+
+        .scroll-indicator span::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #ff7800;
+            border-radius: 50%;
+            animation: scroll 2s infinite;
+        }
+
+        @keyframes scroll {
+            0% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+        }
+        /* Language Switch */
+        .language-switch {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+
+        .language-switch .lang-text {
+            font-weight: 600;
+            color: #ff9f66;
+            user-select: none;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #ff7800;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switch">
+        <span class="lang-text">JA</span>
+        <label class="switch">
+            <input type="checkbox" id="lang-toggle">
+            <span class="slider round"></span>
+        </label>
+        <span class="lang-text">EN</span>
+    </div>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>RawPhotoForge</h1>
+            <div class="subtitle">RAW Photo Editor Written in Python</div>
+            <p class="description" data-i18n-key="description">
+                シンプルで高機能なRAW現像ソフトウェア。slang (slangpy) で動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-primary" target="_blank" data-i18n-key="githubLink">GitHub で見る</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-secondary" target="_blank" data-i18n-key="releasesLink">リリースページ</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span></span>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title" data-i18n-key="featuresTitle">特徴</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">⚡</span>
+                    <h3 class="feature-title" data-i18n-key="feature1Title">高速処理</h3>
+                    <p class="feature-description" data-i18n-key="feature1Desc">slang (slangpy) バックエンドによる、GPUを使用した高速な画像処理エンジンで、リアルタイムプレビューを実現</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🎨</span>
+                    <h3 class="feature-title" data-i18n-key="feature2Title">細かい色調整</h3>
+                    <p class="feature-description" data-i18n-key="feature2Desc">明るさ、色相、彩度、輝度のトーンカーブで色や明るさを自由自在にコントロール</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🤖</span>
+                    <h3 class="feature-title" data-i18n-key="feature3Title">AIマスク対応</h3>
+                    <p class="feature-description" data-i18n-key="feature3Desc">SAM（Segment Anything Model）による高精度な部分補正機能を搭載</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📸</span>
+                    <h3 class="feature-title" data-i18n-key="feature4Title">レンズ補正</h3>
+                    <p class="feature-description" data-i18n-key="feature4Desc">Lensfunライブラリによる自動レンズ補正機能で歪みや色収差を修正</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3 class="feature-title" data-i18n-key="feature5Title">メタデータ表示</h3>
+                    <p class="feature-description" data-i18n-key="feature5Desc">ExifToolによる詳細なメタデータ表示で撮影情報を一目で確認</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🐍</span>
+                    <h3 class="feature-title" data-i18n-key="feature6Title">Python製</h3>
+                    <p class="feature-description" data-i18n-key="feature6Desc">Pythonで書かれたオープンソースソフトウェアで、カスタマイズも簡単</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title" data-i18n-key="techStackTitle">技術スタック</h2>
+            <div class="tech-stack">
+                <div class="tech-badge">Python 3.11+</div>
+                <div class="tech-badge">slang (slangpy)</div>
+                <div class="tech-badge">Tkinter</div>
+                <div class="tech-badge">SAM 2.1</div>
+                <div class="tech-badge">Lensfun</div>
+                <div class="tech-badge">ExifTool</div>
+            </div>
+            <div class="tech-stack" style="margin-top: 2rem;">
+                <div class="tech-badge">Windows</div>
+                <div class="tech-badge">Linux</div>
+                <div class="tech-badge">English</div>
+                <div class="tech-badge" data-i18n-key="langJa">日本語</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title" data-i18n-key="usageTitle">使い方</h2>
+            <div class="usage-section">
+                <div class="warning-box">
+                    <strong data-i18n-key="usageWarningTitle">⚠️ 注意事項</strong><br>
+                    <span data-i18n-key="usageWarningText">
+                        本READMEに記載しているコマンド例は<strong>Linux環境向け</strong>です。Windowsで利用する場合は、コマンドやパスを適宜読み替えてください。<br>
+                        本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>slang (slangpy) が利用可能な環境</strong>が必要です。
+                    </span>
+                </div>
+
+
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <h3 class="step-title" data-i18n-key="step1Title">ソースコードを取得</h3>
+                    <div class="step-content">
+                        <p data-i18n-key="step1Desc1">GitHubのリリースページから<strong>自作Asset（zipファイル）</strong>をダウンロードしてください。</p>
+                        <div class="download-buttons">
+                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn-small btn-download" target="_blank" data-i18n-key="step1Btn">📥 リリースページへ</a>
+                        </div>
+                        <div class="warning-box">
+                            <strong data-i18n-key="step1WarningTitle">重要:</strong><br>
+                            <span data-i18n-key="step1WarningText">GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず自作Assetを使用してください。<br>
+                            ファイル名フォーマット: <code>RawPhotoForge-v&lt;バージョン&gt;.zip</code></span>
+                        </div>
+                        <p data-i18n-key="step1Desc2">ダウンロード後、zipファイルを解凍し、任意の場所に配置します。</p>
+                        <div class="code-block">cd RawPhotoForge</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <h3 class="step-title" data-i18n-key="step2Title">AIモデルを配置</h3>
+                    <div class="step-content">
+                        <p data-i18n-key="step2Desc1"><a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large ダウンロードページ</a>から以下のファイルを取得し、<strong>RawPhotoForgeフォルダ直下</strong>に配置します。</p>
+                        <ul style="list-style: none; padding-left: 1rem; margin-top: 1rem;">
+                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_large.pt</li>
+                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_l.yaml</li>
+                        </ul>
+                        <div class="info-box" data-i18n-key="step2Info">
+                            配置例: <code>./sam2.1_hiera_large.pt</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <h3 class="step-title" data-i18n-key="step3Title">ExifToolの導入</h3>
+                    <div class="step-content">
+                        <p data-i18n-key="step3Desc1"><a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool 公式サイト</a>からダウンロードして、環境変数PATHに追加してください。</p>
+                        <p style="margin-top: 1rem;"><strong data-i18n-key="step3Desc2">確認手順:</strong></p>
+                        <div class="code-block">exiftool -ver</div>
+                        <p data-i18n-key="step3Desc3">バージョン番号が表示されればOKです。</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">04</div>
+                    <h3 class="step-title" data-i18n-key="step4Title">依存ライブラリのインストール</h3>
+                    <div class="step-content">
+                        <div class="code-block">pip install -r raw_photo_forge/requirements.txt</div>
+                        <p data-i18n-key="step4Desc">Pythonライブラリを一括でインストールします。エラーが出る場合は、Pythonのインストールやバージョンを確認してください。</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">05</div>
+                    <h3 class="step-title" data-i18n-key="step5Title">RawPhotoForgeを起動</h3>
+                    <div class="step-content">
+                        <div class="code-block">python raw_photo_forge/raw_photo_forge.py</div>
+                        <p data-i18n-key="step5Desc">ソフトが起動します。起動できない場合は、PythonやExifToolのPATH設定を確認してください。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="text-align: center; padding: 5rem 2rem;">
+        <div class="container">
+            <h2 class="section-title" data-i18n-key="getStartedTitle">始めよう</h2>
+            <p style="font-size: 1.2rem; color: #b0b0b0; margin-bottom: 2rem;" data-i18n-key="getStartedDesc">
+                今すぐRawPhotoForgeをダウンロードして、RAW現像の新しい体験を始めましょう
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-primary" target="_blank" data-i18n-key="getStartedBtn1">リリースページへ</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank" data-i18n-key="getStartedBtn2">GitHubで詳細を見る</a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const translations = {
+                description: {
+                    ja: 'シンプルで高機能なRAW現像ソフトウェア。slang (slangpy) で動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。',
+                    en: 'Simple yet powerful RAW development software. A high-speed image processing engine running on slang (slangpy) allows you to edit RAW photos with a real-time preview. Finely adjust colors and brightness with tone curves for brightness, hue, saturation, and luminance. Also supports partial correction with AI masks (SAM), lens correction with Lensfun, and metadata display with ExifTool.'
+                },
+                githubLink: { ja: 'GitHub で見る', en: 'View on GitHub' },
+                releasesLink: { ja: 'リリースページ', en: 'Releases Page' },
+                featuresTitle: { ja: '特徴', en: 'Features' },
+                feature1Title: { ja: '高速処理', en: 'High-Speed Processing' },
+                feature1Desc: { ja: 'slang (slangpy) バックエンドによる高速な画像処理エンジンで、リアルタイムプレビューを実現', en: 'Achieve real-time previews with a high-speed image processing engine powered by a slang (slangpy) backend.' },
+                feature2Title: { ja: '細かい色調整', en: 'Fine Color Adjustment' },
+                feature2Desc: { ja: '明るさ、色相、彩度、輝度のトーンカーブで色や明るさを自由自在にコントロール', en: 'Freely control color and brightness with tone curves for brightness, hue, saturation, and luminance.' },
+                feature3Title: { ja: 'AIマスク対応', en: 'AI Mask Support' },
+                feature3Desc: { ja: 'SAM（Segment Anything Model）による高精度な部分補正機能を搭載', en: 'Equipped with high-precision partial correction using SAM (Segment Anything Model).' },
+                feature4Title: { ja: 'レンズ補正', en: 'Lens Correction' },
+                feature4Desc: { ja: 'Lensfunライブラリによる自動レンズ補正機能で歪みや色収差を修正', en: 'Corrects distortion and chromatic aberration with the automatic lens correction function by the Lensfun library.' },
+                feature5Title: { ja: 'メタデータ表示', en: 'Metadata Display' },
+                feature5Desc: { ja: 'ExifToolによる詳細なメタデータ表示で撮影情報を一目で確認', en: 'Check shooting information at a glance with detailed metadata display by ExifTool.' },
+                feature6Title: { ja: 'Python製', en: 'Made with Python' },
+                feature6Desc: { ja: 'Pythonで書かれたオープンソースソフトウェアで、カスタマイズも簡単', en: 'Open-source software written in Python, easy to customize.' },
+                techStackTitle: { ja: '技術スタック', en: 'Tech Stack' },
+                langJa: { ja: '日本語', en: 'Japanese' },
+                usageTitle: { ja: '使い方', en: 'How to Use' },
+                usageWarningTitle: { ja: '⚠️ 注意事項', en: '⚠️ Note' },
+                usageWarningText: {
+                    ja: `本READMEに記載しているコマンド例は<strong>Linux環境向け</strong>です。Windowsを利用する場合は、コマンドやパスを適宜読み替えてください。<br>本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>slang (slangpy) が利用可能な環境</strong>が必要です。`,
+                    en: `The command examples in this README are for a <strong>Linux environment</strong>. If you are using Windows, please adapt the commands and paths accordingly.<br>This software is distributed as <strong>source code only</strong>. It requires <strong>Python 3.11 or higher</strong> and an environment where <strong>slang (slangpy) is available</strong>.`
+                },
+                step1Title: { ja: 'ソースコードを取得', en: 'Get the Source Code' },
+                step1Desc1: { ja: 'GitHubのリリースページから<strong>自作Asset（zipファイル）</strong>をダウンロードしてください。', en: 'Please download the <strong>custom Asset (zip file)</strong> from the GitHub releases page.' },
+                step1Btn: { ja: '📥 リリースページへ', en: '📥 Go to Releases Page' },
+                step1WarningTitle: { ja: '重要:', en: 'Important:' },
+                step1WarningText: {
+                    ja: `GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず自作Assetを使用してください。<br>ファイル名フォーマット: <code>RawPhotoForge-v&lt;バージョン&gt;.zip</code>`,
+                    en: `Please be sure to use the custom Asset, not the auto-generated "Source code (zip/tar.gz)" from GitHub.<br>Filename format: <code>RawPhotoForge-v&lt;version&gt;.zip</code>`
+                },
+                step1Desc2: { ja: 'ダウンロード後、zipファイルを解凍し、任意の場所に配置します。', en: 'After downloading, unzip the file and place it in any location.' },
+                step2Title: { ja: 'AIモデルを配置', en: 'Place the AI Model' },
+                step2Desc1: { ja: `<a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large ダウンロードページ</a>から以下のファイルを取得し、<strong>RawPhotoForgeフォルダ直下</strong>に配置します。`, en: `Get the following files from the <a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large download page</a> and place them directly in the <strong>RawPhotoForge folder</strong>.` },
+                step2Info: { ja: '配置例: <code>./sam2.1_hiera_large.pt</code>', en: 'Example placement: <code>./sam2.1_hiera_large.pt</code>' },
+                step3Title: { ja: 'ExifToolの導入', en: 'Install ExifTool' },
+                step3Desc1: { ja: '<a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool 公式サイト</a>からダウンロードして、環境変数PATHに追加してください。', en: 'Download it from the <a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool official website</a> and add it to your system\'s PATH environment variable.' },
+                step3Desc2: { ja: '確認手順:', en: 'Verification:' },
+                step3Desc3: { ja: 'バージョン番号が表示されればOKです。', en: 'It\'s successful if the version number is displayed.' },
+                step4Title: { ja: '依存ライブラリのインストール', en: 'Install Dependencies' },
+                step4Desc: { ja: 'Pythonライブラリを一括でインストールします。エラーが出る場合は、Pythonのインストールやバージョンを確認してください。', en: 'This will install all the Python libraries at once. If you encounter errors, please check your Python installation and version.' },
+                step5Title: { ja: 'RawPhotoForgeを起動', en: 'Launch RawPhotoForge' },
+                step5Desc: { ja: 'ソフトが起動します。', en: 'The software will start. ' },
+                getStartedTitle: { ja: '始めよう', en: 'Get Started' },
+                getStartedDesc: { ja: '今すぐRawPhotoForgeをダウンロードして、RAW現像の新しい体験を始めましょう', en: 'Download RawPhotoForge now and start a new experience in RAW development.' },
+                getStartedBtn1: { ja: 'リリースページへ', en: 'Go to Releases Page' },
+                getStartedBtn2: { ja: 'GitHubで詳細を見る', en: 'View details on GitHub' }
+            };
+
+            const langToggle = document.getElementById('lang-toggle');
+            const translatableElements = document.querySelectorAll('[data-i18n-key]');
+
+            const setLanguage = (lang) => {
+                document.documentElement.lang = lang;
+                translatableElements.forEach(el => {
+                    const key = el.getAttribute('data-i18n-key');
+                    if (translations[key] && translations[key][lang]) {
+                        el.innerHTML = translations[key][lang];
+                    }
+                });
+                localStorage.setItem('lang', lang);
+                langToggle.checked = lang === 'en';
+            };
+
+            langToggle.addEventListener('change', (event) => {
+                setLanguage(event.target.checked ? 'en' : 'ja');
+            });
+
+            const getInitialLanguage = () => {
+                const savedLang = localStorage.getItem('lang');
+                if (savedLang) {
+                    return savedLang;
+                }
+                const browserLang = navigator.language || navigator.userLanguage;
+                return browserLang.toLowerCase().startsWith('ja') ? 'ja' : 'en';
+            };
+
+            setLanguage(getInitialLanguage());
+        });
+    </script>
+</body>
+</html>
