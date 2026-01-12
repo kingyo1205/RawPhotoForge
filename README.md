@@ -36,12 +36,12 @@ RawPhotoForge/
 ## Rust Project Layout
 
 
-
+```
 rust/
 ├── photo-editor           # Core image processing library
 ├── photo-editor-godot     # Godot GDExtension wrapper
 └── raw-photo-forge        # Godot project (UI)
-
+```
 
 
 - `photo-editor`

@@ -38,12 +38,12 @@ RawPhotoForge/
 ## Rust版の構成
 
 
-
+```
 rust/
 ├── photo-editor           # 画像処理コア
 ├── photo-editor-godot     # Godot用GDExtension
 └── raw-photo-forge        # Godotプロジェクト(UI)
-
+```
 
 - `photo-editor`
   - RAW画像処理
