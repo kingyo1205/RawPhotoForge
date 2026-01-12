@@ -1,0 +1,6 @@
+[configuration]
+compatibility_minimum = 4.2
+entry_symbol = "gdext_rust_init"
+
+[libraries]
+linux.x86_64 = "res://addons/photo_editor/libphoto_editor_godot.so"

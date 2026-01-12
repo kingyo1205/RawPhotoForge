@@ -1,0 +1,66 @@
+[gd_resource type="Theme" load_steps=8 format=3 uid="uid://ceujvpsxcn5rv"]
+
+[sub_resource type="DPITexture" id="DPITexture_denks"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#fefefe\" fill-opacity=\".75\"/></svg>
+"
+
+[sub_resource type="DPITexture" id="DPITexture_rqugq"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#fefefe\" fill-opacity=\".37\"/></svg>
+"
+
+[sub_resource type="DPITexture" id="DPITexture_jf26r"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#fefefe\"/></svg>
+"
+
+[sub_resource type="DPITexture" id="DPITexture_6lx7k"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"8\"><path fill=\"#fff\" fill-opacity=\".25\" d=\"M1 0h2v16H1z\"/></svg>
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iqtc0"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.17999983, 0, 0.9, 0.4)
+border_color = Color(0, 0.754, 0.78, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7any1"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 1, 1, 0.75)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3fgq6"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 6
+
+[resource]
+HSlider/constants/center_grabber = 0
+HSlider/constants/grabber_offset = 0
+HSlider/constants/tick_offset = 0
+HSlider/icons/grabber = SubResource("DPITexture_denks")
+HSlider/icons/grabber_disabled = SubResource("DPITexture_rqugq")
+HSlider/icons/grabber_highlight = SubResource("DPITexture_jf26r")
+HSlider/icons/tick = SubResource("DPITexture_6lx7k")
+HSlider/styles/grabber_area = SubResource("StyleBoxFlat_iqtc0")
+HSlider/styles/grabber_area_highlight = SubResource("StyleBoxFlat_7any1")
+HSlider/styles/slider = SubResource("StyleBoxFlat_3fgq6")

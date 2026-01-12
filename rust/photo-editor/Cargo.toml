@@ -1,0 +1,23 @@
+[package]
+name = "photo-editor"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+image = "0.25.9"
+kamadak-exif = "0.6.1"
+ndarray = "0.17.1"
+rawler = "0.7.1"
+thiserror = "2.0.17"
+wgpu = "27.0.1"
+pollster = "0.4.0"
+bytemuck = { version = "1.24.0", features = ["derive"] }
+futures = "0.3.31"
+num-traits = "0.2.19"
+once_cell = "1.21.3"
+serde_json = "1.0"
+
+[build-dependencies]
+fs_extra = "1.3"
+glob = "0.3"

@@ -1,0 +1,48 @@
+key,en,ja
+TR_EXPOSURE,Exposure,露出
+TR_CONTRAST,Contrast,コントラスト
+TR_SHADOW,Shadow,シャドウ
+TR_HIGHLIGHT,Highlight,ハイライト
+TR_BLACK_LEVEL,Black Level,黒レベル
+TR_WHITE_LEVEL,White Level,白レベル
+TR_TEMPERATURE,Temperature,色温度
+TR_TINT,Tint,色かぶり補正
+TR_VIGNETTE,Vignette,周辺減光
+TR_LENS_DISTORTION,Lens Distortion,レンズ歪み補正
+TR_SAVED_FILE,"Saved file: %s","保存しました: %s"
+TR_JPEG_IMAGE,"JPEG Image","JPEG画像"
+TR_PNG_IMAGE,"PNG Image","PNG画像"
+TR_JPEG_FORMAT,"JPEG","JPEG形式"
+TR_PNG_FORMAT,"PNG","PNG形式"
+TR_MENU_OPEN,"Open Photo","写真を開く"
+TR_MENU_SAVE,"Save Photo","写真を保存"
+TR_MENU_RESET_ALL,"Reset All Edits","すべての編集をリセット"
+TR_MENU_SETTING,"Setting","設定"
+TR_TAB_TONE,"Tone","トーン"
+TR_TAB_BRIGHTNESS,"Brightness","明るさ"
+TR_TAB_HUE,"Hue","色相"
+TR_TAB_SATURATION,"Saturation","彩度"
+TR_TAB_LIGHTNESS,"Lightness","輝度"
+TR_TAB_WB,"White Balance","ホワイトバランス"
+TR_TAB_EFFECT,"Effect","効果"
+TR_TAB_METADATA,"Metadata","メタデータ"
+TR_RESET_THIS_TAB,"Reset This Tab","このタブをリセット"
+TR_DIALOG_OPEN_TITLE,"Open a File","ファイルを開く"
+TR_DIALOG_SAVE_TITLE,"Save Photo","写真を保存"
+TR_SELECT_FORMAT,"Select Format","フォーマットを選択"
+TR_BUTTON_SAVE,"Save","保存"
+TR_BUTTON_CANCEL,"Cancel","キャンセル"
+TR_DIALOG_SAVE_COMPLETE_TITLE,"Save Complete","保存完了"
+TR_BUTTON_OK,"OK","OK"
+TR_MENU_FILE,"File","ファイル"
+TR_MENU_EDIT,"Edit","編集"
+TR_MENU_SETTING_TITLE,"Setting","設定"
+TR_SETTINGS_TITLE,"Settings","設定"
+TR_SETTINGS_TAB_LANGUAGE,"Language","言語"
+TR_SETTINGS_TAB_IMAGE,"Image","画像"
+TR_SETTINGS_UI_PREVIEW_SIZE,"UI Preview Size (Long Edge)","UIプレビューサイズ (長辺)"
+TR_SETTINGS_DRAG_PREVIEW_SIZE,"Drag Preview Size (Long Edge)","ドラッグ中プレビューサイズ (長辺)"
+TR_SETTINGS_SAVE_BUTTON,"Save Settings","設定を保存"
+TR_INFO_DIALOG_TITLE,"Information","情報"
+TR_SETTINGS_SAVED_INFO,"Settings saved. \nSettings will be applied after restart.","設定を保存しました。\n設定は再起動後に適用されます。"
+TR_SETTINGS_LANGUAGE_LABEL,"Language","言語"

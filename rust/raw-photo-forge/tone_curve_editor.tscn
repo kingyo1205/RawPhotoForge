@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3 uid="uid://dpsk1t2w76b0n"]
+
+[ext_resource type="Script" path="res://tone_curve_editor.gd" id="1_00000"]
+[ext_resource type="Script" path="res://tone_curve_canvas.gd" id="2_00000"]
+[ext_resource type="Script" path="res://tone_curve_input_catcher.gd" id="3_00000"]
+
+[node name="ToneCurveEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_00000")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CurveCanvas" type="Control" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_00000")
+
+[node name="InputCatcher" type="Control" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_00000")

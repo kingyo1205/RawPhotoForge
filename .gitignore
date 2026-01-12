@@ -1,3 +1,6 @@
+# ==================
+# Python
+# ==================
 __pycache__/
 *.pyc
 *.pyo
@@ -6,3 +9,26 @@ venv/
 dist/
 build/
 
+# ==================
+# Rust
+# ==================
+target/
+
+# ==================
+# Godot
+# ==================
+.import/
+.export/
+*.uid
+
+# Godot GDExtension build outputs
+rust/raw-photo-forge/addons/photo_editor/*.so
+rust/raw-photo-forge/addons/photo_editor/*.dll
+rust/raw-photo-forge/addons/photo_editor/*.dylib
+
+# ==================
+# OS / Editor
+# ==================
+.DS_Store
+.idea/
+.vscode/

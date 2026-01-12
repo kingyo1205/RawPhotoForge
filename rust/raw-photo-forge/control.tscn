@@ -1,0 +1,348 @@
+[gd_scene load_steps=5 format=3 uid="uid://cjp8cnfl2cg1d"]
+
+[ext_resource type="Script" uid="uid://b4k2ay2meo2uo" path="res://main.gd" id="1_0fbet"]
+[ext_resource type="PackedScene" uid="uid://dpsk1t2w76b0n" path="res://tone_curve_editor.tscn" id="2_tce"]
+[ext_resource type="PackedScene" uid="uid://b1m7a3j5xjw5w" path="res://settings_window.tscn" id="3_abcde"]
+
+[sub_resource type="Theme" id="Theme_sky72"]
+
+[node name="Control" type="Control"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_0fbet")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_sky72")
+
+[node name="MenuBar" type="MenuBar" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 620)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ImageArea" type="AspectRatioContainer" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 6.0
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/HBoxContainer/ImageArea"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EditPanel" type="PanelContainer" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="TabContainer" type="TabContainer" parent="VBoxContainer/HBoxContainer/EditPanel"]
+layout_mode = 2
+current_tab = 0
+
+[node name="Tone" type="Control" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ExposureLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "露出 0.00"
+
+[node name="ExposureSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+min_value = -6.0
+max_value = 6.0
+step = 0.05
+
+[node name="ContrastLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "コントラスト 0"
+
+[node name="ContrastSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="ShadowLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "シャドウ 0"
+
+[node name="ShadowSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="HighlightLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "ハイライト 0"
+
+[node name="HighlightSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="BlackLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "黒レベル 0"
+
+[node name="BlackSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="WhiteLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "白レベル 0"
+
+[node name="WhiteSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="ResetToneButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Tone/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Brightness" type="AspectRatioContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Brightness"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ToneCurveEditor" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Brightness/VBoxContainer" instance=ExtResource("2_tce")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResetBrightnessButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Brightness/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Hue" type="AspectRatioContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Hue"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ToneCurveEditor" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Hue/VBoxContainer" instance=ExtResource("2_tce")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResetHueButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Hue/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Saturation" type="AspectRatioContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Saturation"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ToneCurveEditor" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Saturation/VBoxContainer" instance=ExtResource("2_tce")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResetSaturationButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Saturation/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Lightness" type="AspectRatioContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Lightness"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ToneCurveEditor" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Lightness/VBoxContainer" instance=ExtResource("2_tce")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResetLightnessButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Lightness/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="WB" type="Control" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 5
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TemperatureLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "色温度 0"
+
+[node name="TemperatureSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="TintLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "色かぶり補正 0"
+
+[node name="TintSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="ResetWBButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/WB/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Effect" type="Control" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 6
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VignetteLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "周辺減光 0"
+
+[node name="VignetteSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="LensDistortionLabel" type="Label" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "レンズ歪み補正 0"
+
+[node name="LensDistortionSlider" type="HSlider" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+min_value = -100.0
+
+[node name="ResetEffectButton" type="Button" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Effect/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "TR_RESET_THIS_TAB"
+
+[node name="Metadata" type="Control" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 7
+
+[node name="Tree" type="Tree" parent="VBoxContainer/HBoxContainer/EditPanel/TabContainer/Metadata"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+hide_root = true
+
+[node name="PhotoEditorFull" type="PhotoEditor" parent="."]
+
+[node name="PhotoEditorMid" type="PhotoEditor" parent="."]
+
+[node name="PhotoEditorLow" type="PhotoEditor" parent="."]
+
+[node name="FileDialog" type="FileDialog" parent="."]
+title = "Open a File"
+file_mode = 0
+access = 2
+
+[node name="SaveDialog" type="Window" parent="."]
+title = "TR_DIALOG_SAVE_TITLE"
+initial_position = 1
+size = Vector2i(300, 150)
+visible = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SaveDialog"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_sky72")
+
+[node name="Label" type="Label" parent="SaveDialog/VBoxContainer"]
+layout_mode = 2
+text = "TR_SELECT_FORMAT"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="SaveDialog/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="FormatOptionButton" type="OptionButton" parent="SaveDialog/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="SaveDialog/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="SaveDialog/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="SaveButton" type="Button" parent="SaveDialog/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "TR_BUTTON_SAVE"
+
+[node name="CancelButton" type="Button" parent="SaveDialog/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "TR_BUTTON_CANCEL"
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+access = 2
+
+[node name="SaveConfirmationDialog" type="ConfirmationDialog" parent="."]
+title = "TR_DIALOG_SAVE_COMPLETE_TITLE"
+size = Vector2i(300, 100)
+ok_button_text = "TR_BUTTON_OK"
+dialog_autowrap = true
+
+[node name="SettingsWindow" parent="." instance=ExtResource("3_abcde")]
+unique_name_in_owner = true
