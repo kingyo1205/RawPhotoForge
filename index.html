@@ -524,9 +524,9 @@
     <section class="hero">
         <div class="hero-content">
             <h1>RawPhotoForge</h1>
-            <div class="subtitle">RAW Photo Editor Written in Python</div>
+            <div class="subtitle">High-performance RAW Photo Editor (Rust & Godot)</div>
             <p class="description" data-i18n-key="description">
-                シンプルで高機能なRAW現像ソフトウェア。slang (slangpy) で動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。
+                RawPhotoForgeはRustとGodotで開発された高性能RAW現像ソフトウェア。wgpuによるGPUアクセラレーションを活用し、完全ローカルで高速かつ非破壊のRAW編集を実現します。多機能でプロフェッショナルな現像ワークフローを目指しています。
             </p>
             <div class="cta-buttons">
                 <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-primary" target="_blank" data-i18n-key="githubLink">GitHub で見る</a>
@@ -544,33 +544,28 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <span class="feature-icon">⚡</span>
-                    <h3 class="feature-title" data-i18n-key="feature1Title">高速処理</h3>
-                    <p class="feature-description" data-i18n-key="feature1Desc">slang (slangpy) バックエンドによる、GPUを使用した高速な画像処理エンジンで、リアルタイムプレビューを実現</p>
+                    <h3 class="feature-title" data-i18n-key="feature1Title">超高速処理</h3>
+                    <p class="feature-description" data-i18n-key="feature1Desc">RustとwgpuによるGPUアクセラレーションで、リアルタイムに近いプレビューで快適に編集できます。/p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">🎨</span>
-                    <h3 class="feature-title" data-i18n-key="feature2Title">細かい色調整</h3>
-                    <p class="feature-description" data-i18n-key="feature2Desc">明るさ、色相、彩度、輝度のトーンカーブで色や明るさを自由自在にコントロール</p>
+                    <h3 class="feature-title" data-i18n-key="feature2Title">高度な色調整</h3>
+                    <p class="feature-description" data-i18n-key="feature2Desc">トーンカーブ、露出、ホワイトバランス、oklchでの色相・彩度・輝度など、プロレベルの編集ツールを提供します。非破壊編集設計で何度でも調整可能。</p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">🤖</span>
-                    <h3 class="feature-title" data-i18n-key="feature3Title">AIマスク対応</h3>
-                    <p class="feature-description" data-i18n-key="feature3Desc">SAM（Segment Anything Model）による高精度な部分補正機能を搭載</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📸</span>
-                    <h3 class="feature-title" data-i18n-key="feature4Title">レンズ補正</h3>
-                    <p class="feature-description" data-i18n-key="feature4Desc">Lensfunライブラリによる自動レンズ補正機能で歪みや色収差を修正</p>
+                    <h3 class="feature-title" data-i18n-key="feature3Title">AIマスク(今後実装予定)</h3>
+                    <p class="feature-description" data-i18n-key="feature3Desc">AIベースのマスク機能は将来のリリースで追加予定です。モデルはONNX/Burn経由での統合を想定しています。</p>
                 </div>
                 <div class="feature-card">
                     <span class="feature-icon">📊</span>
                     <h3 class="feature-title" data-i18n-key="feature5Title">メタデータ表示</h3>
-                    <p class="feature-description" data-i18n-key="feature5Desc">ExifToolによる詳細なメタデータ表示で撮影情報を一目で確認</p>
+                    <p class="feature-description" data-i18n-key="feature5Desc">EXIFを表示します。</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">🐍</span>
-                    <h3 class="feature-title" data-i18n-key="feature6Title">Python製</h3>
-                    <p class="feature-description" data-i18n-key="feature6Desc">Pythonで書かれたオープンソースソフトウェアで、カスタマイズも簡単</p>
+                    <span class="feature-icon">🦀</span>
+                    <h3 class="feature-title" data-i18n-key="feature6Title">Rustベース実装</h3>
+                    <p class="feature-description" data-i18n-key="feature6Desc">コアはRustで実装。photo-editorコアとGodotのGDExtensionを分離した設計で保守性を高めています。</p>
                 </div>
             </div>
         </div>
@@ -580,18 +575,19 @@
         <div class="container">
             <h2 class="section-title" data-i18n-key="techStackTitle">技術スタック</h2>
             <div class="tech-stack">
-                <div class="tech-badge">Python 3.11+</div>
-                <div class="tech-badge">slang (slangpy)</div>
-                <div class="tech-badge">Tkinter</div>
-                <div class="tech-badge">SAM 2.1</div>
-                <div class="tech-badge">Lensfun</div>
-                <div class="tech-badge">ExifTool</div>
-            </div>
-            <div class="tech-stack" style="margin-top: 2rem;">
-                <div class="tech-badge">Windows</div>
+                <div class="tech-badge">Rust</div>
+                <div class="tech-badge">wgpu</div>
+                <div class="tech-badge">Godot Engine</div>
+                <div class="tech-badge">GDExtension</div>
+                <div class="tech-badge">rawler</div>
                 <div class="tech-badge">Linux</div>
                 <div class="tech-badge">English</div>
-                <div class="tech-badge" data-i18n-key="langJa">日本語</div>
+                <div class="tech-badge">Japanese</div>
+            </div>
+            <div class="tech-stack" style="margin-top: 2rem;">
+                <div class="tech-badge">High-performance</div>
+                <div class="tech-badge">Non-destructive</div>
+                <div class="tech-badge">AGPL-3.0</div>
             </div>
         </div>
     </section>
@@ -601,73 +597,51 @@
             <h2 class="section-title" data-i18n-key="usageTitle">使い方</h2>
             <div class="usage-section">
                 <div class="warning-box">
-                    <strong data-i18n-key="usageWarningTitle">⚠️ 注意事項</strong><br>
+                    <strong data-i18n-key="usageWarningTitle">⚠️ 注意</strong><br>
                     <span data-i18n-key="usageWarningText">
-                        本READMEに記載しているコマンド例は<strong>Linux環境向け</strong>です。Windowsで利用する場合は、コマンドやパスを適宜読み替えてください。<br>
-                        本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>slang (slangpy) が利用可能な環境</strong>が必要です。
+                        現在はリリースからダウンロード可能なバイナリ配布を推奨します。Linux(x86_64)バイナリでの動作はKubuntu 25.10で確認済み。Windows向けバイナリは今後追加予定です。
                     </span>
                 </div>
 
-
                 <div class="step">
                     <div class="step-number">01</div>
-                    <h3 class="step-title" data-i18n-key="step1Title">ソースコードを取得</h3>
+                    <h3 class="step-title" data-i18n-key="step1Title">ダウンロード</h3>
                     <div class="step-content">
-                        <p data-i18n-key="step1Desc1">GitHubのリリースページから<strong>自作Asset（zipファイル）</strong>をダウンロードしてください。</p>
+                        <p data-i18n-key="step1Desc1">GitHub Releasesから配布アセット（バイナリ）をダウンロードしてください。必ずリリースのアセットを使用してください（Source codeではありません）。</p>
                         <div class="download-buttons">
-                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn-small btn-download" target="_blank" data-i18n-key="step1Btn">📥 リリースページへ</a>
+                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn-small btn-download" target="_blank" data-i18n-key="step1Btn">📥 リリースページへ / Releases</a>
                         </div>
                         <div class="warning-box">
-                            <strong data-i18n-key="step1WarningTitle">重要:</strong><br>
-                            <span data-i18n-key="step1WarningText">GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず自作Assetを使用してください。<br>
-                            ファイル名フォーマット: <code>RawPhotoForge-v&lt;バージョン&gt;.zip</code></span>
+                            <strong data-i18n-key="step1WarningTitle">重要 / Important:</strong><br>
+                            <span data-i18n-key="step1WarningText">アセット名の例: <code>RawPhotoForge_v1.0.0-alpha_Linux_x86_64.zip</code>。Source codeのzipではなく、必ずビルド済みアセットをダウンロードしてください。</span>
                         </div>
-                        <p data-i18n-key="step1Desc2">ダウンロード後、zipファイルを解凍し、任意の場所に配置します。</p>
-                        <div class="code-block">cd RawPhotoForge</div>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">02</div>
-                    <h3 class="step-title" data-i18n-key="step2Title">AIモデルを配置</h3>
+                    <h3 class="step-title" data-i18n-key="step2Title">解凍して実行</h3>
                     <div class="step-content">
-                        <p data-i18n-key="step2Desc1"><a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large ダウンロードページ</a>から以下のファイルを取得し、<strong>RawPhotoForgeフォルダ直下</strong>に配置します。</p>
-                        <ul style="list-style: none; padding-left: 1rem; margin-top: 1rem;">
-                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_large.pt</li>
-                            <li style="margin: 0.5rem 0;">📄 sam2.1_hiera_l.yaml</li>
-                        </ul>
-                        <div class="info-box" data-i18n-key="step2Info">
-                            配置例: <code>./sam2.1_hiera_large.pt</code>
-                        </div>
+                        <p data-i18n-key="step2Desc1">ダウンロードしたzipを解凍し、配布された実行ファイルを実行します。Linuxでは実行ビットを付けてください。</p>
+                        <div class="code-block">chmod +x ./RawPhotoForge<br>./RawPhotoForge</div>
+                        <p data-i18n-key="step2Desc2">Windows版が提供されている場合は、同梱の実行ファイル(.exe)をダブルクリックまたはPowerShellから実行してください。</p>
+                        <div class="code-block">.\RawPhotoForge.exe</div>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">03</div>
-                    <h3 class="step-title" data-i18n-key="step3Title">ExifToolの導入</h3>
+                    <h3 class="step-title" data-i18n-key="step3Title">AIモデル</h3>
                     <div class="step-content">
-                        <p data-i18n-key="step3Desc1"><a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool 公式サイト</a>からダウンロードして、環境変数PATHに追加してください。</p>
-                        <p style="margin-top: 1rem;"><strong data-i18n-key="step3Desc2">確認手順:</strong></p>
-                        <div class="code-block">exiftool -ver</div>
-                        <p data-i18n-key="step3Desc3">バージョン番号が表示されればOKです。</p>
+                        <p data-i18n-key="step3Desc1">AIマスク等の外部モデルは将来的に利用可能になります。使用時はリリース情報やドキュメントに従ってモデルファイルを配置してください（現時点では必須ではありません）。</p>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">04</div>
-                    <h3 class="step-title" data-i18n-key="step4Title">依存ライブラリのインストール</h3>
+                    <h3 class="step-title" data-i18n-key="step4Title">問題報告</h3>
                     <div class="step-content">
-                        <div class="code-block">pip install -r raw_photo_forge/requirements.txt</div>
-                        <p data-i18n-key="step4Desc">Pythonライブラリを一括でインストールします。エラーが出る場合は、Pythonのインストールやバージョンを確認してください。</p>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">05</div>
-                    <h3 class="step-title" data-i18n-key="step5Title">RawPhotoForgeを起動</h3>
-                    <div class="step-content">
-                        <div class="code-block">python raw_photo_forge/raw_photo_forge.py</div>
-                        <p data-i18n-key="step5Desc">ソフトが起動します。起動できない場合は、PythonやExifToolのPATH設定を確認してください。</p>
+                        <p data-i18n-key="step4Desc">不具合や動作報告はGitHub Issuesにお願いします。環境情報(OS/driver/GPU)を添えると対応が早くなります。</p>
                     </div>
                 </div>
             </div>
@@ -678,12 +652,15 @@
         <div class="container">
             <h2 class="section-title" data-i18n-key="getStartedTitle">始めよう</h2>
             <p style="font-size: 1.2rem; color: #b0b0b0; margin-bottom: 2rem;" data-i18n-key="getStartedDesc">
-                今すぐRawPhotoForgeをダウンロードして、RAW現像の新しい体験を始めましょう
+                今すぐRawPhotoForgeをダウンロードして、速くて高機能なRAW現像を体験しよう。Windowsバイナリは今後追加予定。
             </p>
             <div class="cta-buttons">
-                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-primary" target="_blank" data-i18n-key="getStartedBtn1">リリースページへ</a>
-                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank" data-i18n-key="getStartedBtn2">GitHubで詳細を見る</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-primary" target="_blank" data-i18n-key="getStartedBtn1">リリースページへ / Releases</a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank" data-i18n-key="getStartedBtn2">GitHubで詳細を見る / Project</a>
             </div>
+            <p style="opacity:0.8;margin-top:1.2rem;font-size:0.9rem;">
+                Legacy: Python版はリポジトリ内の <code>python-legacy/</code> に残しています（参考用）。現在の主力はRust+Godot実装です。
+            </p>
         </div>
     </section>
 
@@ -691,56 +668,89 @@
         document.addEventListener('DOMContentLoaded', () => {
             const translations = {
                 description: {
-                    ja: 'シンプルで高機能なRAW現像ソフトウェア。slang (slangpy) で動作する高速な画像処理エンジンにより、RAW写真をリアルタイムでプレビューしながら編集できます。明るさ、色相、彩度、輝度のトーンカーブで色や明るさを細かく調整可能。AIマスク（SAM）による部分補正、Lensfunによるレンズ補正、ExifToolによるメタデータ表示もサポート。',
-                    en: 'Simple yet powerful RAW development software. A high-speed image processing engine running on slang (slangpy) allows you to edit RAW photos with a real-time preview. Finely adjust colors and brightness with tone curves for brightness, hue, saturation, and luminance. Also supports partial correction with AI masks (SAM), lens correction with Lensfun, and metadata display with ExifTool.'
+                    ja: 'RawPhotoForgeはRustとGodotで開発された高性能RAW現像ソフトウェア。wgpuによるGPUアクセラレーションを活用し、完全ローカルで高速かつ非破壊のRAW編集を実現します。多機能でプロフェッショナルな現像ワークフローを目指しています。',
+                    en: 'RawPhotoForge is a high-performance RAW photo editor written in Rust and Godot. It leverages GPU acceleration via wgpu to provide fast, fully local, non-destructive RAW editing and a professional feature set.'
                 },
                 githubLink: { ja: 'GitHub で見る', en: 'View on GitHub' },
                 releasesLink: { ja: 'リリースページ', en: 'Releases Page' },
+
                 featuresTitle: { ja: '特徴', en: 'Features' },
-                feature1Title: { ja: '高速処理', en: 'High-Speed Processing' },
-                feature1Desc: { ja: 'slang (slangpy) バックエンドによる高速な画像処理エンジンで、リアルタイムプレビューを実現', en: 'Achieve real-time previews with a high-speed image processing engine powered by a slang (slangpy) backend.' },
-                feature2Title: { ja: '細かい色調整', en: 'Fine Color Adjustment' },
-                feature2Desc: { ja: '明るさ、色相、彩度、輝度のトーンカーブで色や明るさを自由自在にコントロール', en: 'Freely control color and brightness with tone curves for brightness, hue, saturation, and luminance.' },
-                feature3Title: { ja: 'AIマスク対応', en: 'AI Mask Support' },
-                feature3Desc: { ja: 'SAM（Segment Anything Model）による高精度な部分補正機能を搭載', en: 'Equipped with high-precision partial correction using SAM (Segment Anything Model).' },
-                feature4Title: { ja: 'レンズ補正', en: 'Lens Correction' },
-                feature4Desc: { ja: 'Lensfunライブラリによる自動レンズ補正機能で歪みや色収差を修正', en: 'Corrects distortion and chromatic aberration with the automatic lens correction function by the Lensfun library.' },
+                feature1Title: { ja: '超高速処理', en: 'High-Speed Processing' },
+                feature1Desc: {
+                    ja: 'RustとwgpuによるGPUアクセラレーションで、リアルタイムに近いプレビューで快適に編集できます。',
+                    en: 'GPU-accelerated processing via Rust and wgpu enables near real-time previews and comfortable editing.'
+                },
+                feature2Title: { ja: '高度な色調整', en: 'Advanced Color Controls' },
+                feature2Desc: {
+                    ja: 'トーンカーブ、露出、ホワイトバランス、oklchでの色相・彩度・輝度など、プロレベルの編集ツールを提供します。非破壊編集設計で何度でも調整可能です。',
+                    en: 'Provides pro-level tools: tone curves, exposure, white balance, OKLCH-based hue/saturation/luminance. Non-destructive by design.'
+                },
+                feature3Title: { ja: 'AIマスク(今後実装予定)', en: 'AI Mask (Planned)' },
+                feature3Desc: {
+                    ja: 'AIベースのマスク機能は将来のリリースで追加予定です。モデルはONNX/Burn経由での統合を想定しています。',
+                    en: 'AI-based masking is planned for future releases. Integration via ONNX/Burn is intended.'
+                },
                 feature5Title: { ja: 'メタデータ表示', en: 'Metadata Display' },
-                feature5Desc: { ja: 'ExifToolによる詳細なメタデータ表示で撮影情報を一目で確認', en: 'Check shooting information at a glance with detailed metadata display by ExifTool.' },
-                feature6Title: { ja: 'Python製', en: 'Made with Python' },
-                feature6Desc: { ja: 'Pythonで書かれたオープンソースソフトウェアで、カスタマイズも簡単', en: 'Open-source software written in Python, easy to customize.' },
+                feature5Desc: {
+                    ja: 'EXIFを詳細に表示し、撮影情報の確認・整理に役立ちます。',
+                    en: 'Displays EXIF metadata in detail to help inspect and organize shooting information.'
+                },
+                feature6Title: { ja: 'Rustベース実装', en: 'Rust-based Implementation' },
+                feature6Desc: {
+                    ja: 'コアはRustで実装。photo-editorコアとGodotのGDExtensionを分離した設計で保守性を高めています。',
+                    en: 'Core implemented in Rust. Photo-editor core and Godot GDExtension are separated to improve maintainability.'
+                },
+
                 techStackTitle: { ja: '技術スタック', en: 'Tech Stack' },
-                langJa: { ja: '日本語', en: 'Japanese' },
-                usageTitle: { ja: '使い方', en: 'How to Use' },
-                usageWarningTitle: { ja: '⚠️ 注意事項', en: '⚠️ Note' },
+
+                usageTitle: { ja: '使い方', en: 'How to use' },
+                usageWarningTitle: { ja: '⚠️ 注意', en: '⚠️ Note' },
                 usageWarningText: {
-                    ja: `本READMEに記載しているコマンド例は<strong>Linux環境向け</strong>です。Windowsを利用する場合は、コマンドやパスを適宜読み替えてください。<br>本ソフトウェアは<strong>ソースコードのみを配布</strong>しています。実行には<strong>Python 3.11以上</strong>と<strong>slang (slangpy) が利用可能な環境</strong>が必要です。`,
-                    en: `The command examples in this README are for a <strong>Linux environment</strong>. If you are using Windows, please adapt the commands and paths accordingly.<br>This software is distributed as <strong>source code only</strong>. It requires <strong>Python 3.11 or higher</strong> and an environment where <strong>slang (slangpy) is available</strong>.`
+                    ja: '現在はリリースからダウンロード可能なバイナリ配布を推奨します。Linux(x86_64)バイナリでの動作はKubuntu 25.10で確認済み。Windows向けバイナリは今後追加予定です。',
+                    en: 'We recommend using the provided binary assets from official releases. Linux (x86_64) binaries have been tested on Kubuntu 25.10. Windows binaries will be added in future releases.'
                 },
-                step1Title: { ja: 'ソースコードを取得', en: 'Get the Source Code' },
-                step1Desc1: { ja: 'GitHubのリリースページから<strong>自作Asset（zipファイル）</strong>をダウンロードしてください。', en: 'Please download the <strong>custom Asset (zip file)</strong> from the GitHub releases page.' },
-                step1Btn: { ja: '📥 リリースページへ', en: '📥 Go to Releases Page' },
-                step1WarningTitle: { ja: '重要:', en: 'Important:' },
+
+                step1Title: { ja: 'ダウンロード', en: 'Download' },
+                step1Desc1: {
+                    ja: 'GitHub Releasesから配布アセット（バイナリ）をダウンロードしてください。必ずリリースのアセットを使用してください（Source codeではありません）。',
+                    en: 'Download the binary asset from GitHub Releases. Use the release asset, not the auto-generated source zip.'
+                },
+                step1Btn: { ja: '📥 リリースページへ / Releases', en: '📥 Go to Releases Page' },
+                step1WarningTitle: { ja: '重要 / Important:', en: 'Important:' },
                 step1WarningText: {
-                    ja: `GitHubの自動生成「Source code (zip/tar.gz)」ではなく、必ず自作Assetを使用してください。<br>ファイル名フォーマット: <code>RawPhotoForge-v&lt;バージョン&gt;.zip</code>`,
-                    en: `Please be sure to use the custom Asset, not the auto-generated "Source code (zip/tar.gz)" from GitHub.<br>Filename format: <code>RawPhotoForge-v&lt;version&gt;.zip</code>`
+                    ja: 'アセット名の例: <code>RawPhotoForge_v1.0.0-alpha_Linux_x86_64.zip</code>。Source codeのzipではなく、必ずビルド済みアセットをダウンロードしてください。',
+                    en: 'Example asset name: <code>RawPhotoForge_v1.0.0-alpha_Linux_x86_64.zip</code>. Do not use the Source code (zip/tar.gz).'
                 },
-                step1Desc2: { ja: 'ダウンロード後、zipファイルを解凍し、任意の場所に配置します。', en: 'After downloading, unzip the file and place it in any location.' },
-                step2Title: { ja: 'AIモデルを配置', en: 'Place the AI Model' },
-                step2Desc1: { ja: `<a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large ダウンロードページ</a>から以下のファイルを取得し、<strong>RawPhotoForgeフォルダ直下</strong>に配置します。`, en: `Get the following files from the <a href="https://huggingface.co/facebook/sam2.1-hiera-large/tree/main" target="_blank" style="color: #ff9f66;">sam2.1-hiera-large download page</a> and place them directly in the <strong>RawPhotoForge folder</strong>.` },
-                step2Info: { ja: '配置例: <code>./sam2.1_hiera_large.pt</code>', en: 'Example placement: <code>./sam2.1_hiera_large.pt</code>' },
-                step3Title: { ja: 'ExifToolの導入', en: 'Install ExifTool' },
-                step3Desc1: { ja: '<a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool 公式サイト</a>からダウンロードして、環境変数PATHに追加してください。', en: 'Download it from the <a href="https://exiftool.org/" target="_blank" style="color: #ff9f66;">ExifTool official website</a> and add it to your system\'s PATH environment variable.' },
-                step3Desc2: { ja: '確認手順:', en: 'Verification:' },
-                step3Desc3: { ja: 'バージョン番号が表示されればOKです。', en: 'It\'s successful if the version number is displayed.' },
-                step4Title: { ja: '依存ライブラリのインストール', en: 'Install Dependencies' },
-                step4Desc: { ja: 'Pythonライブラリを一括でインストールします。エラーが出る場合は、Pythonのインストールやバージョンを確認してください。', en: 'This will install all the Python libraries at once. If you encounter errors, please check your Python installation and version.' },
-                step5Title: { ja: 'RawPhotoForgeを起動', en: 'Launch RawPhotoForge' },
-                step5Desc: { ja: 'ソフトが起動します。', en: 'The software will start. ' },
-                getStartedTitle: { ja: '始めよう', en: 'Get Started' },
-                getStartedDesc: { ja: '今すぐRawPhotoForgeをダウンロードして、RAW現像の新しい体験を始めましょう', en: 'Download RawPhotoForge now and start a new experience in RAW development.' },
-                getStartedBtn1: { ja: 'リリースページへ', en: 'Go to Releases Page' },
-                getStartedBtn2: { ja: 'GitHubで詳細を見る', en: 'View details on GitHub' }
+
+                step2Title: { ja: '解凍して実行', en: 'Unpack & Run' },
+                step2Desc1: {
+                    ja: 'ダウンロードしたzipを解凍し、配布された実行ファイルを実行します。Linuxでは実行ビットを付けてください。',
+                    en: 'Unpack the downloaded archive and run the supplied executable. On Linux, set the executable bit.'
+                },
+                step2Desc2: {
+                    ja: 'Windows版が提供されている場合は、同梱の実行ファイル(.exe)をダブルクリックまたはPowerShellから実行してください。',
+                    en: 'If a Windows build is provided, run the included .exe (double-click or via PowerShell).'
+                },
+
+                step3Title: { ja: 'AIモデル', en: 'Optional models' },
+                step3Desc1: {
+                    ja: 'AIマスク等の外部モデルは将来的に利用可能になります。使用時はリリース情報やドキュメントに従ってモデルファイルを配置してください（現時点では必須ではありません）。',
+                    en: 'External models for AI masks will be available in future releases. Follow release notes and docs for placement when available.'
+                },
+
+                step4Title: { ja: '問題報告', en: 'Report issues' },
+                step4Desc: {
+                    ja: '不具合や動作報告はGitHub Issuesにお願いします。環境情報(OS/driver/GPU)を添えると対応が早くなります。',
+                    en: 'Please report issues on GitHub Issues. Include environment info (OS/driver/GPU) for faster triage.'
+                },
+
+                getStartedTitle: { ja: '始めよう', en: 'Get started' },
+                getStartedDesc: {
+                    ja: '今すぐRawPhotoForgeをダウンロードして、速くて高機能なRAW現像を体験しよう。Windowsバイナリは今後追加予定。',
+                    en: 'Download RawPhotoForge now and experience fast, feature-rich RAW editing. Windows binaries coming soon.'
+                },
+                getStartedBtn1: { ja: 'リリースページへ / Releases', en: 'Releases' },
+                getStartedBtn2: { ja: 'GitHubで詳細を見る / Project', en: 'Project' }
             };
 
             const langToggle = document.getElementById('lang-toggle');
@@ -755,7 +765,7 @@
                     }
                 });
                 localStorage.setItem('lang', lang);
-                langToggle.checked = lang === 'en';
+                langToggle.checked = (lang === 'en');
             };
 
             langToggle.addEventListener('change', (event) => {
@@ -763,16 +773,15 @@
             });
 
             const getInitialLanguage = () => {
-                const savedLang = localStorage.getItem('lang');
-                if (savedLang) {
-                    return savedLang;
-                }
-                const browserLang = navigator.language || navigator.userLanguage;
-                return browserLang.toLowerCase().startsWith('ja') ? 'ja' : 'en';
+                const saved = localStorage.getItem('lang');
+                if (saved) return saved;
+                const nav = navigator.language || navigator.userLanguage || 'en';
+                return nav.toLowerCase().startsWith('ja') ? 'ja' : 'en';
             };
 
             setLanguage(getInitialLanguage());
         });
     </script>
+
 </body>
 </html>
