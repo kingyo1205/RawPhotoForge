@@ -13,7 +13,7 @@ Rust版では **wgpu** を中心に設計しており、CUDAなどのベンダ�
 
 ## リポジトリ構成
 
-````
+```
 
 RawPhotoForge/
 ├── python-legacy/   # 旧Python版 (v0.5.0まで)
@@ -37,14 +37,13 @@ RawPhotoForge/
 
 ## Rust版の構成
 
-```
+
 
 rust/
 ├── photo-editor           # 画像処理コア
 ├── photo-editor-godot     # Godot用GDExtension
 └── raw-photo-forge        # Godotプロジェクト(UI)
 
-````
 
 - `photo-editor`
   - RAW画像処理
@@ -75,7 +74,17 @@ Rust版で使用している依存関係のライセンス一覧は以下にま�
 例:
 ```bash
 cargo about generate about.hbs > rust_licenses.html
-````
+```
+
+---
+
+## 使用しているAIツール
+RawPhotoForgeの開発では、以下のAIツールを活用しています。
+
+- ChatGPT
+- Gemini
+- Gemini CLI
+- Claude
 
 ---
 

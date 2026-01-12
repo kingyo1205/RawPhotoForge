@@ -35,14 +35,14 @@ RawPhotoForge/
 
 ## Rust Project Layout
 
-```
+
 
 rust/
 ├── photo-editor           # Core image processing library
 ├── photo-editor-godot     # Godot GDExtension wrapper
 └── raw-photo-forge        # Godot project (UI)
 
-````
+
 
 - `photo-editor`
   - RAW image processing
@@ -73,7 +73,17 @@ This file is generated using `cargo-about`.
 Example:
 ```bash
 cargo about generate about.hbs > rust_licenses.html
-````
+```
+
+---
+
+## AI Tools Used
+The development of RawPhotoForge is supported by the following AI tools:
+
+- ChatGPT
+- Gemini
+- Gemini CLI
+- Claude
 
 ---
 
