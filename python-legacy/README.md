@@ -9,7 +9,7 @@ It also supports **AI masks (SAM) for partial adjustments**, lens correction via
 
 ---
 
-> 📕 [README_Japanese](https://github.com/kingyo1205/RawPhotoForge/blob/main/README_Japanese.md)
+> 📕 [README_Japanese](https://github.com/kingyo1205/RawPhotoForge/blob/main/python-legacy/README_Japanese.md)
 
 ---
 
