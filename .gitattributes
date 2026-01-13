@@ -1,1 +1,3 @@
 *.html linguist-vendored
+*.py linguist-vendored
+*.slang linguist-vendored
