@@ -1,3 +1,6 @@
+// lib.rs
+
+
 use godot::prelude::*;
 use godot::builtin::{PackedByteArray, PackedVector2Array, VarDictionary}; // Removed PackedInt32Array
 use photo_editor::{self, PhotoEditor as PhotoEditorImpl};

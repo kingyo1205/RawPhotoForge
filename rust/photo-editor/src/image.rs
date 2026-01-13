@@ -1,4 +1,5 @@
-// read_image.rs
+// image.rs
+
 
 use std::io::{Cursor};
 use image;

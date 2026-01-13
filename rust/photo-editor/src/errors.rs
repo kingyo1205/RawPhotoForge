@@ -1,5 +1,6 @@
 // errors.rs
 
+
 use thiserror::Error;
 use std::io;
 
