@@ -1,7 +1,9 @@
 
 
 # RawPhotoForge
-**高機能 & 高速 RAW現像ソフトウェア**
+**高機能 & 高速 & 非破壊 RAW現像ソフトウェア**
+
+![RawPhotoForge Screenshot](images/screenshot-main.png)
 
 RawPhotoForgeはローカル環境で動作するRAW現像ソフトです。
 初期はPythonで実装していましたが、現在は **Rust版が最新かつメインの実装** です。

@@ -1,6 +1,8 @@
 
 # RawPhotoForge
-**High-performance & fast RAW photo editor**
+**High-performance & fast & Non-destructive RAW photo editor**
+
+![RawPhotoForge Screenshot](images/screenshot-main.png)
 
 RawPhotoForge is a fully local RAW photo editing software.
 The project was originally implemented in Python, but the **Rust version is now the latest and actively developed version**.
