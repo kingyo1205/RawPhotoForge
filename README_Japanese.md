@@ -99,6 +99,48 @@ RawPhotoForgeの開発では、以下のAIツールを活用しています。
 
 ---
 
+## ビルド方法
+
+RawPhotoForgeはRustで実装されたコアと、Godot(GDExtension)によるUIで構成されています。
+以下はLinux環境でソースからビルドする手順です。
+
+### 必要環境
+
+- Rust
+- Cargo
+- Godot Engine (通常版 .NET不要)
+- Linux (x86_64で動作確認)
+
+### 手順
+
+```bash
+git clone https://github.com/kingyo1205/RawPhotoForge.git
+cd RawPhotoForge
+
+# Rust GDExtension をビルド
+cd rust/photo-editor-godot
+cargo build --release
+
+# 依存関係ライセンス情報の生成
+cargo about init
+cargo about generate about.hbs > rust_licenses.html
+
+# 生成された共有ライブラリをGodotアドオンにコピー
+cd ../..
+cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/
+
+```
+
+### Godotでのエクスポート
+
+1. Godotで `rust/raw-photo-forge/` ディレクトリをプロジェクトとして開く
+2. GDExtensionが正しく読み込まれていることを確認
+3. Godotのエクスポート機能を使ってバイナリを生成
+
+
+
+
+
 ## 注意事項
 
 

@@ -96,6 +96,49 @@ The development of RawPhotoForge is supported by the following AI tools:
 * Godot Engine is licensed separately under the MIT License
   See the official Godot website for details
 
+
+---
+
+
+## Build from Source
+
+RawPhotoForge consists of a Rust-based core and a Godot UI using GDExtension.
+Below are the steps to build the project from source on Linux.
+
+### Requirements
+
+- Rust
+- Cargo
+- Godot Engine (standard version, .NET not required)
+- Linux (tested on x86_64)
+
+### Steps
+
+```bash
+git clone https://github.com/kingyo1205/RawPhotoForge.git
+cd RawPhotoForge
+
+# Build Rust GDExtension
+cd rust/photo-editor-godot
+cargo build --release
+
+# Generate license information for Rust dependencies
+cargo about init
+cargo about generate about.hbs > rust_licenses.html
+
+# Copy the generated shared library into the Godot addon directory
+cd ../..
+cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so \
+   ./rust/raw-photo-forge/addons/photo_editor/
+```
+
+### Export with Godot
+
+1. Open `rust/raw-photo-forge/` as a project in Godot
+2. Make sure the GDExtension is loaded correctly
+3. Use Godot’s export feature to build the final binary
+
+
 ---
 
 ## Notes
