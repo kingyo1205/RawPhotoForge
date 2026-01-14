@@ -128,8 +128,7 @@ cargo about generate about.hbs > rust_licenses.html
 
 # Copy the generated shared library into the Godot addon directory
 cd ../..
-cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so \
-   ./rust/raw-photo-forge/addons/photo_editor/
+cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/
 ```
 
 ### Export with Godot

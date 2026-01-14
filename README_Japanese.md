@@ -138,7 +138,7 @@ cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so ./rust/raw-
 3. Godotのエクスポート機能を使ってバイナリを生成
 
 
-
+---
 
 
 ## 注意事項
