@@ -2,18 +2,19 @@
 
 
 use godot::prelude::*;
-use godot::builtin::{PackedByteArray, PackedVector2Array, VarDictionary}; // Removed PackedInt32Array
-use photo_editor::{self, PhotoEditor as PhotoEditorImpl};
+use godot::builtin::{PackedByteArray, PackedVector2Array, VarDictionary, PackedStringArray};
+use photo_editor::{self, PhotoEditor as PhotoEditorImpl, GpuProcessor as GpuProcessorImpl};
 use photo_editor::image::ImageFormat as ImageFormatImpl;
 use ndarray::{Array1, Array2};
 use anyhow::{Result};
+use std::sync::Arc;
 
 /// photo-editorクレートのImageFormat enumのGodotラッパー。
 /// Godotエディタ上で文字列として選択できます。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, GodotConvert, Var, Export)]
 #[godot(via = GString)]
 pub enum ImageFormat {
-    Png, Jpeg, Webp, Tiff,
+    JPEG, PNG, WEBP, TIFF,
     ARI, ARW, CR2, CR3, CRM, CRW, DCR, DCS, DNG, ERF, IIQ, KDC, MEF, MOS, MRW, NEF, NRW, ORF, ORI, PEF, RAF, RAW, RW2, RWL, SRW, _3FR, FFF, X3F, QTK
 }
 
@@ -21,7 +22,8 @@ pub enum ImageFormat {
 impl From<ImageFormat> for ImageFormatImpl {
     fn from(format: ImageFormat) -> Self {
         match format {
-            ImageFormat::Png => Self::Png, ImageFormat::Jpeg => Self::Jpeg, ImageFormat::Webp => Self::Webp, ImageFormat::Tiff => Self::Tiff,
+            ImageFormat::JPEG => Self::JPEG, ImageFormat::PNG => Self::PNG, ImageFormat::WEBP => Self::WEBP, ImageFormat::TIFF => Self::TIFF,
+            
             ImageFormat::ARI => Self::ARI, ImageFormat::ARW => Self::ARW, ImageFormat::CR2 => Self::CR2, ImageFormat::CR3 => Self::CR3,
             ImageFormat::CRM => Self::CRM, ImageFormat::CRW => Self::CRW, ImageFormat::DCR => Self::DCR, ImageFormat::DCS => Self::DCS,
             ImageFormat::DNG => Self::DNG, ImageFormat::ERF => Self::ERF, ImageFormat::IIQ => Self::IIQ, ImageFormat::KDC => Self::KDC,
@@ -33,6 +35,60 @@ impl From<ImageFormat> for ImageFormatImpl {
         }
     }
 }
+
+/// GPUプロセッサのGodotラッパー
+#[derive(GodotClass)]
+#[class(base=Node, init)]
+pub struct GpuProcessor {
+    base: Base<Node>,
+    processor: Option<Arc<GpuProcessorImpl>>,
+    error_message: Option<String>,
+}
+
+#[godot_api]
+impl GpuProcessor {
+    fn base(&self) -> &Base<Node> { &self.base }
+    fn base_mut(&mut self) -> &mut Base<Node> { &mut self.base }
+    fn init(base: Base<Node>) -> Self {
+        Self {
+            base,
+            processor: None,
+            error_message: None,
+        }
+    }
+
+    /// 指定されたアダプターでGPUプロセッサを初期化します。
+    #[func]
+    pub fn initialize(&mut self, adapter_index: i32) -> bool {
+        match GpuProcessorImpl::new(adapter_index as usize) {
+            Ok(processor) => {
+                self.processor = Some(Arc::new(processor));
+                self.error_message = None;
+                true
+            }
+            Err(e) => {
+                let err_msg = format!("Failed to initialize GpuProcessor: {:?}", e);
+                godot_error!("{}", err_msg);
+                self.error_message = Some(err_msg);
+                self.processor = None;
+                false
+            }
+        }
+    }
+
+    /// 初期化に失敗した場合のエラーメッセージを取得します。
+    #[func]
+    pub fn get_error(&self) -> GString {
+        self.error_message.as_deref().unwrap_or("").into()
+    }
+    
+    /// 利用可能なGPUアダプターのリストを返します。
+    #[func]
+    pub fn get_adapters() -> PackedStringArray {
+        GpuProcessorImpl::get_adapter_list().iter().map(GString::from).collect()
+    }
+}
+
 
 /// photo_editorクレートのPhotoEditor構造体のGodotラッパー
 #[derive(GodotClass)]
@@ -61,7 +117,7 @@ impl PhotoEditor {
 
     /// 画像データを渡して新しいPhotoEditorインスタンスを作成します。
     #[func]
-    pub fn open_image(&mut self, file_data: PackedByteArray, format_str: GString) -> bool {
+    pub fn open_image(&mut self, gpu_processor: Gd<GpuProcessor>, file_data: PackedByteArray, format_str: GString) -> bool {
         let format_str = format_str.to_string();
         let format = match ImageFormatImpl::from_ext(&format_str) {
             Ok(f) => f,
@@ -71,14 +127,22 @@ impl PhotoEditor {
             }
         };
 
+        let gpu = gpu_processor.bind();
+        let gpu_arc = if let Some(p) = &gpu.processor {
+            p.clone()
+        } else {
+            godot_error!("GpuProcessor is not initialized. Call initialize() first.");
+            return false;
+        };
+
         let data_vec = file_data.to_vec();
-        match PhotoEditorImpl::new(data_vec.as_slice(), format) {
+        match PhotoEditorImpl::new(gpu_arc, data_vec.as_slice(), format) {
             Ok(editor) => {
                 self.editor = Some(editor);
                 true
             }
             Err(e) => {
-                godot_error!("Failed to create PhotoEditor: {}", e);
+                godot_error!("Failed to create PhotoEditor: {:?}", e);
                 false
             }
         }

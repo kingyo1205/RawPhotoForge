@@ -7,25 +7,27 @@ use ndarray::{Array3, ShapeError};
 use rawler::{decoders, rawsource, imgop};
 use exif::{Reader as ExifReader, Tag};
 
-use crate::errors::{self, PhotoEditorError, ReadStandardImageError, ReadRawImageError, SaveImageError};
+use crate::errors::PhotoEditorError;
 use crate::metadata;
 
 // 一般的な画像とRAW画像を入れる
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
-    Png, Jpeg, Webp, Tiff,
+    PNG, JPEG, WEBP, TIFF,
 
-    ARI, ARW, CR2, CR3, CRM, CRW, DCR, DCS, DNG, ERF, IIQ, KDC, MEF, MOS, MRW, NEF, NRW, ORF, ORI, PEF, RAF, RAW, RW2, RWL, SRW, _3FR, FFF, X3F, QTK
+    ARI, ARW, CR2, CR3, CRM, CRW, DCR, DCS, DNG, ERF, IIQ, KDC, MEF, MOS, MRW, NEF, NRW, ORF, ORI, PEF, RAF, RAW, RW2, RWL, SRW, _3FR, FFF, X3F, QTK,
+
+    Unknown
 
 }
 
 impl ImageFormat {
-    pub fn from_ext(ext: &str) -> Result<ImageFormat, errors::PhotoEditorError> {
+    pub fn from_ext(ext: &str) -> Result<ImageFormat, PhotoEditorError> {
         let image_format = match ext.to_lowercase().as_str() {
-            "jpg" | "jpeg" => ImageFormat::Jpeg,
-            "png" => ImageFormat::Png,
-            "webp" => ImageFormat::Webp,
-            "tiff" | "tif" => ImageFormat::Tiff,
+            "jpg" | "jpeg" => ImageFormat::JPEG,
+            "png" => ImageFormat::PNG,
+            "webp" => ImageFormat::WEBP,
+            "tiff" | "tif" => ImageFormat::TIFF,
 
             "ari" => ImageFormat::ARI, 
             "arw" => ImageFormat::ARW, 
@@ -57,7 +59,7 @@ impl ImageFormat {
             "x3f" => ImageFormat::X3F, 
             "qtk" => ImageFormat::QTK,
 
-            _ => { return Err(errors::PhotoEditorError::UnsupportedFormat(ext.to_string())); }
+            _ => ImageFormat::Unknown
         };
 
         Ok(image_format)
@@ -66,10 +68,10 @@ impl ImageFormat {
 
     pub fn to_str(&self) -> &str {
         match self {
-            ImageFormat::Png => "png",
-            ImageFormat::Jpeg => "jpeg",
-            ImageFormat::Webp => "webp",
-            ImageFormat::Tiff => "tiff",
+            ImageFormat::JPEG => "jpeg",
+            ImageFormat::PNG => "png",
+            ImageFormat::WEBP => "webp",
+            ImageFormat::TIFF => "tiff",
 
             ImageFormat::ARI => "ari", 
             ImageFormat::ARW => "arw", 
@@ -99,20 +101,54 @@ impl ImageFormat {
             ImageFormat::_3FR => "3fr", 
             ImageFormat::FFF => "fff", 
             ImageFormat::X3F => "x3f", 
-            ImageFormat::QTK => "qtk"
+            ImageFormat::QTK => "qtk",
+
+            ImageFormat::Unknown => "unknown"
         }
     }
 
 
     pub fn is_standard_image(&self) -> bool {
         match self {
-            ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::Webp | ImageFormat::Tiff => true,
+            ImageFormat::JPEG | ImageFormat::PNG | ImageFormat::WEBP | ImageFormat::TIFF => true,
             _ => false,
         }
     }
 
     pub fn is_raw_image(&self) -> bool {
-        !self.is_standard_image()
+       match self {
+            ImageFormat::ARI |
+            ImageFormat::ARW |
+            ImageFormat::CR2 |
+            ImageFormat::CR3 | 
+            ImageFormat::CRM | 
+            ImageFormat::CRW | 
+            ImageFormat::DCR | 
+            ImageFormat::DCS | 
+            ImageFormat::DNG | 
+            ImageFormat::ERF | 
+            ImageFormat::IIQ |
+            ImageFormat::KDC |
+            ImageFormat::MEF | 
+            ImageFormat::MOS | 
+            ImageFormat::MRW | 
+            ImageFormat::NEF | 
+            ImageFormat::NRW | 
+            ImageFormat::ORF | 
+            ImageFormat::ORI | 
+            ImageFormat::PEF |
+            ImageFormat::RAF |
+            ImageFormat::RAW |
+            ImageFormat::RW2 |
+            ImageFormat::RWL |
+            ImageFormat::SRW |
+            ImageFormat::_3FR |
+            ImageFormat::FFF | 
+            ImageFormat::X3F | 
+            ImageFormat::QTK  => true,
+
+            _ => false
+       }
     }
     
 }
@@ -200,37 +236,39 @@ pub fn read_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image
 
     if image_format.is_standard_image() {
         Ok(read_standard_image(file_data, image_format)?)
-    } else {
+    } else if image_format.is_raw_image() {
         Ok(read_raw_image(file_data, image_format)?)
+    } else {
+        Err(PhotoEditorError::ReadImageUnsupportedFormat(image_format.to_str().to_string()))
     }
     
 }
 
 
-fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image, metadata::Exif), ReadStandardImageError> {
+fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image, metadata::Exif), PhotoEditorError> {
 
     let image_crate_format = match image_format {
-        ImageFormat::Png => image::ImageFormat::Png,
-        ImageFormat::Jpeg => image::ImageFormat::Jpeg,
-        ImageFormat::Webp => image::ImageFormat::WebP,
-        ImageFormat::Tiff => image::ImageFormat::Tiff,
+        ImageFormat::JPEG => image::ImageFormat::Jpeg,
+        ImageFormat::PNG => image::ImageFormat::Png,
+        ImageFormat::WEBP => image::ImageFormat::WebP,
+        ImageFormat::TIFF => image::ImageFormat::Tiff,
         _ => panic!("Non-standard format passed to read_standard_image"),
     };
 
     // read pixels
     let file_cursor = Cursor::new(&file_data);
-    let image = image::load(file_cursor, image_crate_format)?;
+    let dynamic_image = image::load(file_cursor, image_crate_format).map_err(PhotoEditorError::standard_image)?;
 
-    let height = image.height() as usize;
-    let width = image.width() as usize;
+    let height = dynamic_image.height() as usize;
+    let width = dynamic_image.width() as usize;
 
-    let image_vec = image.to_rgb8().to_vec();
+    let image_vec = dynamic_image.to_rgb8().to_vec();
 
-    drop(image);
+    drop(dynamic_image);
 
     let image_vec = image_vec.iter().map(|v| (v.clone() as f32) / 255.0).collect::<Vec<f32>>();
     
-    let image = Image::new_from_vec(image_vec, height, width)?;
+    let image = Image::new_from_vec(image_vec, height, width).map_err(PhotoEditorError::standard_image)?;
 
 
     // read exif
@@ -262,15 +300,15 @@ fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(
 
 
 
-fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Image, metadata::Exif), ReadRawImageError> {
+fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Image, metadata::Exif), PhotoEditorError> {
 
     // read pixels
     let raw_source = rawsource::RawSource::new_from_slice(&file_data);
-    let raw_decoder = rawler::get_decoder(&raw_source)?;
-    let raw_image = raw_decoder.raw_image(&raw_source, &decoders::RawDecodeParams::default(), false)?;
-    let raw_metadata = raw_decoder.raw_metadata(&raw_source, &decoders::RawDecodeParams::default())?;
+    let raw_decoder = rawler::get_decoder(&raw_source).map_err(PhotoEditorError::raw_image)?;
+    let raw_image = raw_decoder.raw_image(&raw_source, &decoders::RawDecodeParams::default(), false).map_err(PhotoEditorError::raw_image)?;
+    let raw_metadata = raw_decoder.raw_metadata(&raw_source, &decoders::RawDecodeParams::default()).map_err(PhotoEditorError::raw_image)?;
 
-    let mut dynamic_image = imgop::develop::RawDevelop::default().develop_intermediate(&raw_image)?.to_dynamic_image().unwrap();
+    let mut dynamic_image = imgop::develop::RawDevelop::default().develop_intermediate(&raw_image).map_err(PhotoEditorError::raw_image)?.to_dynamic_image().unwrap();
 
     let exif = raw_metadata.exif;
     dynamic_image = apply_exif_orientation(dynamic_image, exif.orientation);
@@ -280,7 +318,7 @@ fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Imag
 
     let image_vec = dynamic_image.to_rgb32f().to_vec();
 
-    let image = Image::new_from_vec(image_vec, height, width)?;
+    let image = Image::new_from_vec(image_vec, height, width).map_err(PhotoEditorError::raw_image)?;
 
     // read exif
     let mut exif_data = metadata::Exif::default();
@@ -360,26 +398,21 @@ fn apply_exif_orientation(mut dynamic_image: image::DynamicImage, orientation: O
 
 
 
-pub fn write_image(image: &Image, image_format: &ImageFormat) -> Result<Vec<u8>, SaveImageError> {
+pub fn write_image(image: &Image, image_format: &ImageFormat) -> Result<Vec<u8>, PhotoEditorError> {
     if !image_format.is_standard_image() {
-        // This case should ideally be handled by the caller, but we return an error anyway.
-        // A better error might be needed here, but for now, we can use an I/O error kind.
-        return Err(SaveImageError::Io(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "Cannot save to a raw image format.",
-        )));
+        return Err(PhotoEditorError::SaveImageUnsupportedFormat(image_format.to_str().to_string()));
     }
 
     let image_crate_format = match image_format {
-        ImageFormat::Png => image::ImageFormat::Png,
-        ImageFormat::Jpeg => image::ImageFormat::Jpeg,
-        ImageFormat::Webp => image::ImageFormat::WebP,
-        ImageFormat::Tiff => image::ImageFormat::Tiff,
+        ImageFormat::JPEG => image::ImageFormat::Jpeg,
+        ImageFormat::PNG => image::ImageFormat::Png,
+        ImageFormat::WEBP => image::ImageFormat::WebP,
+        ImageFormat::TIFF => image::ImageFormat::Tiff,
         _ => panic!("Failed to convert to image crate format: {}", image_format.to_str()),
     };
 
     let mut writer = Cursor::new(Vec::<u8>::new());
-    image.to_u8_rgbimage().write_to(&mut writer, image_crate_format)?;
+    image.to_u8_rgbimage().write_to(&mut writer, image_crate_format).map_err(PhotoEditorError::save)?;
 
     Ok(writer.into_inner())
 }

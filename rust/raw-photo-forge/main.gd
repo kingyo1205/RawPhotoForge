@@ -6,6 +6,7 @@ var settings: Dictionary = {}
 @onready var editor_full = $PhotoEditorFull
 @onready var editor_mid  = $PhotoEditorMid
 @onready var editor_low  = $PhotoEditorLow
+@onready var gpu_processor = $GpuProcessor
 
 @onready var tex_rect: TextureRect = \
 	$VBoxContainer/HBoxContainer/ImageArea/TextureRect
@@ -90,6 +91,8 @@ var settings: Dictionary = {}
 	$VBoxContainer/HBoxContainer/EditPanel/TabContainer/Saturation/VBoxContainer/ResetSaturationButton
 @onready var reset_lightness_button: Button = \
 	$VBoxContainer/HBoxContainer/EditPanel/TabContainer/Lightness/VBoxContainer/ResetLightnessButton
+	
+
 
 
 
@@ -100,9 +103,10 @@ var settings: Dictionary = {}
 @onready var save_button: Button = $SaveDialog/VBoxContainer/HBoxContainer2/SaveButton
 @onready var cancel_button: Button = $SaveDialog/VBoxContainer/HBoxContainer2/CancelButton
 @onready var save_file_dialog: FileDialog = $SaveFileDialog
-@onready var save_confirmation_dialog: ConfirmationDialog = $SaveConfirmationDialog
+@onready var confirmation_dialog: ConfirmationDialog = $ConfirmationDialog
 @onready var control: Control = $'.'
 @onready var settings_window: Window = %SettingsWindow
+
 
 var edit := {
 	"exposure": 0.0,
@@ -130,6 +134,24 @@ var _original_filename_base: String = ""
 
 func _ready() -> void:
 	load_settings()
+	
+	var adapters = gpu_processor.get_adapters()
+	
+	if not adapters:
+		push_error("wgpu adapter zero")
+		show_dialog(tr("TR_ERROR_NO_WGPU"))
+		return
+
+	var adapter_index = int(settings.get("wgpu_adapter", 0))
+	
+	print("adapter_index: %s" % str(adapter_index))
+	print(adapters)
+	if not gpu_processor.initialize(adapter_index):
+		show_dialog(tr("TR_ERROR_GPU_INIT"))
+		
+		return
+	
+	
 	for s in [
 		exposure_slider, contrast_slider, shadow_slider,
 		highlight_slider, black_slider, white_slider,
@@ -190,9 +212,9 @@ func _ready() -> void:
 	cancel_button.pressed.connect(_on_save_dialog_cancel_pressed)
 	save_file_dialog.file_selected.connect(_on_save_file_selected)
 
-	format_option_button.add_item(tr("TR_JPEG_FORMAT"))
+	format_option_button.add_item("JPEG")
 	format_option_button.set_item_metadata(0, "jpeg")
-	format_option_button.add_item(tr("TR_PNG_FORMAT"))
+	format_option_button.add_item("PNG")
 	format_option_button.set_item_metadata(1, "png")
 
 	_setup_curve_editor(brightness_tone_curve_editor, "brightness_tone_curve_points", 0, "res://assets/tone_curve/brightness_gradient.png")
@@ -213,6 +235,13 @@ func _ready() -> void:
 	tab_container.set_tab_title(7, tr("TR_TAB_METADATA"))
 	
 	_update_all_slider_labels()
+	
+	
+func show_dialog(message):
+	confirmation_dialog.dialog_text = message
+	confirmation_dialog.popup_centered()
+	confirmation_dialog.get_cancel_button().hide()
+	
 
 
 func load_settings() -> void:
@@ -235,6 +264,7 @@ func load_settings() -> void:
 
 func _load_default_settings() -> void:
 	settings = {
+		"wgpu_adapter": 0,
 		"image": {
 			"ui_preview_size": 1280,
 			"drag_preview_size": 400
@@ -282,11 +312,7 @@ func _on_save_dialog_save_pressed() -> void:
 
 
 func _on_save_file_selected(path: String) -> void:
-	var format = format_option_button.get_item_text(format_option_button.selected).to_lower()
-	if format == "jpeg":
-		format = "Jpeg"
-	elif format == "png":
-		format = "Png"
+	var format = format_option_button.get_item_text(format_option_button.selected)
 	_set_editor_parameters(editor_full)
 	editor_full.apply_adjustments()
 	var data: PackedByteArray = editor_full.save(format)
@@ -294,9 +320,8 @@ func _on_save_file_selected(path: String) -> void:
 	if file:
 		file.store_buffer(data)
 		file.close()
-		save_confirmation_dialog.dialog_text = tr("TR_SAVED_FILE") % path
-		save_confirmation_dialog.popup_centered()
-		save_confirmation_dialog.get_cancel_button().hide() # Hide the cancel button explicitly
+		show_dialog(tr("TR_SAVED_FILE") % path)
+		
 
 
 func _on_edit_menu_id_pressed(id: int) -> void:
@@ -415,7 +440,11 @@ func _load_image(path: String):
 	_original_filename_base = path.get_file().get_basename()
 	var _original_file_ext = path.get_file().get_extension()
 	
-	editor_full.open_image(bytes, _original_file_ext)
+	if not editor_full.open_image(gpu_processor, bytes, _original_file_ext):
+		show_dialog(tr("TR_ERROR_IMAGE_LOAD") % path)
+		
+		return
+		
 	base_image = editor_full.get_image()
 
 	_init_preview_editors()
@@ -451,7 +480,8 @@ func _open_resized(editor, long_edge: int) -> void:
 		int(img.get_height() * p_scale),
 		Image.INTERPOLATE_BILINEAR
 	)
-	editor.open_image(img.save_png_to_buffer(), "png")
+	editor.open_image(gpu_processor, img.save_png_to_buffer(), "png")
+	
 
 
 func _update_all_slider_labels() -> void:

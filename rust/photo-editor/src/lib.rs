@@ -8,12 +8,13 @@ pub mod gpu_image_processing;
 pub mod interpolation;
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use ndarray::{Array1, Array2};
 use errors::{PhotoEditorError, InterpolationError};
 use image::Image;
 use metadata::Exif;
-use gpu_image_processing::GpuProcessor;
-use crate::image::ImageFormat;
+pub use gpu_image_processing::GpuProcessor;
+pub use crate::image::ImageFormat;
 
 const CURVE_RESOLUTION: usize = 65536;
 
@@ -73,14 +74,13 @@ pub struct PhotoEditor {
     pub image_format: image::ImageFormat,
     pub main_adjustments: EditParameters,
     pub masks: HashMap<String, (Array2<f32>, EditParameters)>,
-    gpu_processor: GpuProcessor,
+    gpu_processor: Arc<GpuProcessor>,
 }
 
 impl PhotoEditor {
-    pub fn new(file_data: &[u8], image_format: image::ImageFormat) -> Result<PhotoEditor, PhotoEditorError> {
+    pub fn new(gpu_processor: Arc<GpuProcessor>, file_data: &[u8], image_format: image::ImageFormat) -> Result<PhotoEditor, PhotoEditorError> {
         let (image, exif) = image::read_image(file_data, &image_format)?;
         let original_image = image.clone();
-        let gpu_processor = GpuProcessor::new(image.width as u32, image.height as u32)?;
 
         Ok(PhotoEditor {
             image,
@@ -321,12 +321,14 @@ impl PhotoEditor {
     pub fn apply_adjustments(&mut self) -> Result<(), PhotoEditorError> {
         let processed_data = self.gpu_processor.apply_adjustments(
             &self.original_image.to_flat_vec(),
+            self.original_image.width as u32,
+            self.original_image.height as u32,
             &self.main_adjustments,
             &self.masks,
         )?;
 
         self.image = Image::new_from_vec(processed_data, self.original_image.height, self.original_image.width)
-            .map_err(|e| PhotoEditorError::GpuComputeError(e.into()))?;
+            .map_err(|e| PhotoEditorError::gpu_compute(e))?;
 
         Ok(())
     }

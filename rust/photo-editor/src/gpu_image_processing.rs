@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::borrow::Cow;
 use wgpu::util::DeviceExt;
-use crate::errors::{GpuComputeError, GpuInitializationError, InterpolationError, PhotoEditorError};
+use crate::errors::PhotoEditorError;
 use ndarray::{Array1, Array2};
 use crate::EditParameters;
 use bytemuck::{Pod, Zeroable};
@@ -65,6 +65,13 @@ struct LensDistortionParams {
 }
 
 //--------------------------------------------------------------------------------
+// Public Functions
+//--------------------------------------------------------------------------------
+
+/// 利用可能なGPUアダプターのリストを取得します。
+
+
+//--------------------------------------------------------------------------------
 // GpuProcessor
 //--------------------------------------------------------------------------------
 
@@ -72,22 +79,19 @@ pub struct GpuProcessor {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipelines: HashMap<String, wgpu::ComputePipeline>,
-    width: u32,
-    height: u32,
-    base_params_buffer: wgpu::Buffer,
 }
 
 impl GpuProcessor {
     /// 新しいGpuProcessorインスタンスを作成します。
     /// WGPUデバイスを初期化し、シェーダーパイプラインをコンパイルします。
-    pub fn new(width: u32, height: u32) -> Result<Self, PhotoEditorError> {
+    pub fn new(adapter_index: usize) -> Result<Self, PhotoEditorError> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
 
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            force_fallback_adapter: false,
-            compatible_surface: None,
-        })).map_err(|_| PhotoEditorError::from(GpuInitializationError::Adapter))?;
+        let adapter = instance
+            .enumerate_adapters(wgpu::Backends::all())
+            .into_iter()
+            .nth(adapter_index)
+            .ok_or_else(|| PhotoEditorError::gpu_initialization_no_source())?;
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -97,8 +101,8 @@ impl GpuProcessor {
                 memory_hints: wgpu::MemoryHints::default(),
                 experimental_features: wgpu::ExperimentalFeatures::disabled(),
                 trace: wgpu::Trace::Off,
-            }
-        )).map_err(GpuInitializationError::from)?;
+            },
+        )).map_err(PhotoEditorError::gpu_initialization)?;
 
         let shader_source = include_str!("wgpu_shader.wgsl");
         let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -131,23 +135,25 @@ impl GpuProcessor {
             pipelines.insert(name.to_string(), pipeline);
         }
 
-        let base_params_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Base Params Buffer"),
-            contents: bytemuck::bytes_of(&BaseParams { width, height }),
-            usage: wgpu::BufferUsages::UNIFORM,
-        });
-
-        Ok(Self { device, queue, pipelines, width, height, base_params_buffer })
+        Ok(Self { device, queue, pipelines })
     }
 
     /// 画像データに全ての編集を適用します。
     pub fn apply_adjustments(
         &self,
         image_data: &[f32],
+        width: u32,
+        height: u32,
         main_adjustments: &EditParameters,
         masks: &HashMap<String, (Array2<f32>, EditParameters)>,
     ) -> Result<Vec<f32>, PhotoEditorError> {
-        let num_elements = (self.width * self.height * 3) as usize;
+        let num_elements = (width * height * 3) as usize;
+
+        let base_params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Base Params Buffer"),
+            contents: bytemuck::bytes_of(&BaseParams { width, height }),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
 
         let image_buffer_current = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Image Buffer Current"),
@@ -165,7 +171,7 @@ impl GpuProcessor {
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Main Encoder") });
 
         // sRGB -> Linear
-        self.to_linear(&mut encoder, &image_buffer_current);
+        self.to_linear(&mut encoder, &image_buffer_current, width, height, &base_params_buffer);
 
         // Lens Distortion (if active, this is an out-of-place operation)
         if main_adjustments.lens_distortion != 0 {
@@ -175,6 +181,8 @@ impl GpuProcessor {
                 &image_buffer_current,
                 &image_buffer_scratch,
                 main_adjustments,
+                width,
+                height,
             );
             // Then, we copy the result back to the current buffer so subsequent in-place operations work correctly.
             encoder.copy_buffer_to_buffer(&image_buffer_scratch, 0, &image_buffer_current, 0, image_buffer_scratch.size());
@@ -182,12 +190,14 @@ impl GpuProcessor {
 
         // Vignette (if active, and only for main adjustments)
         if main_adjustments.vignette != 0 {
-            let mask_buffer = self.create_mask_buffer(None);
+            let mask_buffer = self.create_mask_buffer(None, width, height);
             self.adjustment_vignette(
                 &mut encoder,
                 &image_buffer_current,
                 &mask_buffer,
                 main_adjustments,
+                width,
+                height,
             );
         }
 
@@ -197,34 +207,34 @@ impl GpuProcessor {
         );
 
         for (mask_array, adjustments) in all_adjustments {
-            let mask_buffer = self.create_mask_buffer(mask_array);
-            self.adjustment_whitebalance(&mut encoder, &image_buffer_current, &mask_buffer, adjustments);
-            self.adjustment_tone(&mut encoder, &image_buffer_current, &mask_buffer, adjustments)?;
-            self.adjustment_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.brightness_tone_curve);
+            let mask_buffer = self.create_mask_buffer(mask_array, width, height);
+            self.adjustment_whitebalance(&mut encoder, &image_buffer_current, &mask_buffer, adjustments, width, height);
+            self.adjustment_tone(&mut encoder, &image_buffer_current, &mask_buffer, adjustments, width, height)?;
+            self.adjustment_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.brightness_tone_curve, width, height);
         }
         
         // Linear RGB -> Oklch (in-place)
-        self.linear_srgb_to_oklch(&mut encoder, &image_buffer_current);
+        self.linear_srgb_to_oklch(&mut encoder, &image_buffer_current, width, height, &base_params_buffer);
 
         // --- Oklch Adjustments (all in-place) ---
         let all_adjustments_oklch = std::iter::once((None, main_adjustments)).chain(
             masks.iter().map(|(_name, (mask, adj))| (Some(mask), adj))
         );
         for (mask_array, adjustments) in all_adjustments_oklch {
-            let mask_buffer = self.create_mask_buffer(mask_array);
-            self.adjustment_oklch_hue_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.hue_tone_curve);
-            self.adjustment_oklch_saturation_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.saturation_tone_curve);
-            self.adjustment_oklch_lightness_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.lightness_tone_curve);
+            let mask_buffer = self.create_mask_buffer(mask_array, width, height);
+            self.adjustment_oklch_hue_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.hue_tone_curve, width, height);
+            self.adjustment_oklch_saturation_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.saturation_tone_curve, width, height);
+            self.adjustment_oklch_lightness_tone_curve(&mut encoder, &image_buffer_current, &mask_buffer, &adjustments.lightness_tone_curve, width, height);
         }
 
         // Oklch -> Linear RGB (in-place)
-        self.oklch_to_linear_srgb(&mut encoder, &image_buffer_current);
+        self.oklch_to_linear_srgb(&mut encoder, &image_buffer_current, width, height, &base_params_buffer);
 
         // Linear -> sRGB (in-place)
-        self.to_srgb(&mut encoder, &image_buffer_current);
+        self.to_srgb(&mut encoder, &image_buffer_current, width, height, &base_params_buffer);
         
         // Final Clip (in-place)
-        self.clip_0_1(&mut encoder, &image_buffer_current);
+        self.clip_0_1(&mut encoder, &image_buffer_current, width, height, &base_params_buffer);
 
         // 結果をCPUに読み戻す
         let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -244,10 +254,10 @@ impl GpuProcessor {
             tx.send(result).unwrap();
         });
         
-        self.device.poll(wgpu::PollType::Wait { submission_index: Some(submission_index), timeout: None }).map_err(|e| PhotoEditorError::GpuComputeError(e.into()))?;
+        self.device.poll(wgpu::PollType::Wait { submission_index: Some(submission_index), timeout: None }).map_err(|e| PhotoEditorError::gpu_compute(e))?;
         
-        let mapped_result = rx.recv().map_err(|e| PhotoEditorError::GpuComputeError(GpuComputeError::ChannelReceive(e.to_string())))?;
-        mapped_result.map_err(|e| PhotoEditorError::GpuComputeError(e.into()))?;
+        let mapped_result = rx.recv().map_err(|e| PhotoEditorError::gpu_compute(e))?;
+        mapped_result.map_err(|e| PhotoEditorError::gpu_compute(e))?;
 
         let data = buffer_slice.get_mapped_range();
         let result: Vec<f32> = bytemuck::cast_slice(&data).to_vec();
@@ -264,7 +274,10 @@ impl GpuProcessor {
         &self, 
         encoder: &mut wgpu::CommandEncoder, 
         pipeline_name: &str, 
-        image_buffer: &wgpu::Buffer
+        image_buffer: &wgpu::Buffer,
+        width: u32,
+        height: u32,
+        base_params_buffer: &wgpu::Buffer,
     ) {
         let pipeline = self.pipelines.get(pipeline_name).unwrap();
         let bind_group_layout = pipeline.get_bind_group_layout(0);
@@ -273,7 +286,7 @@ impl GpuProcessor {
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry { binding: 0, resource: image_buffer.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: self.base_params_buffer.as_entire_binding() },
+                wgpu::BindGroupEntry { binding: 1, resource: base_params_buffer.as_entire_binding() },
             ],
         });
 
@@ -283,14 +296,14 @@ impl GpuProcessor {
         });
         compute_pass.set_pipeline(pipeline);
         compute_pass.set_bind_group(0, &bind_group, &[]);
-        let workgroups_x = (self.width + 15) / 16;
-        let workgroups_y = (self.height + 15) / 16;
+        let workgroups_x = (width + 15) / 16;
+        let workgroups_y = (height + 15) / 16;
         compute_pass.dispatch_workgroups(workgroups_x, workgroups_y, 1);
     }
 
     /// マスク配列からGPUバッファを作成します。
-    fn create_mask_buffer(&self, mask_array: Option<&Array2<f32>>) -> wgpu::Buffer {
-        let num_pixels = (self.width * self.height) as usize;
+    fn create_mask_buffer(&self, mask_array: Option<&Array2<f32>>, width: u32, height: u32) -> wgpu::Buffer {
+        let num_pixels = (width * height) as usize;
         let mask_data: Vec<f32> = match mask_array {
             Some(arr) => arr.iter().cloned().collect(),
             None => vec![1.0f32; num_pixels], // マスクがない場合は全ピクセルに適用
@@ -306,24 +319,24 @@ impl GpuProcessor {
     // Color Space Conversions & Clip
     //--------------------------------------------------------------------------------
 
-    pub fn to_linear(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer) {
-        self.run_compute_shader(encoder, "to_linear", image_buffer);
+    pub fn to_linear(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, width: u32, height: u32, base_params_buffer: &wgpu::Buffer) {
+        self.run_compute_shader(encoder, "to_linear", image_buffer, width, height, base_params_buffer);
     }
     
-    pub fn to_srgb(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer) {
-        self.run_compute_shader(encoder, "to_srgb", image_buffer);
+    pub fn to_srgb(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, width: u32, height: u32, base_params_buffer: &wgpu::Buffer) {
+        self.run_compute_shader(encoder, "to_srgb", image_buffer, width, height, base_params_buffer);
     }
 
-    pub fn clip_0_1(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer) {
-        self.run_compute_shader(encoder, "clip_0_1", image_buffer);
+    pub fn clip_0_1(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, width: u32, height: u32, base_params_buffer: &wgpu::Buffer) {
+        self.run_compute_shader(encoder, "clip_0_1", image_buffer, width, height, base_params_buffer);
     }
     
-    pub fn linear_srgb_to_oklch(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer) {
-        self.run_compute_shader(encoder, "linear_srgb_to_oklch", image_buffer);
+    pub fn linear_srgb_to_oklch(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, width: u32, height: u32, base_params_buffer: &wgpu::Buffer) {
+        self.run_compute_shader(encoder, "linear_srgb_to_oklch", image_buffer, width, height, base_params_buffer);
     }
     
-    pub fn oklch_to_linear_srgb(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer) {
-        self.run_compute_shader(encoder, "oklch_to_linear_srgb", image_buffer);
+    pub fn oklch_to_linear_srgb(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, width: u32, height: u32, base_params_buffer: &wgpu::Buffer) {
+        self.run_compute_shader(encoder, "oklch_to_linear_srgb", image_buffer, width, height, base_params_buffer);
     }
 
     //--------------------------------------------------------------------------------
@@ -331,12 +344,12 @@ impl GpuProcessor {
     //--------------------------------------------------------------------------------
     
     /// ホワイトバランス調整を適用します。
-    pub fn adjustment_whitebalance(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters) {
+    pub fn adjustment_whitebalance(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters, width: u32, height: u32) {
         if adjustments.wb_temperature != 0 || adjustments.wb_tint != 0 {
              let r_gain = 1.0 + 0.5 * (adjustments.wb_temperature as f32 / 100.0);
              let b_gain = 1.0 - 0.5 * (adjustments.wb_temperature as f32 / 100.0);
              let g_gain = 1.0 - 0.25 * (adjustments.wb_tint as f32 / 100.0);
-             let params = WhiteBalanceParams { width: self.width, height: self.height, r_gain, g_gain, b_gain };
+             let params = WhiteBalanceParams { width, height, r_gain, g_gain, b_gain };
              
              let pipeline = self.pipelines.get("white_balance").unwrap();
              let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -354,19 +367,19 @@ impl GpuProcessor {
              let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
              compute_pass.set_pipeline(pipeline);
              compute_pass.set_bind_group(0, &bind_group, &[]);
-             compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+             compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
         }
     }
 
     /// トーン調整（露出、コントラストなど）を適用します。
-    pub fn adjustment_tone(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters) -> Result<(), PhotoEditorError> {
+    pub fn adjustment_tone(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters, width: u32, height: u32) -> Result<(), PhotoEditorError> {
         let lut = self.create_tone_lut(adjustments)?;
-        self.adjustment_tone_curve(encoder, image_buffer, mask_buffer, &lut);
+        self.adjustment_tone_curve(encoder, image_buffer, mask_buffer, &lut, width, height);
         Ok(())
     }
 
     /// 明るさトーンカーブを適用します。
-    pub fn adjustment_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>) {
+    pub fn adjustment_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, width: u32, height: u32) {
         let pipeline = self.pipelines.get("tone_curve_lut").unwrap();
         let curve_data_f32: Vec<f32> = curve_data.iter().map(|&x| x as f32).collect();
         let curve_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -375,7 +388,7 @@ impl GpuProcessor {
         let channels = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Channels Buffer"), contents: bytemuck::cast_slice(&[0u32, 1, 2]), usage: wgpu::BufferUsages::STORAGE,
         });
-        let params = ToneCurveParams { width: self.width, height: self.height, channel_count: 3 };
+        let params = ToneCurveParams { width, height, channel_count: 3 };
         let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("ToneCurveParams Buffer"), contents: bytemuck::bytes_of(&params), usage: wgpu::BufferUsages::UNIFORM,
         });
@@ -393,11 +406,11 @@ impl GpuProcessor {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         compute_pass.set_pipeline(pipeline);
         compute_pass.set_bind_group(0, &bind_group, &[]);
-        compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+        compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
     }
 
     /// Oklchの色相トーンカーブを適用します。
-    pub fn adjustment_oklch_hue_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>) {
+    pub fn adjustment_oklch_hue_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, width: u32, height: u32) {
         let pipeline = self.pipelines.get("tone_curve_lut").unwrap();
         let curve_data_f32: Vec<f32> = curve_data.iter().map(|&x| x as f32).collect();
         let curve_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -406,7 +419,7 @@ impl GpuProcessor {
         let channels = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Hue Channel Buffer"), contents: bytemuck::cast_slice(&[2u32]), usage: wgpu::BufferUsages::STORAGE,
         });
-        let params = ToneCurveParams { width: self.width, height: self.height, channel_count: 1 };
+        let params = ToneCurveParams { width, height, channel_count: 1 };
         let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Hue ToneCurveParams Buffer"), contents: bytemuck::bytes_of(&params), usage: wgpu::BufferUsages::UNIFORM,
         });
@@ -424,24 +437,24 @@ impl GpuProcessor {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         compute_pass.set_pipeline(pipeline);
         compute_pass.set_bind_group(0, &bind_group, &[]);
-        compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+        compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
     }
 
     /// Oklchの色相別彩度トーンカーブを適用します。
-    pub fn adjustment_oklch_saturation_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>) {
-        self.apply_curve_by_hue(encoder, image_buffer, curve_data, mask_buffer, 2, 1) // ch_hue: 2 (Lchのh), ch_target: 1 (Lchのc)
+    pub fn adjustment_oklch_saturation_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, width: u32, height: u32) {
+        self.apply_curve_by_hue(encoder, image_buffer, curve_data, mask_buffer, 2, 1, width, height) // ch_hue: 2 (Lchのh), ch_target: 1 (Lchのc)
     }
 
     /// Oklchの色相別輝度トーンカーブを適用します。
-    pub fn adjustment_oklch_lightness_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>) {
-        self.apply_curve_by_hue(encoder, image_buffer, curve_data, mask_buffer, 2, 0) // ch_hue: 2 (Lchのh), ch_target: 0 (LchのL)
+    pub fn adjustment_oklch_lightness_tone_curve(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, width: u32, height: u32) {
+        self.apply_curve_by_hue(encoder, image_buffer, curve_data, mask_buffer, 2, 0, width, height) // ch_hue: 2 (Lchのh), ch_target: 0 (LchのL)
     }
     
     /// 周辺光量落ち（ヴィネット）効果を適用します。
-    pub fn adjustment_vignette(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters) {
+    pub fn adjustment_vignette(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, mask_buffer: &wgpu::Buffer, adjustments: &EditParameters, width: u32, height: u32) {
         if adjustments.vignette != 0 {
             let strength = (-adjustments.vignette as f32 / 100.0) * 2.0;
-            let params = VignetteParams { width: self.width, height: self.height, strength };
+            let params = VignetteParams { width, height, strength };
             let pipeline = self.pipelines.get("vignette_effect").unwrap();
             let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                label: Some("Vignette Params Buffer"), contents: bytemuck::bytes_of(&params), usage: wgpu::BufferUsages::UNIFORM,
@@ -458,7 +471,7 @@ impl GpuProcessor {
             let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             compute_pass.set_pipeline(pipeline);
             compute_pass.set_bind_group(0, &bind_group, &[]);
-            compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+            compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
         }
     }
 
@@ -469,6 +482,8 @@ impl GpuProcessor {
         image_buffer_in: &wgpu::Buffer,
         image_buffer_out: &wgpu::Buffer,
         adjustments: &EditParameters,
+        width: u32,
+        height: u32,
     ) {
         if adjustments.lens_distortion != 0 {
             // スライダーの値 -100..100 を歪み係数に変換
@@ -476,8 +491,8 @@ impl GpuProcessor {
             let strength_scaled = adjustments.lens_distortion as f32 / 100.0 * -0.5; // 例: -0.5 から 0.5 (負の値で樽型補正、正の値で糸巻き型補正)
 
             let params = LensDistortionParams {
-                width: self.width,
-                height: self.height,
+                width,
+                height,
                 strength: strength_scaled,
             };
 
@@ -502,18 +517,18 @@ impl GpuProcessor {
             let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             compute_pass.set_pipeline(pipeline);
             compute_pass.set_bind_group(0, &bind_group, &[]);
-            compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+            compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
         }
     }
 
     /// Oklchの色相を基準にカーブを適用するヘルパー関数です。
-    fn apply_curve_by_hue(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, mask_buffer: &wgpu::Buffer, ch_hue: u32, ch_target: u32) {
+    fn apply_curve_by_hue(&self, encoder: &mut wgpu::CommandEncoder, image_buffer: &wgpu::Buffer, curve_data: &Array1<i32>, mask_buffer: &wgpu::Buffer, ch_hue: u32, ch_target: u32, width: u32, height: u32) {
         let pipeline = self.pipelines.get("tone_curve_by_hue").unwrap();
         let curve_data_f32: Vec<f32> = curve_data.iter().map(|&x| x as f32).collect();
         let curve_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("CurveByHue Buffer"), contents: &bytemuck::cast_slice(&curve_data_f32), usage: wgpu::BufferUsages::STORAGE,
         });
-        let params = ToneCurveByHueParams { width: self.width, height: self.height, ch_hue, ch_target };
+        let params = ToneCurveByHueParams { width, height, ch_hue, ch_target };
         let params_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("ToneCurveByHueParams Buffer"), contents: bytemuck::bytes_of(&params), usage: wgpu::BufferUsages::UNIFORM,
         });
@@ -530,11 +545,23 @@ impl GpuProcessor {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         compute_pass.set_pipeline(pipeline);
         compute_pass.set_bind_group(0, &bind_group, &[]);
-        compute_pass.dispatch_workgroups((self.width + 15) / 16, (self.height + 15) / 16, 1);
+        compute_pass.dispatch_workgroups((width + 15) / 16, (height + 15) / 16, 1);
+    }
+
+
+
+    /// wgpuのアダプターのリストを取得
+    pub fn get_adapter_list() -> Vec<String> {
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        instance
+            .enumerate_adapters(wgpu::Backends::all())
+            .into_iter()
+            .map(|adapter| format!("{}, {}", adapter.get_info().name, adapter.get_info().backend))
+            .collect()
     }
 
     /// トーン調整用のLUT（ルックアップテーブル）を作成します。
-    fn create_tone_lut(&self, params: &EditParameters) -> Result<Array1<i32>, InterpolationError> {
+    fn create_tone_lut(&self, params: &EditParameters) -> Result<Array1<i32>, PhotoEditorError> {
         let x_lum = Array1::from_iter((0..65536).map(|i| i as f32 / 65535.0));
         let mut y_lum = x_lum.clone();
 
@@ -602,3 +629,4 @@ impl GpuProcessor {
         Ok(lum_contrasted.mapv(|v| (v.clamp(0.0f32, 1.0f32) * 65535.0f32) as i32))
     }
 }
+

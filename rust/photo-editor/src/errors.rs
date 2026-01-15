@@ -2,64 +2,138 @@
 
 
 use thiserror::Error;
-use std::io;
 
-/// The main error type for the photo editor library.
-/// It consolidates all possible errors from different modules.
+/// photo-editorのエラー。 エラーをざっくりまとめる
 #[derive(Error, Debug)]
 pub enum PhotoEditorError {
-    #[error("Failed to read raw image: {0}")]
-    FailedToReadRawImage(#[from] ReadRawImageError),
 
-    #[error("Failed to read standard image: {0}")]
-    FailedToReadStandardImage(#[from] ReadStandardImageError),
+    /// RAW画像
+    #[error("Failed to read raw image")]
+    FailedToReadRawImage {
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
 
+    /// 標準画像
+    #[error("Failed to read standard image")]
+    FailedToReadStandardImage {
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
+
+    // 保存
+    #[error("failed to save image")]
+    FailedToSaveImage {
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
+
+    /// 非対応形式
+    #[error("Unsupported read image format: {0}")]
+    ReadImageUnsupportedFormat(String),
+
+    #[error("Unsupported save image format: {0}")]
+    SaveImageUnsupportedFormat(String),
+
+
+    /// 補完
     #[error("Interpolation failed: {0}")]
     Interpolation(#[from] InterpolationError),
 
-    #[error("Failed to save image: {0}")]
-    FailedToSaveImage(#[from] SaveImageError),
 
-    #[error("Unsupported image format: {0}")]
-    UnsupportedFormat(String),
+    /// GPU
+    #[error("GPU compute error")]
+    GpuComputeError  {
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
 
-    #[error("GPU compute error: {0}")]
-    GpuComputeError(#[from] GpuComputeError),
-
-    #[error("GPU initialization error: {0}")]
-    GpuInitializationError(#[from] GpuInitializationError),
+    #[error("GPU initialization error")]
+    GpuInitializationError {
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
     
-    #[error("Metadata error: {0}")]
-    Metadata(#[from] MetadataError),
 
+
+    /// マスク
     #[error("Mask not found: {0}")]
     MaskNotFound(String),
 }
 
-/// Errors that can occur when reading a standard image format (JPEG, PNG, etc.).
-#[derive(Error, Debug)]
-pub enum ReadStandardImageError {
-    #[error("Failed to decode image: {0}")]
-    Decoding(#[from] image::ImageError),
+impl PhotoEditorError {
+    pub fn standard_image<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        PhotoEditorError::FailedToReadStandardImage {
+            source: Some(Box::new(e)),
+        }
+    }
 
-    #[error("Failed to create image from data: {0}")]
-    Shape(#[from] ndarray::ShapeError),
+    pub fn standard_image_no_source() -> Self {
+        PhotoEditorError::FailedToReadStandardImage { source: None }
+    }
 
-    #[error("Failed to read EXIF data: {0}")]
-    Exif(#[from] exif::Error),
+
+    pub fn raw_image<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        PhotoEditorError::FailedToReadRawImage {
+            source: Some(Box::new(e)),
+        }
+    }
+
+    pub fn raw_image_no_source() -> Self {
+        PhotoEditorError::FailedToReadRawImage { source: None }
+    }
+
+
+    pub fn save<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        PhotoEditorError::FailedToSaveImage {
+            source: Some(Box::new(e)),
+        }
+    }
+
+
+    pub fn save_no_source() -> Self {
+        PhotoEditorError::FailedToSaveImage { source: None }
+    }
+    
+    pub fn gpu_initialization<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        PhotoEditorError::GpuInitializationError {
+            source: Some(Box::new(e)),
+        }
+    }
+
+    pub fn gpu_initialization_no_source() -> Self {
+        PhotoEditorError::GpuInitializationError { source: None }
+    }
+
+    pub fn gpu_compute<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        PhotoEditorError::GpuComputeError {
+            source: Some(Box::new(e)),
+        }
+    }
+
+
+    pub fn gpu_compute_no_source() -> Self {
+        PhotoEditorError::GpuComputeError { source: None }
+    }
+    
 }
 
-/// Errors that can occur when reading a raw image format.
-#[derive(Error, Debug)]
-pub enum ReadRawImageError {
-    #[error("Failed to decode or process raw file: {0}")]
-    Rawler(#[from] rawler::RawlerError),
-
-    #[error("Failed to create image from data: {0}")]
-    Shape(#[from] ndarray::ShapeError),
-}
-
-/// Errors that can occur during image interpolation.
+/// Errors that can occur during interpolation.
 #[derive(Error, Debug)]
 pub enum InterpolationError {
     #[error("Input arrays must have the same length: x has {x_len}, y has {y_len}")]
@@ -85,57 +159,7 @@ pub enum InterpolationError {
 }
 
 
-/// Errors that can occur when saving an image.
-#[derive(Error, Debug)]
-pub enum SaveImageError {
-    #[error("I/O error during save: {0}")]
-    Io(#[from] io::Error),
-
-    #[error("Encoding error during save: {0}")]
-    Encoding(#[from] image::ImageError),
-}
-
-/// Errors related to initializing the GPU context (adapter, device).
-#[derive(Error, Debug)]
-pub enum GpuInitializationError {
-    #[error("Failed to get a suitable GPU adapter.")]
-    Adapter,
-    #[error("Failed to get a GPU device from the adapter: {0}")]
-    Device(#[from] wgpu::RequestDeviceError),
-}
-
-/// Errors that occur during GPU compute operations.
-#[derive(Error, Debug)]
-pub enum GpuComputeError {
-    #[error("wgpu API error: {0}")]
-    Wgpu(#[from] wgpu::Error),
-    
-    #[error("Device poll error: {0}")]
-    Poll(#[from] wgpu::PollError),
-
-    #[error("Failed to receive data from GPU: {0}")]
-    ChannelReceive(String),
-    
-    #[error("Asynchronous buffer mapping error: {0}")]
-    BufferAsync(#[from] wgpu::BufferAsyncError),
-    
-    #[error("Failed to create image from GPU data: {0}")]
-    Shape(#[from] ndarray::ShapeError),
-}
 
 
-/// Errors related to metadata processing.
-#[derive(Error, Debug)]
-pub enum MetadataError {
-    #[error("I/O error: {0}")]
-    Io(#[from] io::Error),
 
-    #[error("JSON serialization/deserialization error: {0}")]
-    Json(#[from] serde_json::Error),
 
-    #[error("Failed to read Exif data: {0}")]
-    Exif(#[from] exif::Error),
-
-    #[error("Command execution error: {0}")]
-    Command(String),
-}

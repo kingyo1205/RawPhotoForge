@@ -7,11 +7,8 @@ use std::ops::{Sub, Div, Mul, Add};
 use std::fmt::Debug;
 use std::cmp::Ordering;
 
-// エラー定義は既存のものを使用
 use crate::errors::InterpolationError; 
 
-/// Piecewise Cubic Hermite Interpolating Polynomial implementation.
-/// Generics kept as requested.
 pub fn pchip_interpolate<T>(
     x_pts: &Array1<T>, 
     y_pts: &Array1<T>, 

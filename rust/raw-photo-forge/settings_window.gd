@@ -7,14 +7,20 @@ const SETTINGS_FILE_PATH = "user://settings.json"
 @onready var ui_preview_size_line_edit: LineEdit = %UIPreviewSizeLineEdit
 @onready var drag_preview_size_slider: HSlider = %DragPreviewSizeSlider
 @onready var drag_preview_size_line_edit: LineEdit = %DragPreviewSizeLineEdit
-@onready var info_dialog: AcceptDialog = %InfoDialog
 @onready var language_option_button: OptionButton = %LanguageOptionButton
+@onready var device_option_button: OptionButton = %DeviceOptionButton
+@onready var info_dialog: AcceptDialog = %InfoDialog
+@onready var save_button: Button = %SaveButton
 
+var gpu_processor
 var settings: Dictionary = {}
 
 func _ready() -> void:
+	# main.gdのGpuProcessorノードを取得
+	gpu_processor = get_node("/root/Control/GpuProcessor")
+	
 	load_settings()
-	# ウィンドウが閉じられたときに非表示にする
+	
 	close_requested.connect(hide)
 	
 	# UI要素の初期値を設定から反映
@@ -27,15 +33,23 @@ func _ready() -> void:
 	drag_preview_size_line_edit.text_submitted.connect(_on_drag_preview_size_line_edit_submitted)
 
 	var tab_container = $VBoxContainer/TabContainer
-	tab_container.set_tab_title(0, tr("TR_SETTINGS_TAB_LANGUAGE"))
-	tab_container.set_tab_title(1, tr("TR_SETTINGS_TAB_IMAGE"))
+	tab_container.set_tab_title(0, tr("TR_DEVICE"))
+	tab_container.set_tab_title(1, tr("TR_SETTINGS_TAB_LANGUAGE"))
+	tab_container.set_tab_title(2, tr("TR_SETTINGS_TAB_IMAGE"))
 
 	# LanguageOptionButton setup
 	language_option_button.add_item("English")
 	language_option_button.set_item_metadata(0, "en")
 	language_option_button.add_item("日本語")
 	language_option_button.set_item_metadata(1, "ja")
-	language_option_button.item_selected.connect(_on_language_selected)
+	
+	# DeviceOptionButton setup
+	var adapters = gpu_processor.get_adapters()
+	for adapter in adapters:
+		device_option_button.add_item(adapter)
+	
+	# SaveButton connection
+	save_button.pressed.connect(_on_save_button_pressed)
 
 
 func show_and_center(min_size: Vector2i = Vector2i(0, 0)) -> void:
@@ -64,6 +78,7 @@ func load_settings() -> void:
 
 func _load_default_settings() -> void:
 	settings = {
+		"wgpu_adapter": 0,
 		"image": {
 			"ui_preview_size": 1280,
 			"drag_preview_size": 400
@@ -86,6 +101,10 @@ func _update_ui_from_settings() -> void:
 		if language_option_button.get_item_metadata(i) == locale:
 			language_option_button.select(i)
 			break
+			
+	var adapter_index = settings.get("wgpu_adapter", 0)
+	if adapter_index < device_option_button.item_count:
+		device_option_button.select(adapter_index)
 
 
 func save_settings() -> void:
@@ -93,20 +112,20 @@ func save_settings() -> void:
 		"ui_preview_size": int(ui_preview_size_line_edit.text),
 		"drag_preview_size": int(drag_preview_size_line_edit.text)
 	}
-	settings["locale"] = TranslationServer.get_locale()
+	settings["locale"] = language_option_button.get_item_metadata(language_option_button.selected)
+	settings["wgpu_adapter"] = device_option_button.selected
+	
+	# 新しいロケールを即座に適用
+	TranslationServer.set_locale(settings["locale"])
 	
 	var file = FileAccess.open(SETTINGS_FILE_PATH, FileAccess.WRITE)
 	var json_string = JSON.stringify(settings, "	")
 	file.store_string(json_string)
 
-func _on_save_button_pressed() -> void:
+func _on_save_button_pressed() -> void: # 復活
 	save_settings()
 	info_dialog.dialog_text = tr("TR_SETTINGS_SAVED_INFO")
 	info_dialog.popup_centered()
-
-func _on_language_selected(index: int) -> void:
-	var selected_locale = language_option_button.get_item_metadata(index)
-	TranslationServer.set_locale(selected_locale)
 
 func _on_ui_preview_size_slider_changed(value: float) -> void:
 	ui_preview_size_line_edit.text = str(int(value))
@@ -119,6 +138,7 @@ func _on_ui_preview_size_line_edit_submitted(new_text: String) -> void:
 	else:
 		# 不正な値の場合はスライダーの値に戻す
 		ui_preview_size_line_edit.text = str(int(ui_preview_size_slider.value))
+
 
 func _on_drag_preview_size_slider_changed(value: float) -> void:
 	drag_preview_size_line_edit.text = str(int(value))
