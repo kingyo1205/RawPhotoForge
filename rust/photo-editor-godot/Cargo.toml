@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 godot = "0.4.5"
 photo-editor = { path = "../photo-editor" }
-ndarray = "0.17.0" # photo-editorで使用されているバージョンに合わせる
-anyhow = "1.0.100" # photo-editorで使用されているバージョンに合わせる
+ndarray = "0.17.1"
+anyhow = "1.0.100"
 
 [lib]
 crate-type = ["cdylib"]

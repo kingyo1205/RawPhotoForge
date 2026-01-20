@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "rust/photo-editor",
+    "rust/photo-editor-godot",
+    "rust/photo-editor-test"
+]

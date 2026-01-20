@@ -13,6 +13,7 @@ build/
 # Rust
 # ==================
 target/
+photo-editor-test/
 
 # ==================
 # Godot
