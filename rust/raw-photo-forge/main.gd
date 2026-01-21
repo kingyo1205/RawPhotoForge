@@ -437,9 +437,15 @@ func _on_curve_changed(points: Array, key: String) -> void:
 	
 func _open_dialog():
 	var filters: PackedStringArray = [
-		"%s (*.jpg *.jpeg *.png *.webp *.tiff *.tif *.bmp *.gif *.heic *.avif *.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)" % tr("TR_SAVE_SUPPORT_IMAGE"),
-		"%s (*.jpg *.jpeg *.png *.webp *.tiff *.tif *.bmp *.gif *.heic *.avif)" % tr("TR_SAVE_STANDARD_IMAGE"),
-		"%s (*.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mestandardf *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)" % tr("TR_SAVE_RAW_IMAGE")
+		tr("TR_SAVE_SUPPORT_IMAGE")
+		+ " (*.jpeg *.jpg *.png *.webp *.tiff *.tif"
+		+ " *.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)",
+
+		tr("TR_SAVE_STANDARD_IMAGE")
+		+ " (*.jpeg *.jpg *.png *.webp *.tiff *.tif)",
+
+		tr("TR_SAVE_RAW_IMAGE")
+		+ " (*.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)"
 	]
 	DisplayServer.file_dialog_show(
 		tr("TR_MENU_OPEN"),
