@@ -122,7 +122,7 @@ func save_settings() -> void:
 	var json_string = JSON.stringify(settings, "	")
 	file.store_string(json_string)
 
-func _on_save_button_pressed() -> void: # 復活
+func _on_save_button_pressed() -> void:
 	save_settings()
 	info_dialog.dialog_text = tr("TR_SETTINGS_SAVED_INFO")
 	info_dialog.popup_centered()

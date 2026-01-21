@@ -96,13 +96,11 @@ var settings: Dictionary = {}
 
 
 
-@onready var file_dialog: FileDialog = $FileDialog
 
 @onready var save_dialog: Window = $SaveDialog
 @onready var format_option_button: OptionButton = $SaveDialog/VBoxContainer/HBoxContainer/FormatOptionButton
 @onready var save_button: Button = $SaveDialog/VBoxContainer/HBoxContainer2/SaveButton
 @onready var cancel_button: Button = $SaveDialog/VBoxContainer/HBoxContainer2/CancelButton
-@onready var save_file_dialog: FileDialog = $SaveFileDialog
 @onready var confirmation_dialog: ConfirmationDialog = $ConfirmationDialog
 @onready var control: Control = $'.'
 @onready var settings_window: Window = %SettingsWindow
@@ -205,12 +203,11 @@ func _ready() -> void:
 
 	tex_rect.gui_input.connect(_on_image_input)
 	
-	file_dialog.file_selected.connect(_open_image)
 
 	save_dialog.close_requested.connect(_on_save_dialog_cancel_pressed)
 	save_button.pressed.connect(_on_save_dialog_save_pressed)
 	cancel_button.pressed.connect(_on_save_dialog_cancel_pressed)
-	save_file_dialog.file_selected.connect(_on_save_file_selected)
+
 
 	format_option_button.add_item("JPEG")
 	format_option_button.set_item_metadata(0, "jpeg")
@@ -303,15 +300,28 @@ func _on_save_dialog_save_pressed() -> void:
 		filters.append("*.jpeg;%s" % tr("TR_JPEG_IMAGE"))
 	elif selected_format == "png":
 		filters.append("*.png;%s" % tr("TR_PNG_IMAGE"))
-	save_file_dialog.filters = filters
 	
 	
-	save_file_dialog.current_file = "%s_edited.%s" % [_original_filename_base, selected_format]
+	var save_file_name = "%s_edited.%s" % [_original_filename_base, selected_format]
+	DisplayServer.file_dialog_show(
+		tr("TR_MENU_SAVE"),
+		".",
+		save_file_name,
+		false,
+		DisplayServer.FILE_DIALOG_MODE_SAVE_FILE,
+		filters,
+		_on_save_file_selected
+	)
 	
-	save_file_dialog.popup_centered()
+	
+	
 
 
-func _on_save_file_selected(path: String) -> void:
+func _on_save_file_selected(status: bool, paths: PackedStringArray, _filter_index) -> void:
+	if not status:
+		return
+	
+	var path = paths[0]
 	var format = format_option_button.get_item_text(format_option_button.selected)
 	_set_editor_parameters(editor_full)
 	editor_full.apply_adjustments()
@@ -426,10 +436,25 @@ func _on_curve_changed(points: Array, key: String) -> void:
 	
 	
 func _open_dialog():
-	file_dialog.popup()
+	var filters: PackedStringArray = [
+		"%s (*.jpg *.jpeg *.png *.webp *.tiff *.tif *.bmp *.gif *.heic *.avif *.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)" % tr("TR_SAVE_SUPPORT_IMAGE"),
+		"%s (*.jpg *.jpeg *.png *.webp *.tiff *.tif *.bmp *.gif *.heic *.avif)" % tr("TR_SAVE_STANDARD_IMAGE"),
+		"%s (*.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mestandardf *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)" % tr("TR_SAVE_RAW_IMAGE")
+	]
+	DisplayServer.file_dialog_show(
+		tr("TR_MENU_OPEN"),
+		".",
+		"",
+		false,
+		DisplayServer.FILE_DIALOG_MODE_OPEN_FILE,
+		filters,
+		_open_image
+	)
+
 	
-func _open_image(path: String):
-	_load_image(path)
+func _open_image(status: bool, paths: PackedStringArray, _filter_index):
+	if status:
+		_load_image(paths[0])
 
 
 func _load_image(path: String):
