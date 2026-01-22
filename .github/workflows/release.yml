@@ -1,8 +1,8 @@
-name: build-test
+name: release
 
 on:
-  push:
-  pull_request:
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -82,9 +82,9 @@ jobs:
           mkdir godot-bin
           curl -L https://downloads.tuxfamily.org/godotengine/4.2/Godot_v4.2-stable_${{ matrix.godot_os }}.zip -o godot.zip
           unzip godot.zip -d godot-bin
-          chmod +x godot-bin/* || true
+          chmod +x godot-bin/*
 
-      - name: Godot headless export test
+      - name: Export Godot project
         working-directory: rust/raw-photo-forge
         run: |
           ../godot-bin/godot --headless \
@@ -92,8 +92,24 @@ jobs:
             ../../build/${{ matrix.exe_name }}
 
       # ----------------------------
-      # Result check
+      # Package
       # ----------------------------
-      - name: Check export result
+      - name: Package
         run: |
-          test -f build/${{ matrix.exe_name }} || (echo "export failed" && exit 1)
+          mkdir -p package/RawPhotoForge
+
+          cp build/${{ matrix.exe_name }} package/RawPhotoForge/
+          cp build/${{ matrix.exe_name }}.pck package/RawPhotoForge/ || true
+          cp rust/photo-editor-godot/rust_licenses.html package/RawPhotoForge/
+
+          cp -r rust/raw-photo-forge/addons package/RawPhotoForge/
+
+          zip -r RawPhotoForge_${{ github.ref_name }}_${{ matrix.os_name }}_${{ matrix.arch }}.zip package
+
+      # ----------------------------
+      # Upload to Release
+      # ----------------------------
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: RawPhotoForge_${{ github.ref_name }}_${{ matrix.os_name }}_${{ matrix.arch }}.zip
