@@ -14,6 +14,7 @@ jobs:
           - os: ubuntu-latest
             os_name: Ubuntu
             arch: x86_64
+            lib_prefix: lib
             lib_ext: so
             godot_os: linux
             addon_dir: Linux-x86_64
@@ -23,6 +24,7 @@ jobs:
           - os: windows-latest
             os_name: Windows
             arch: x86_64
+            lib_prefix: ""
             lib_ext: dll
             godot_os: windows
             addon_dir: Windows-x86_64
@@ -32,6 +34,7 @@ jobs:
           - os: macos-latest
             os_name: macOS
             arch: arm64
+            lib_prefix: lib
             lib_ext: dylib
             godot_os: macos
             addon_dir: macOS
@@ -71,7 +74,7 @@ jobs:
       # ----------------------------
       - name: Copy GDExtension
         run: |
-          cp rust/photo-editor-godot/target/release/libphoto_editor_godot.${{ matrix.lib_ext }} \
+          cp rust/photo-editor-godot/target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
              rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
 
       # ----------------------------
