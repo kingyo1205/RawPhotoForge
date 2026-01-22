@@ -1,0 +1,99 @@
+name: build-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_name: Ubuntu
+            arch: x86_64
+            lib_ext: so
+            godot_os: linux
+            addon_dir: Linux-x86_64
+            export_name: "Linux/X11"
+            exe_name: RawPhotoForge
+
+          - os: windows-latest
+            os_name: Windows
+            arch: x86_64
+            lib_ext: dll
+            godot_os: windows
+            addon_dir: Windows-x86_64
+            export_name: "Windows Desktop"
+            exe_name: RawPhotoForge.exe
+
+          - os: macos-latest
+            os_name: macOS
+            arch: arm64
+            lib_ext: dylib
+            godot_os: macos
+            addon_dir: macOS
+            export_name: "macOS"
+            exe_name: RawPhotoForge
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # ----------------------------
+      # checkout
+      # ----------------------------
+      - uses: actions/checkout@v4
+
+      # ----------------------------
+      # Rust
+      # ----------------------------
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-about
+        run: cargo install cargo-about
+
+      - name: Build Rust GDExtension
+        working-directory: rust/photo-editor-godot
+        run: cargo build --release
+
+      - name: Generate Rust licenses
+        working-directory: rust/photo-editor-godot
+        run: |
+          cargo about init || true
+          cargo about generate about.hbs > rust_licenses.html
+
+      # ----------------------------
+      # Copy GDExtension to Godot
+      # ----------------------------
+      - name: Copy GDExtension
+        run: |
+          cp rust/photo-editor-godot/target/release/libphoto_editor_godot.${{ matrix.lib_ext }} \
+             rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
+
+      # ----------------------------
+      # Godot
+      # ----------------------------
+      - name: Download Godot
+        run: |
+          mkdir godot-bin
+          curl -L https://downloads.tuxfamily.org/godotengine/4.2/Godot_v4.2-stable_${{ matrix.godot_os }}.zip -o godot.zip
+          unzip godot.zip -d godot-bin
+          chmod +x godot-bin/* || true
+
+      - name: Godot headless export test
+        working-directory: rust/raw-photo-forge
+        run: |
+          ../godot-bin/godot --headless \
+            --export-release "${{ matrix.export_name }}" \
+            ../../build/${{ matrix.exe_name }}
+
+      # ----------------------------
+      # Result check
+      # ----------------------------
+      - name: Check export result
+        run: |
+          test -f build/${{ matrix.exe_name }} || (echo "export failed" && exit 1)
