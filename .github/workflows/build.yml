@@ -6,6 +6,8 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         include:
@@ -36,8 +38,6 @@ jobs:
             export_name: "macOS"
             exe_name: RawPhotoForge
 
-    runs-on: ${{ matrix.os }}
-
     steps:
       # ----------------------------
       # checkout
@@ -57,14 +57,14 @@ jobs:
         run: cargo install cargo-about
 
       - name: Build Rust GDExtension
-        working-directory: rust/photo-editor-godot
-        run: cargo build --release
+        run: |
+          cd rust/photo-editor-godot
+          cargo build --release
 
       - name: Generate Rust licenses
-        working-directory: rust/photo-editor-godot
         run: |
           cargo about init || true
-          cargo about generate about.hbs > rust_licenses.html
+          cargo about generate about.hbs > rust/photo-editor-godot/rust_licenses.html
 
       # ----------------------------
       # Copy GDExtension to Godot
@@ -80,16 +80,16 @@ jobs:
       - name: Download Godot
         run: |
           mkdir godot-bin
-          curl -L https://downloads.tuxfamily.org/godotengine/4.2/Godot_v4.2-stable_${{ matrix.godot_os }}.zip -o godot.zip
+          curl -L https://downloads.tuxfamily.org/godotengine/4.5/Godot_v4.5-stable_${{ matrix.godot_os }}.zip -o godot.zip
           unzip godot.zip -d godot-bin
           chmod +x godot-bin/* || true
 
       - name: Godot headless export test
-        working-directory: rust/raw-photo-forge
         run: |
-          ../godot-bin/godot --headless \
+          mkdir -p build
+          ./godot-bin/godot --headless \
             --export-release "${{ matrix.export_name }}" \
-            ../../build/${{ matrix.exe_name }}
+            build/${{ matrix.exe_name }}
 
       # ----------------------------
       # Result check
