@@ -58,7 +58,7 @@ jobs:
 
       - name: Build Rust GDExtension
         working-directory: rust/photo-editor-godot
-        run: cargo build --release
+        run: cargo build --release --manifest-path Cargo.toml
 
       - name: Generate Rust licenses
         working-directory: rust/photo-editor-godot
