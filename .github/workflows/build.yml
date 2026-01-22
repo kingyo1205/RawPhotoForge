@@ -61,8 +61,7 @@ jobs:
 
       - name: Build Rust GDExtension
         run: |
-          cd rust/photo-editor-godot
-          cargo build --release
+          cargo build --release -p photo-editor-godot
 
       - name: Generate Rust licenses
         run: |
@@ -74,7 +73,7 @@ jobs:
       # ----------------------------
       - name: Copy GDExtension
         run: |
-          cp rust/photo-editor-godot/target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
+          cp target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
              rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
 
       # ----------------------------
