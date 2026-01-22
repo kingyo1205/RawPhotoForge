@@ -73,8 +73,10 @@ jobs:
       # ----------------------------
       - name: Copy GDExtension
         run: |
-          cp target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
-             rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
+            mkdir -p rust/raw-photo-forge/addons/photo_editor/libs
+            mkdir -p rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}
+            cp target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
+
 
       # ----------------------------
       # Godot
