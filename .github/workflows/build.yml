@@ -20,6 +20,7 @@ jobs:
             addon_dir: Linux-x86_64
             export_name: "Linux/X11"
             exe_name: RawPhotoForge
+            godot_asset: Godot_v4.5.1-stable_linux.x86_64.zip
 
           - os: windows-latest
             os_name: Windows
@@ -29,6 +30,7 @@ jobs:
             godot_os: windows
             addon_dir: Windows-x86_64
             export_name: "Windows Desktop"
+            godot_asset: Godot_v4.5.1-stable_win64.exe.zip
             exe_name: RawPhotoForge.exe
 
           - os: macos-latest
@@ -39,6 +41,7 @@ jobs:
             godot_os: macos
             addon_dir: macOS
             export_name: "macOS"
+            godot_asset: Godot_v4.5.1-stable_macos.universal.zip
             exe_name: RawPhotoForge
 
     steps:
@@ -84,7 +87,9 @@ jobs:
       - name: Download Godot
         run: |
           mkdir godot-bin
-          curl -L https://downloads.tuxfamily.org/godotengine/4.5/Godot_v4.5-stable_${{ matrix.godot_os }}.zip -o godot.zip
+          curl -L \
+            https://github.com/godotengine/godot/releases/download/4.5.1-stable/${{ matrix.godot_asset }} \
+            -o godot.zip
           unzip godot.zip -d godot-bin
           chmod +x godot-bin/* || true
 
