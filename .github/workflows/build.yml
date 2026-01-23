@@ -6,131 +6,268 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            platform_name: Linux
-            bin_name: RawPhotoForge.x86_64
-            lib_name: libphoto_editor_godot.so
+            os_name: Ubuntu
+            arch: x86_64
+            lib_prefix: lib
+            lib_ext: so
             addon_dir: Linux-x86_64
-          - os: windows-latest
-            platform_name: Windows
-            bin_name: RawPhotoForge.exe
-            lib_name: photo_editor_godot.dll
-            addon_dir: Windows-x86_64
-          - os: macos-latest
-            platform_name: macOS
-            bin_name: RawPhotoForge.zip
-            lib_name: libphoto_editor_godot.dylib
-            addon_dir: macOS
+            export_name: Linux
+            exe_name: RawPhotoForge.x86_64
+            godot_asset: Godot_v4.5.1-stable_linux.x86_64.zip
+            godot_template_dir: ~/.local/share/godot/export_templates/4.5.1.stable
 
-    runs-on: ${{ matrix.os }}
+          - os: windows-latest
+            os_name: Windows
+            arch: x86_64
+            lib_prefix: ""
+            lib_ext: dll
+            addon_dir: Windows-x86_64
+            export_name: Windows Desktop
+            exe_name: RawPhotoForge.exe
+            godot_asset: Godot_v4.5.1-stable_win64.exe.zip
+            godot_template_dir: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+
+          - os: macos-latest
+            os_name: macOS
+            arch: arm64
+            lib_prefix: lib
+            lib_ext: dylib
+            addon_dir: macOS
+            export_name: macOS
+            exe_name: RawPhotoForge.app
+            godot_asset: Godot_v4.5.1-stable_macos.universal.zip
+            godot_template_dir: ~/Library/Application Support/Godot/export_templates/4.5.1.stable
 
     steps:
-      - uses: actions/checkout@v4
+      # ----------------------------
+      # Checkout
+      # ----------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       # ----------------------------
-      # Rust Setup & Build
+      # Rust setup and build
       # ----------------------------
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
+        uses: actions-rs/toolchain@v1
         with:
-          workspaces: "rust -> target"
+          toolchain: stable
+          override: true
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build Rust GDExtension
         run: cargo build --release -p photo-editor-godot
 
       # ----------------------------
-      # GDExtension Library Placement
+      # Copy GDExtension library
       # ----------------------------
-      - name: Copy Library to Godot Project
+      - name: Create addon libs directory
         shell: bash
         run: |
-          DEST="rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}"
-          mkdir -p "$DEST"
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/release/${{ matrix.lib_name }} "$DEST/libphoto_editor_godot.dll"
-          else
-            cp target/release/${{ matrix.lib_name }} "$DEST/libphoto_editor_godot.${{ matrix.os == 'ubuntu-latest' && 'so' || 'dylib' }}"
+          mkdir -p rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}
+
+      - name: Copy GDExtension library
+        shell: bash
+        run: |
+          cp target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
+             rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
+
+      - name: Verify library exists
+        shell: bash
+        run: |
+          if [ ! -f "rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}" ]; then
+            echo "Error: Library not found"
+            exit 1
           fi
 
       # ----------------------------
-      # Godot Engine & Templates Setup
+      # Download and setup Godot
       # ----------------------------
-      - name: Cache Godot Engine
-        id: cache-godot
-        uses: actions/cache@v4
-        with:
-          path: godot-bin
-          key: ${{ runner.os }}-godot-4.5.1
-
       - name: Download Godot
-        if: steps.cache-godot.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          mkdir godot-bin
-          GODOT_VER="4.5.1-stable"
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            URL="https://github.com/godotengine/godot/releases/download/${GODOT_VER}/Godot_v${GODOT_VER}_linux.x86_64.zip"
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            URL="https://github.com/godotengine/godot/releases/download/${GODOT_VER}/Godot_v${GODOT_VER}_win64.exe.zip"
-          else
-            URL="https://github.com/godotengine/godot/releases/download/${GODOT_VER}/Godot_v${GODOT_VER}_macos.universal.zip"
-          fi
-          curl -L "$URL" -o godot.zip
-          unzip godot.zip -d godot-bin
-          rm godot.zip
+          mkdir -p godot-bin
+          curl -L \
+            https://github.com/godotengine/godot/releases/download/4.5.1-stable/${{ matrix.godot_asset }} \
+            -o godot.zip
 
-      - name: Setup Godot Binary Path
+      - name: Extract Godot
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            echo "GODOT_BIN=$(find godot-bin -name "Godot_v*" -type f)" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            echo "GODOT_BIN=$(find godot-bin -name "*_console.exe" -type f)" >> $GITHUB_ENV
-          else
-            echo "GODOT_BIN=$(find godot-bin -path "*/Contents/MacOS/Godot" -type f)" >> $GITHUB_ENV
-          fi
+          unzip -q godot.zip -d godot-bin
 
-      - name: Install Export Templates
+      - name: Find and setup Godot executable (Ubuntu)
+        if: matrix.os_name == 'Ubuntu'
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            TEMPLATE_DIR="$APPDATA/Godot/export_templates/4.5.1.stable"
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            TEMPLATE_DIR="$HOME/Library/Application Support/Godot/export_templates/4.5.1.stable"
-          else
-            TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.5.1.stable"
+          GODOT_PATH=$(find godot-bin -type f -name "Godot_v*" | head -n 1)
+          if [ -z "$GODOT_PATH" ]; then
+            echo "Error: Godot executable not found"
+            exit 1
           fi
+          chmod +x "$GODOT_PATH"
+          mv "$GODOT_PATH" godot-bin/godot
+          echo "GODOT_BIN=./godot-bin/godot" >> $GITHUB_ENV
+
+      - name: Find and setup Godot executable (Windows)
+        if: matrix.os_name == 'Windows'
+        shell: bash
+        run: |
+          GODOT_PATH=$(find godot-bin -type f -name "*_console.exe" | head -n 1)
+          if [ -z "$GODOT_PATH" ]; then
+            echo "Error: Godot executable not found"
+            exit 1
+          fi
+          mv "$GODOT_PATH" godot-bin/godot.exe
+          echo "GODOT_BIN=./godot-bin/godot.exe" >> $GITHUB_ENV
+
+      - name: Find and setup Godot executable (macOS)
+        if: matrix.os_name == 'macOS'
+        shell: bash
+        run: |
+          GODOT_PATH=$(find godot-bin -type f -path "*/Contents/MacOS/Godot" | head -n 1)
+          if [ -z "$GODOT_PATH" ]; then
+            echo "Error: Godot executable not found"
+            exit 1
+          fi
+          chmod +x "$GODOT_PATH"
+          ln -s "$GODOT_PATH" godot-bin/godot
+          echo "GODOT_BIN=./godot-bin/godot" >> $GITHUB_ENV
+
+      # ----------------------------
+      # Install Godot export templates
+      # ----------------------------
+      - name: Download export templates
+        shell: bash
+        run: |
+          curl -L \
+            https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz \
+            -o templates.tpz
+
+      - name: Install export templates (Unix)
+        if: matrix.os_name != 'Windows'
+        shell: bash
+        run: |
+          TEMPLATE_DIR="${{ matrix.godot_template_dir }}"
           mkdir -p "$TEMPLATE_DIR"
-          curl -L https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz -o templates.tpz
-          unzip templates.tpz -d "$TEMPLATE_DIR"
-          mv "$TEMPLATE_DIR/templates/"* "$TEMPLATE_DIR/"
-          rm -rf "$TEMPLATE_DIR/templates"
+          unzip -q templates.tpz -d template_tmp
+          mv template_tmp/templates/* "$TEMPLATE_DIR/"
+          rm -rf template_tmp
 
-      # ----------------------------
-      # Export Test
-      # ----------------------------
-      - name: Godot Export Build Test
+      - name: Install export templates (Windows)
+        if: matrix.os_name == 'Windows'
         shell: bash
         run: |
-          chmod +x ${{ env.GODOT_BIN }}
+          TEMPLATE_DIR="${{ matrix.godot_template_dir }}"
+          mkdir -p "$TEMPLATE_DIR"
+          unzip -q templates.tpz -d template_tmp
+          cp -r template_tmp/templates/* "$TEMPLATE_DIR/"
+          rm -rf template_tmp
+
+      # ----------------------------
+      # Godot project validation
+      # ----------------------------
+      - name: Import Godot project
+        shell: bash
+        run: |
           cd rust/raw-photo-forge
-          mkdir -p build/${{ matrix.platform_name }}
-          "${{ env.GODOT_BIN }}" --headless --editor --quit || true
-          "${{ env.GODOT_BIN }}" --headless --export-release "${{ matrix.platform_name }}"
+          ${{ env.GODOT_BIN }} --headless --editor --quit --verbose || true
 
-      - name: Verify Build Output
+      - name: Wait for import completion
+        shell: bash
+        run: sleep 5
+
+      # ----------------------------
+      # Export test
+      # ----------------------------
+      - name: Create build directory
         shell: bash
         run: |
-          # プリセットで指定したパスにファイルが存在するか確認
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
-             ls -R rust/raw-photo-forge/build/macos/
-          else
-             test -f rust/raw-photo-forge/build/${{ matrix.platform_name == 'Linux' && 'linux' || 'windows' }}/${{ matrix.bin_name }}
+          mkdir -p rust/raw-photo-forge/build
+
+      - name: Test Godot export
+        shell: bash
+        run: |
+          cd rust/raw-photo-forge
+          ${{ env.GODOT_BIN }} --headless \
+            --export-release "${{ matrix.export_name }}" \
+            build/${{ matrix.exe_name }} \
+            --verbose
+
+      # ----------------------------
+      # Verify export result
+      # ----------------------------
+      - name: Check export result (Unix)
+        if: matrix.os_name != 'macOS'
+        shell: bash
+        run: |
+          if [ ! -f "rust/raw-photo-forge/build/${{ matrix.exe_name }}" ]; then
+            echo "Error: Export failed - executable not found"
+            exit 1
+          fi
+          echo "Export successful: ${{ matrix.exe_name }}"
+
+      - name: Check export result (macOS)
+        if: matrix.os_name == 'macOS'
+        shell: bash
+        run: |
+          if [ ! -d "rust/raw-photo-forge/build/${{ matrix.exe_name }}" ]; then
+            echo "Error: Export failed - .app bundle not found"
+            exit 1
+          fi
+          if [ ! -f "rust/raw-photo-forge/build/${{ matrix.exe_name }}/Contents/MacOS/RawPhotoForge" ]; then
+            echo "Error: Export failed - executable not found in .app bundle"
+            exit 1
+          fi
+          echo "Export successful: ${{ matrix.exe_name }}"
+
+      # ----------------------------
+      # Debug information on failure
+      # ----------------------------
+      - name: Debug - Show directory structure
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Addon directory structure ==="
+          ls -lR rust/raw-photo-forge/addons/ || true
+          echo ""
+          echo "=== Build directory structure ==="
+          ls -lR rust/raw-photo-forge/build/ || true
+          echo ""
+          echo "=== Target directory structure ==="
+          ls -lR target/release/ || true
+
+      - name: Debug - Show Godot logs
+        if: failure()
+        shell: bash
+        run: |
+          if [ -f "$HOME/.local/share/godot/app_userdata/RawPhotoForge/logs/godot.log" ]; then
+            echo "=== Godot log (Linux) ==="
+            cat "$HOME/.local/share/godot/app_userdata/RawPhotoForge/logs/godot.log"
+          fi
+          if [ -f "$HOME/AppData/Roaming/Godot/app_userdata/RawPhotoForge/logs/godot.log" ]; then
+            echo "=== Godot log (Windows) ==="
+            cat "$HOME/AppData/Roaming/Godot/app_userdata/RawPhotoForge/logs/godot.log"
+          fi
+          if [ -f "$HOME/Library/Application Support/Godot/app_userdata/RawPhotoForge/logs/godot.log" ]; then
+            echo "=== Godot log (macOS) ==="
+            cat "$HOME/Library/Application Support/Godot/app_userdata/RawPhotoForge/logs/godot.log"
           fi
