@@ -85,20 +85,46 @@ jobs:
       # Godot
       # ----------------------------
       - name: Download Godot
+        shell: bash
         run: |
           mkdir godot-bin
           curl -L \
             https://github.com/godotengine/godot/releases/download/4.5.1-stable/${{ matrix.godot_asset }} \
             -o godot.zip
           unzip godot.zip -d godot-bin
-          chmod +x godot-bin/* || true
+
+          if [ "${{ matrix.os_name }}" = "Ubuntu" ]; then
+            GODOT_PATH=$(find godot-bin -type f -name "Godot_v*" | head -n 1)
+          elif [ "${{ matrix.os_name }}" = "Windows" ]; then
+            GODOT_PATH=$(find godot-bin -type f -name "*_console.exe" | head -n 1)
+          else
+            GODOT_PATH=$(find godot-bin -type f -path "*/Contents/MacOS/*" | head -n 1)
+          fi
+
+          if [ -z "$GODOT_PATH" ]; then
+            echo "Godot executable not found"
+            exit 1
+          fi
+
+          chmod +x "$GODOT_PATH"
+          mv "$GODOT_PATH" godot-bin/godot
+
+
+      - name: Godot editor validation
+        shell: bash
+        run: |
+          cd rust/raw-photo-forge
+          ../../godot-bin/godot --headless --editor --quit --verbose
 
       - name: Godot headless export test
+        shell: bash
         run: |
+          cd rust/raw-photo-forge
           mkdir -p build
-          ./godot-bin/godot --headless \
+          ../../godot-bin/godot --headless \
             --export-release "${{ matrix.export_name }}" \
             build/${{ matrix.exe_name }}
+
 
       # ----------------------------
       # Result check
@@ -106,3 +132,9 @@ jobs:
       - name: Check export result
         run: |
           test -f build/${{ matrix.exe_name }} || (echo "export failed" && exit 1)
+
+      - name: Debug tree
+        if: failure()
+        run: |
+          tree rust/raw-photo-forge/addons || true
+          tree rust/photo-editor-godot/target || true
