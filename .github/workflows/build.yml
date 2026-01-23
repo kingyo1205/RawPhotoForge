@@ -37,7 +37,7 @@ jobs:
 
           - os: macos-latest
             os_name: macOS
-            arch: arm64
+            arch: universal
             lib_prefix: lib
             lib_ext: dylib
             addon_dir: macOS
