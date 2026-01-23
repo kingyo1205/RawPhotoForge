@@ -63,6 +63,18 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Install tree (Ubuntu)
+        if: matrix.os_name == 'Ubuntu'
+        run: sudo apt-get update && sudo apt-get install -y tree
+
+      - name: Install tree (Windows)
+        if: matrix.os_name == 'Windows'
+        run: choco install tree
+
+      - name: Install tree (macOS)
+        if: matrix.os_name == 'macOS'
+        run: brew install tree
+
       - name: Install cargo-about
         run: cargo install cargo-about
 
@@ -72,7 +84,7 @@ jobs:
       - name: Generate Rust licenses
         run: |
           cargo about init || true
-          cargo about generate about.hbs > rust/photo-editor-godot/rust_licenses.html
+          cargo about generate about.hbs -o rust/photo-editor-godot/rust_licenses.html
 
       # ----------------------------
       # Copy GDExtension to addon directory
@@ -173,7 +185,7 @@ jobs:
       - name: Create build directory
         shell: bash
         run: |
-          mkdir -p build/RawPhotoForge_v1.0.0-alpha_${{ matrix.os_name }}_${{ matrix.arch }}
+          mkdir -p build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}
 
       - name: Export project
         shell: bash
@@ -181,7 +193,7 @@ jobs:
           cd rust/raw-photo-forge
           ../../godot-download/${{ matrix.godot_exec_name }} --headless \
             --export-release "${{ matrix.export_name }}" \
-            ../../build/RawPhotoForge_v1.0.0-alpha_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }}
+            ../../build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }}
 
       # ----------------------------
       # Verify Export Success
@@ -191,11 +203,11 @@ jobs:
         run: |
           if [ "${{ matrix.os_name }}" = "macOS" ]; then
             # macOSの場合は.appディレクトリの存在を確認
-            test -d build/RawPhotoForge_v1.0.0-alpha_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
+            test -d build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
               (echo "Export failed: .app bundle not found" && exit 1)
           else
             # LinuxとWindowsの場合は実行ファイルの存在を確認
-            test -f build/RawPhotoForge_v1.0.0-alpha_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
+            test -f build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
               (echo "Export failed: executable not found" && exit 1)
           fi
 
@@ -203,7 +215,7 @@ jobs:
         shell: bash
         run: |
           echo "Exported files:"
-          ls -lh build/RawPhotoForge_v1.0.0-alpha_${{ matrix.os_name }}_${{ matrix.arch }}/
+          ls -lh build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/
 
       # ----------------------------
       # Debug Info (失敗時のみ)
@@ -230,3 +242,11 @@ jobs:
         run: |
           echo "=== Godot editor log ==="
           cat rust/raw-photo-forge/.godot/editor/editor.log || true
+
+      - name: Build successful
+        run: |
+          echo "All builds and tests passed successfully!"
+
+      - name: Display directory structure
+        if: always()
+        run: tree -L 3 .
