@@ -1,0 +1,258 @@
+name: build-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_name: Ubuntu
+            arch: x86_64
+            lib_prefix: lib
+            lib_ext: so
+            addon_dir: Linux-x86_64
+            export_name: Linux
+            exe_name: RawPhotoForge.x86_64
+            godot_asset: Godot_v4.5.1-stable_linux.x86_64.zip
+            godot_exec_name: Godot_v4.5.1-stable_linux.x86_64
+            template_dir_suffix: .local/share/godot/export_templates/4.5.1.stable
+
+          - os: windows-latest
+            os_name: Windows
+            arch: x86_64
+            lib_prefix: ""
+            lib_ext: dll
+            addon_dir: Windows-x86_64
+            export_name: Windows
+            exe_name: RawPhotoForge.exe
+            godot_asset: Godot_v4.5.1-stable_win64.exe.zip
+            godot_exec_name: Godot_v4.5.1-stable_win64_console.exe
+            template_dir_suffix: AppData/Roaming/Godot/export_templates/4.5.1.stable
+
+          - os: macos-latest
+            os_name: macOS
+            arch: universal
+            lib_prefix: lib
+            lib_ext: dylib
+            addon_dir: macOS
+            export_name: macOS
+            exe_name: RawPhotoForge.app
+            godot_asset: Godot_v4.5.1-stable_macos.universal.zip
+            godot_exec_name: Godot.app/Contents/MacOS/Godot
+            template_dir_suffix: Library/Application Support/Godot/export_templates/4.5.1.stable
+
+    steps:
+      # ----------------------------
+      # Checkout
+      # ----------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----------------------------
+      # Rust Setup and Build
+      # ----------------------------
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install tree (Ubuntu)
+        if: matrix.os_name == 'Ubuntu'
+        run: sudo apt-get update && sudo apt-get install -y tree
+
+      - name: Install tree (Windows)
+        if: matrix.os_name == 'Windows'
+        run: choco install tree
+
+      - name: Install tree (macOS)
+        if: matrix.os_name == 'macOS'
+        run: brew install tree
+
+      - name: Install cargo-about
+        run: cargo install cargo-about
+
+      - name: Build Rust GDExtension
+        run: cargo build --release -p photo-editor-godot
+
+      - name: Generate Rust licenses
+        run: |
+          cargo about init || true
+          cargo about generate about.hbs -o rust/photo-editor-godot/rust_licenses.html
+
+      # ----------------------------
+      # Copy GDExtension to addon directory
+      # ----------------------------
+      - name: Create addon directory
+        shell: bash
+        run: |
+          mkdir -p rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}
+
+      - name: Copy GDExtension library
+        shell: bash
+        run: |
+          cp target/release/${{ matrix.lib_prefix }}photo_editor_godot.${{ matrix.lib_ext }} \
+             rust/raw-photo-forge/addons/photo_editor/libs/${{ matrix.addon_dir }}/libphoto_editor_godot.${{ matrix.lib_ext }}
+
+      # ----------------------------
+      # Download and Setup Godot
+      # ----------------------------
+      - name: Download Godot
+        shell: bash
+        run: |
+          mkdir -p godot-download
+          curl -L \
+            https://github.com/godotengine/godot/releases/download/4.5.1-stable/${{ matrix.godot_asset }} \
+            -o godot-download/godot.zip
+
+      - name: Extract Godot (Linux)
+        if: matrix.os_name == 'Ubuntu'
+        shell: bash
+        run: |
+          cd godot-download
+          unzip godot.zip
+          chmod +x ${{ matrix.godot_exec_name }}
+
+      - name: Extract Godot (Windows)
+        if: matrix.os_name == 'Windows'
+        shell: bash
+        run: |
+          cd godot-download
+          unzip godot.zip
+
+      - name: Extract Godot (macOS)
+        if: matrix.os_name == 'macOS'
+        shell: bash
+        run: |
+          cd godot-download
+          unzip godot.zip
+          chmod +x ${{ matrix.godot_exec_name }}
+
+      # ----------------------------
+      # Download and Install Export Templates
+      # ----------------------------
+      - name: Download export templates
+        shell: bash
+        run: |
+          curl -L \
+            https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz \
+            -o templates.tpz
+
+      - name: Install export templates (Linux/macOS)
+        if: matrix.os_name != 'Windows'
+        shell: bash
+        run: |
+          TEMPLATE_DIR="$HOME/${{ matrix.template_dir_suffix }}"
+          mkdir -p "$TEMPLATE_DIR"
+          unzip templates.tpz -d "$TEMPLATE_DIR"
+          # テンプレートディレクトリの構造を修正
+          if [ -d "$TEMPLATE_DIR/templates" ]; then
+            mv "$TEMPLATE_DIR/templates"/* "$TEMPLATE_DIR/"
+            rmdir "$TEMPLATE_DIR/templates"
+          fi
+
+      - name: Install export templates (Windows)
+        if: matrix.os_name == 'Windows'
+        shell: bash
+        run: |
+          TEMPLATE_DIR="$HOME/${{ matrix.template_dir_suffix }}"
+          mkdir -p "$TEMPLATE_DIR"
+          unzip templates.tpz -d "$TEMPLATE_DIR"
+          # テンプレートディレクトリの構造を修正
+          if [ -d "$TEMPLATE_DIR/templates" ]; then
+            mv "$TEMPLATE_DIR/templates"/* "$TEMPLATE_DIR/" || true
+            rmdir "$TEMPLATE_DIR/templates" || true
+          fi
+
+      # ----------------------------
+      # Godot Editor Import (必要なリソースをインポート)
+      # ----------------------------
+      - name: Import Godot project resources
+        shell: bash
+        run: |
+          cd rust/raw-photo-forge
+          ../../godot-download/${{ matrix.godot_exec_name }} --headless --editor --quit --verbose || true
+
+      # ----------------------------
+      # Godot Export Test
+      # ----------------------------
+      - name: Create build directory
+        shell: bash
+        run: |
+          mkdir -p build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}
+
+      - name: Export project
+        shell: bash
+        run: |
+          cd rust/raw-photo-forge
+          ../../godot-download/${{ matrix.godot_exec_name }} --headless \
+            --export-release "${{ matrix.export_name }}" \
+            ../../build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }}
+
+      # ----------------------------
+      # Verify Export Success
+      # ----------------------------
+      - name: Verify exported file exists
+        shell: bash
+        run: |
+          if [ "${{ matrix.os_name }}" = "macOS" ]; then
+            # macOSの場合は.appディレクトリの存在を確認
+            test -d build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
+              (echo "Export failed: .app bundle not found" && exit 1)
+          else
+            # LinuxとWindowsの場合は実行ファイルの存在を確認
+            test -f build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/${{ matrix.exe_name }} || \
+              (echo "Export failed: executable not found" && exit 1)
+          fi
+
+      - name: List exported files
+        shell: bash
+        run: |
+          echo "Exported files:"
+          ls -lh build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RawPhotoForge-${{ matrix.os_name }}-${{ matrix.arch }}
+          path: build/RawPhotoForge_${{ matrix.os_name }}_${{ matrix.arch }}/
+
+      # ----------------------------
+      # Debug Info (失敗時のみ)
+      # ----------------------------
+      - name: Debug - Show directory structure
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Addon directory ==="
+          find rust/raw-photo-forge/addons -type f || true
+          echo ""
+          echo "=== Build directory ==="
+          find build -type f || true
+          echo ""
+          echo "=== Godot directory ==="
+          ls -la godot-download/ || true
+          echo ""
+          echo "=== Template directory ==="
+          find "$HOME/${{ matrix.template_dir_suffix }}" -type f || true
+
+      - name: Debug - Show Godot logs
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Godot editor log ==="
+          cat rust/raw-photo-forge/.godot/editor/editor.log || true
+
+      - name: Build successful
+        run: |
+          echo "All builds and tests passed successfully!"
+
+      - name: Display directory structure
+        if: always()
+        run: tree -L 3 .

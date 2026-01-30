@@ -4,3 +4,5 @@ entry_symbol = "gdext_rust_init"
 
 [libraries]
 linux.x86_64 = "res://addons/photo_editor/libs/Linux-x86_64/libphoto_editor_godot.so"
+windows.x86_64 = "res://addons/photo_editor/libs/Windows-x86_64/libphoto_editor_godot.dll"
+macos.universal = "res://addons/photo_editor/libs/macOS/libphoto_editor_godot.dylib"
