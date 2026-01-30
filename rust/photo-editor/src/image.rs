@@ -1,12 +1,10 @@
-// image.rs
 
-
-use std::io::{Cursor};
+use std::io::Cursor;
+use std::sync::Arc;
 use image;
 use ndarray::{Array3, ShapeError};
 use rawler::{decoders, rawsource, imgop};
 use exif::{Reader as ExifReader, Tag};
-
 use crate::errors::PhotoEditorError;
 use crate::metadata;
 
@@ -153,91 +151,236 @@ impl ImageFormat {
     
 }
 
-#[derive(Clone)]
 pub struct Image {
-    pub data: Array3<f32>,
-    pub height: usize,
-    pub width: usize
+    pub texture: wgpu::Texture,
+    pub width: u32,
+    pub height: u32,
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
+}
+
+impl Clone for Image {
+    fn clone(&self) -> Self {
+        let new_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Cloned Texture"),
+            size: wgpu::Extent3d {
+                width: self.width,
+                height: self.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Clone Encoder"),
+        });
+
+        encoder.copy_texture_to_texture(
+            self.texture.as_image_copy(),
+            new_texture.as_image_copy(),
+            wgpu::Extent3d {
+                width: self.width,
+                height: self.height,
+                depth_or_array_layers: 1,
+            },
+        );
+
+        self.queue.submit(Some(encoder.finish()));
+
+        Self {
+            texture: new_texture,
+            width: self.width,
+            height: self.height,
+            device: self.device.clone(),
+            queue: self.queue.clone(),
+        }
+    }
 }
 
 
 impl Image {
-
-
-    pub fn new(data: Array3<f32>, height: usize, width: usize) -> Image {
-        Image {
-            data,
+    pub fn new(
+        device: Arc<wgpu::Device>,
+        queue: Arc<wgpu::Queue>,
+        rgb_data: &[f32],
+        width: u32,
+        height: u32,
+    ) -> Image {
+        let texture_size = wgpu::Extent3d {
+            width,
             height,
-            width
-        }
-    }
-
-    pub fn new_from_vec(image_vec: Vec<f32>, height: usize, width: usize) -> Result<Image, ShapeError> {
-        let image = Image {
-            data: Array3::from_shape_vec((height, width, 3), image_vec)?,
-            height,
-            width
+            depth_or_array_layers: 1,
         };
-        Ok(image)
-    }
 
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Image Texture"),
+            size: texture_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        
+        if !rgb_data.is_empty() {
+            let rgba_data: Vec<f32> = rgb_data
+                .chunks_exact(3)
+                .flat_map(|c| [c[0], c[1], c[2], 1.0])
+                .collect();
 
-    pub fn to_flat_vec(&self) -> Vec<f32> {
-        self.data.iter().map(|v| v.clone()).collect()
-    }
-
-
-    pub fn to_array3(&self) -> Array3<f32> {
-        self.data.clone()
-    }
-
-    pub fn to_array3_u8(&self) -> Array3<u8> {
-        let mut array3 = Array3::zeros((self.height, self.width, 3));
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let r = (self.data[[y, x, 0]].clamp(0.0, 1.0) * 255.0) as u8;
-                let g = (self.data[[y, x, 1]].clamp(0.0, 1.0) * 255.0) as u8;
-                let b = (self.data[[y, x, 2]].clamp(0.0, 1.0) * 255.0) as u8;
-                array3[[y, x, 0]] = r;
-                array3[[y, x, 1]] = g;
-                array3[[y, x, 2]] = b;
-            }
-        }
-        array3
-    }
-
-    pub fn to_u8_rgbimage(&self) -> image::RgbImage {
-        let (h, w, c) = self.data.dim();
-        assert_eq!(c, 3, "チャンネルは3(RGB)である必要がある");
-
-        let mut img = image::RgbImage::new(w as u32, h as u32);
-
-        for y in 0..h {
-            for x in 0..w {
-                let r = (self.data[[y, x, 0]].clamp(0.0, 1.0) * 255.0) as u8;
-                let g = (self.data[[y, x, 1]].clamp(0.0, 1.0) * 255.0) as u8;
-                let b = (self.data[[y, x, 2]].clamp(0.0, 1.0) * 255.0) as u8;
-                img.put_pixel(x as u32, y as u32, image::Rgb([r, g, b]));
-            }
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                bytemuck::cast_slice(&rgba_data),
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(4 * 4 * width),
+                    rows_per_image: Some(height),
+                },
+                texture_size,
+            );
         }
 
-        img
+        Image {
+            texture,
+            width,
+            height,
+            device,
+            queue,
+        }
+    }
+
+    pub fn new_from_vec(
+        device: Arc<wgpu::Device>,
+        queue: Arc<wgpu::Queue>,
+        image_vec: Vec<f32>,
+        height: usize,
+        width: usize,
+    ) -> Result<Image, ShapeError> {
+        Ok(Image::new(
+            device,
+            queue,
+            &image_vec,
+            width as u32,
+            height as u32,
+        ))
+    }
+
+    pub fn to_flat_vec(&self) -> Result<Vec<f32>, PhotoEditorError> {
+        let texture_size = self.texture.size();
+
+        // RGBA (4) * f32 (4 bytes)
+        const BYTES_PER_PIXEL: u32 = 16;
+        // wgpu requires that bytes_per_row be a multiple of 256
+        const ALIGNMENT: u32 = 256;
+
+        let unaligned_bytes_per_row = BYTES_PER_PIXEL * self.width;
+        let aligned_bytes_per_row = (unaligned_bytes_per_row + ALIGNMENT - 1) & !(ALIGNMENT - 1);
+
+        let buffer_size = (aligned_bytes_per_row * self.height) as u64;
+
+        let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Image Readback Buffer"),
+            size: buffer_size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Readback Encoder"),
+        });
+
+        encoder.copy_texture_to_buffer(
+            self.texture.as_image_copy(),
+            wgpu::TexelCopyBufferInfo  {
+                buffer: &output_buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(aligned_bytes_per_row),
+                    rows_per_image: Some(self.height),
+                },
+            },
+            texture_size,
+        );
+
+        self.queue.submit(Some(encoder.finish()));
+
+        let buffer_slice = output_buffer.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
+            tx.send(result).unwrap();
+        });
+
+        self.device.poll(wgpu::PollType::Wait { submission_index: None, timeout: None }).map_err(PhotoEditorError::gpu_compute)?;
+
+        rx.recv().map_err(PhotoEditorError::gpu_compute)?.map_err(PhotoEditorError::gpu_compute)?;
+        
+        let data = buffer_slice.get_mapped_range();
+        let mut rgb_data = Vec::with_capacity((self.width * self.height * 3) as usize);
+
+        for row_bytes in data.chunks(aligned_bytes_per_row as usize) {
+            // Take the slice of the row that contains actual image data, excluding padding
+            let data_row = &row_bytes[..unaligned_bytes_per_row as usize];
+            let row_f32: &[f32] = bytemuck::cast_slice(data_row);
+            
+            // Convert RGBA to RGB
+            rgb_data.extend(
+                row_f32
+                    .chunks_exact(4)
+                    .flat_map(|c| [c[0], c[1], c[2]])
+            );
+        }
+        
+        Ok(rgb_data)
+    }
+
+
+    pub fn to_array3(&self) -> Result<Array3<f32>, PhotoEditorError> {
+        let flat_vec = self.to_flat_vec()?;
+        Ok(Array3::from_shape_vec((self.height as usize, self.width as usize, 3), flat_vec)
+            .expect("Failed to create Array3 from flat vec"))
+    }
+
+    pub fn to_array3_u8(&self) -> Result<Array3<u8>, PhotoEditorError> {
+        Ok(self.to_array3()?.mapv(|v| (v.clamp(0.0, 1.0) * 255.0) as u8))
+    }
+
+    pub fn to_u8_rgbimage(&self) -> Result<image::RgbImage, PhotoEditorError> {
+        let flat_vec = self.to_flat_vec()?;
+        let u8_vec: Vec<u8> = flat_vec.into_iter().map(|v| (v.clamp(0.0, 1.0) * 255.0) as u8).collect();
+        Ok(image::RgbImage::from_raw(self.width, self.height, u8_vec)
+            .expect("Failed to create RgbImage from raw vec"))
     }
 }
 
 
-
-
-
-
-
-
-pub fn read_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image, metadata::Exif), PhotoEditorError> {
+pub fn read_image(
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
+    file_data: &[u8],
+    image_format: &ImageFormat,
+) -> Result<(Image, metadata::Exif), PhotoEditorError> {
 
     if image_format.is_standard_image() {
-        Ok(read_standard_image(file_data, image_format)?)
+        Ok(read_standard_image(device, queue, file_data, image_format)?)
     } else if image_format.is_raw_image() {
-        Ok(read_raw_image(file_data, image_format)?)
+        Ok(read_raw_image(device, queue, file_data, image_format)?)
     } else {
         Err(PhotoEditorError::ReadImageUnsupportedFormat(image_format.to_str().to_string()))
     }
@@ -245,7 +388,12 @@ pub fn read_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image
 }
 
 
-fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(Image, metadata::Exif), PhotoEditorError> {
+fn read_standard_image(
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
+    file_data: &[u8],
+    image_format: &ImageFormat,
+) -> Result<(Image, metadata::Exif), PhotoEditorError> {
 
     let image_crate_format = match image_format {
         ImageFormat::JPEG => image::ImageFormat::Jpeg,
@@ -255,21 +403,15 @@ fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(
         _ => panic!("Non-standard format passed to read_standard_image"),
     };
 
-    // read pixels
     let file_cursor = Cursor::new(&file_data);
     let dynamic_image = image::load(file_cursor, image_crate_format).map_err(PhotoEditorError::standard_image)?;
 
-    let height = dynamic_image.height() as usize;
-    let width = dynamic_image.width() as usize;
-
-    let image_vec = dynamic_image.to_rgb8().to_vec();
-
-    drop(dynamic_image);
-
-    let image_vec = image_vec.iter().map(|v| (v.clone() as f32) / 255.0).collect::<Vec<f32>>();
+    let width = dynamic_image.width();
+    let height = dynamic_image.height();
+    let rgb_image = dynamic_image.to_rgb32f();
+    let image_vec = rgb_image.into_raw();
     
-    let image = Image::new_from_vec(image_vec, height, width).map_err(PhotoEditorError::standard_image)?;
-
+    let image = Image::new(device, queue, &image_vec, width, height);
 
     // read exif
     let mut exif_data = metadata::Exif::default();
@@ -298,9 +440,12 @@ fn read_standard_image(file_data: &[u8], image_format: &ImageFormat) -> Result<(
 }
 
 
-
-
-fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Image, metadata::Exif), PhotoEditorError> {
+fn read_raw_image(
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
+    file_data: &[u8],
+    _image_format: &ImageFormat,
+) -> Result<(Image, metadata::Exif), PhotoEditorError> {
 
     // read pixels
     let raw_source = rawsource::RawSource::new_from_slice(&file_data);
@@ -313,12 +458,12 @@ fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Imag
     let exif = raw_metadata.exif;
     dynamic_image = apply_exif_orientation(dynamic_image, exif.orientation);
 
-    let height = dynamic_image.height() as usize;
-    let width = dynamic_image.width() as usize;
+    let width = dynamic_image.width();
+    let height = dynamic_image.height();
+    let rgb_image = dynamic_image.to_rgb32f();
+    let image_vec = rgb_image.into_raw();
 
-    let image_vec = dynamic_image.to_rgb32f().to_vec();
-
-    let image = Image::new_from_vec(image_vec, height, width).map_err(PhotoEditorError::raw_image)?;
+    let image = Image::new(device, queue, &image_vec, width, height);
 
     // read exif
     let mut exif_data = metadata::Exif::default();
@@ -339,11 +484,6 @@ fn read_raw_image(file_data: &[u8], _image_format: &ImageFormat) -> Result<(Imag
     Ok((image, exif_data))
 
 }
-
-
-
-
-
 
 fn apply_exif_orientation(mut dynamic_image: image::DynamicImage, orientation: Option<u16>) -> image::DynamicImage {
     match orientation {
@@ -393,11 +533,6 @@ fn apply_exif_orientation(mut dynamic_image: image::DynamicImage, orientation: O
     dynamic_image
 }
 
-
-
-
-
-
 pub fn write_image(image: &Image, image_format: &ImageFormat) -> Result<Vec<u8>, PhotoEditorError> {
     if !image_format.is_standard_image() {
         return Err(PhotoEditorError::SaveImageUnsupportedFormat(image_format.to_str().to_string()));
@@ -412,7 +547,7 @@ pub fn write_image(image: &Image, image_format: &ImageFormat) -> Result<Vec<u8>,
     };
 
     let mut writer = Cursor::new(Vec::<u8>::new());
-    image.to_u8_rgbimage().write_to(&mut writer, image_crate_format).map_err(PhotoEditorError::save)?;
+    image.to_u8_rgbimage()?.write_to(&mut writer, image_crate_format).map_err(PhotoEditorError::save)?;
 
     Ok(writer.into_inner())
 }

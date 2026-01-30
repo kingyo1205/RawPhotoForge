@@ -133,21 +133,7 @@ var _original_filename_base: String = ""
 func _ready() -> void:
 	load_settings()
 	
-	var adapters = gpu_processor.get_adapters()
 	
-	if not adapters:
-		push_error("wgpu adapter zero")
-		show_dialog(tr("TR_ERROR_NO_WGPU"))
-		return
-
-	var adapter_index = int(settings.get("wgpu_adapter", 0))
-	
-	print("adapter_index: %s" % str(adapter_index))
-	print(adapters)
-	if not gpu_processor.initialize(adapter_index):
-		show_dialog(tr("TR_ERROR_GPU_INIT"))
-		
-		return
 	
 	
 	for s in [
@@ -232,6 +218,22 @@ func _ready() -> void:
 	tab_container.set_tab_title(7, tr("TR_TAB_METADATA"))
 	
 	_update_all_slider_labels()
+	
+	var adapters = gpu_processor.get_adapters()
+	
+	if not adapters:
+		push_error("wgpu adapter zero")
+		show_dialog(tr("TR_ERROR_NO_WGPU"))
+		return
+
+	var adapter_index = int(settings.get("wgpu_adapter", 0))
+	
+	print("adapter_index: %s" % str(adapter_index))
+	print(adapters)
+	if not gpu_processor.initialize(adapter_index):
+		show_dialog(tr("TR_ERROR_GPU_INIT"))
+		
+		return
 	
 	
 func show_dialog(message):

@@ -155,7 +155,13 @@ impl PhotoEditor {
             let image_impl = &editor.image;
             let width = image_impl.width as i32;
             let height = image_impl.height as i32;
-            let image_data_f32 = image_impl.to_flat_vec();
+            let image_data_f32 = match image_impl.to_flat_vec() {
+                Ok(v) => v,
+                Err(e) => {
+                    godot_error!("Failed to get_image: {:?}", e);
+                    return Variant::nil();
+                }
+            };
 
             let mut raw_bytes: Vec<u8> = Vec::with_capacity((width * height * 3 * 4) as usize);
             for &f in &image_data_f32 {
@@ -345,7 +351,7 @@ impl PhotoEditor {
             let width = mask_image.get_width() as usize;
             let height = mask_image.get_height() as usize;
 
-            if width != editor.image.width || height != editor.image.height {
+            if width != editor.image.width as usize || height != editor.image.height as usize{
                 godot_error!("Mask dimensions ({}, {}) must match image dimensions ({}, {})", width, height, editor.image.width, editor.image.height);
                 return;
             }

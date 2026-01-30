@@ -65,6 +65,10 @@ impl Default for EditParameters {
     }
 }
 
+pub struct GpuMask {
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
+}
 
 
 pub struct PhotoEditor {
@@ -72,26 +76,79 @@ pub struct PhotoEditor {
     pub original_image: Image,
     pub exif: Exif,
     pub image_format: image::ImageFormat,
-    pub main_adjustments: EditParameters,
-    pub masks: HashMap<String, (Array2<f32>, EditParameters)>,
+    pub masks: HashMap<String, (GpuMask, EditParameters)>,
     gpu_processor: Arc<GpuProcessor>,
 }
 
 impl PhotoEditor {
     pub fn new(gpu_processor: Arc<GpuProcessor>, file_data: &[u8], image_format: image::ImageFormat) -> Result<PhotoEditor, PhotoEditorError> {
-        let (image, exif) = image::read_image(file_data, &image_format)?;
+        let (image, exif) = image::read_image(
+            gpu_processor.device(),
+            gpu_processor.queue(),
+            file_data,
+            &image_format,
+        )?;
         let original_image = image.clone();
+
+        let mut masks = HashMap::new();
+        let main_mask = Self::create_gpu_mask(
+            gpu_processor.device(),
+            gpu_processor.queue(),
+            image.width,
+            image.height,
+            None // None for a full mask of 1.0s
+        );
+        masks.insert("main".to_string(), (main_mask, EditParameters::default()));
 
         Ok(PhotoEditor {
             image,
             original_image,
             exif,
             image_format,
-            main_adjustments: EditParameters::default(),
-            masks: HashMap::new(),
+            masks,
             gpu_processor,
         })
     }
+    
+    fn create_gpu_mask(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, width: u32, height: u32, data: Option<&[f32]>) -> GpuMask {
+        let texture_size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Mask Texture"),
+            size: texture_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        let mask_data = match data {
+            Some(d) => d.to_vec(),
+            None => vec![1.0f32; (width * height) as usize],
+        };
+
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            bytemuck::cast_slice(&mask_data),
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height),
+            },
+            texture_size,
+        );
+        
+        let view = texture.create_view(&Default::default());
+        
+        GpuMask { texture, view }
+    }
+
 
     pub fn get_exif_hashmap(&self) -> HashMap<String, String> {
         self.exif.to_hashmap()
@@ -103,18 +160,22 @@ impl PhotoEditor {
 
     pub fn reset(&mut self) {
         self.image = self.original_image.clone();
-        self.main_adjustments = EditParameters::default();
         self.masks.clear();
+        let main_mask = Self::create_gpu_mask(
+            self.gpu_processor.device(),
+            self.gpu_processor.queue(),
+            self.image.width,
+            self.image.height,
+            None
+        );
+        self.masks.insert("main".to_string(), (main_mask, EditParameters::default()));
     }
     
     fn get_adjustment_set(&mut self, mask_name: Option<&str>) -> Result<&mut EditParameters, PhotoEditorError> {
-        if let Some(name) = mask_name {
-            self.masks.get_mut(name)
-                .map(|(_, params)| params)
-                .ok_or_else(|| PhotoEditorError::MaskNotFound(format!("The specified mask '{}' does not exist.", name)))
-        } else {
-            Ok(&mut self.main_adjustments)
-        }
+        let name = mask_name.unwrap_or("main");
+        self.masks.get_mut(name)
+            .map(|(_, params)| params)
+            .ok_or_else(|| PhotoEditorError::MaskNotFound(format!("The specified mask '{}' does not exist.", name)))
     }
     
     // --- Setter methods ---
@@ -309,26 +370,32 @@ impl PhotoEditor {
     }
 
     pub fn add_mask(&mut self, name: &str, mask_data: Array2<f32>) {
-        let mask_range = self.main_adjustments.mask_range; // 現在のmain_adjustmentsからmask_rangeを取得
-        let binarized_mask = mask_data.mapv(|v| if v >= mask_range { 1.0 } else { 0.0 });
-        self.masks.insert(name.to_string(), (binarized_mask, EditParameters::default()));
+        let mask_range = self.get_adjustment_set(None).unwrap().mask_range;
+        let binarized_mask_data: Vec<f32> = mask_data.iter().map(|&v| if v >= mask_range { 1.0 } else { 0.0 }).collect();
+        let gpu_mask = Self::create_gpu_mask(
+            self.gpu_processor.device(),
+            self.gpu_processor.queue(),
+            self.original_image.width,
+            self.original_image.height,
+            Some(&binarized_mask_data)
+        );
+        self.masks.insert(name.to_string(), (gpu_mask, EditParameters::default()));
     }
 
+
     pub fn remove_mask(&mut self, name: &str) {
-        self.masks.remove(name);
+        if name != "main" {
+            self.masks.remove(name);
+        }
     }
     
     pub fn apply_adjustments(&mut self) -> Result<(), PhotoEditorError> {
-        let processed_data = self.gpu_processor.apply_adjustments(
-            &self.original_image.to_flat_vec(),
-            self.original_image.width as u32,
-            self.original_image.height as u32,
-            &self.main_adjustments,
+        let processed_image = self.gpu_processor.apply_adjustments(
+            &self.original_image,
             &self.masks,
         )?;
 
-        self.image = Image::new_from_vec(processed_data, self.original_image.height, self.original_image.width)
-            .map_err(|e| PhotoEditorError::gpu_compute(e))?;
+        self.image = processed_image;
 
         Ok(())
     }
