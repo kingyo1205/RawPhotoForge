@@ -1,12 +1,10 @@
 // errors.rs
 
-
 use thiserror::Error;
 
 /// photo-editorのエラー。 エラーをざっくりまとめる
 #[derive(Error, Debug)]
 pub enum PhotoEditorError {
-
     /// RAW画像
     #[error("Failed to read raw image")]
     FailedToReadRawImage {
@@ -35,15 +33,13 @@ pub enum PhotoEditorError {
     #[error("Unsupported save image format: {0}")]
     SaveImageUnsupportedFormat(String),
 
-
     /// 補完
     #[error("Interpolation failed: {0}")]
     Interpolation(#[from] InterpolationError),
 
-
     /// GPU
     #[error("GPU compute error")]
-    GpuComputeError  {
+    GpuComputeError {
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
@@ -53,8 +49,6 @@ pub enum PhotoEditorError {
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
-    
-
 
     /// マスク
     #[error("Mask not found: {0}")]
@@ -75,7 +69,6 @@ impl PhotoEditorError {
         PhotoEditorError::FailedToReadStandardImage { source: None }
     }
 
-
     pub fn raw_image<E>(e: E) -> Self
     where
         E: std::error::Error + Send + Sync + 'static,
@@ -89,7 +82,6 @@ impl PhotoEditorError {
         PhotoEditorError::FailedToReadRawImage { source: None }
     }
 
-
     pub fn save<E>(e: E) -> Self
     where
         E: std::error::Error + Send + Sync + 'static,
@@ -99,11 +91,10 @@ impl PhotoEditorError {
         }
     }
 
-
     pub fn save_no_source() -> Self {
         PhotoEditorError::FailedToSaveImage { source: None }
     }
-    
+
     pub fn gpu_initialization<E>(e: E) -> Self
     where
         E: std::error::Error + Send + Sync + 'static,
@@ -126,11 +117,9 @@ impl PhotoEditorError {
         }
     }
 
-
     pub fn gpu_compute_no_source() -> Self {
         PhotoEditorError::GpuComputeError { source: None }
     }
-    
 }
 
 /// Errors that can occur during interpolation.
@@ -157,9 +146,3 @@ pub enum InterpolationError {
     #[error("Control point arrays cannot be empty.")]
     EmptyControlPoints,
 }
-
-
-
-
-
-

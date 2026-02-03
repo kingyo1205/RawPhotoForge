@@ -1,6 +1,5 @@
 // metadata.rs
 
-
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
@@ -16,7 +15,6 @@ pub struct Exif {
     pub exposure_time: Option<String>,
     pub iso: Option<u32>,
     pub exposure_bias: Option<f32>,
-
 }
 
 impl Exif {
@@ -60,4 +58,3 @@ impl Exif {
         map
     }
 }
-

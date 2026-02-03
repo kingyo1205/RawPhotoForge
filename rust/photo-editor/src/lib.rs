@@ -1,20 +1,19 @@
 // lib.rs
 
-
-pub mod metadata;
 pub mod errors;
-pub mod image;
 pub mod gpu_image_processing;
+pub mod image;
 pub mod interpolation;
+pub mod metadata;
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use ndarray::{Array1, Array2};
-use errors::{PhotoEditorError, InterpolationError};
+pub use crate::image::ImageFormat;
+use errors::{InterpolationError, PhotoEditorError};
+pub use gpu_image_processing::GpuProcessor;
 use image::Image;
 use metadata::Exif;
-pub use gpu_image_processing::GpuProcessor;
-pub use crate::image::ImageFormat;
+use ndarray::{Array1, Array2};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 const CURVE_RESOLUTION: usize = 65536;
 
@@ -59,8 +58,8 @@ impl Default for EditParameters {
             lens_distortion: 0,
             brightness_tone_curve: Array1::from_iter((0..CURVE_RESOLUTION).map(|i| i as i32)),
             hue_tone_curve: Array1::from_iter((0..CURVE_RESOLUTION).map(|i| i as i32)),
-            saturation_tone_curve: Array1::from_elem(CURVE_RESOLUTION, 65535i32),
-            lightness_tone_curve: Array1::from_elem(CURVE_RESOLUTION, 65535i32),
+            saturation_tone_curve: Array1::from_elem(CURVE_RESOLUTION, 32767),
+            lightness_tone_curve: Array1::from_elem(CURVE_RESOLUTION, 32767),
         }
     }
 }
@@ -69,7 +68,6 @@ pub struct GpuMask {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
 }
-
 
 pub struct PhotoEditor {
     pub image: Image,
@@ -81,7 +79,11 @@ pub struct PhotoEditor {
 }
 
 impl PhotoEditor {
-    pub fn new(gpu_processor: Arc<GpuProcessor>, file_data: &[u8], image_format: image::ImageFormat) -> Result<PhotoEditor, PhotoEditorError> {
+    pub fn new(
+        gpu_processor: Arc<GpuProcessor>,
+        file_data: &[u8],
+        image_format: image::ImageFormat,
+    ) -> Result<PhotoEditor, PhotoEditorError> {
         let (image, exif) = image::read_image(
             gpu_processor.device(),
             gpu_processor.queue(),
@@ -96,7 +98,7 @@ impl PhotoEditor {
             gpu_processor.queue(),
             image.width,
             image.height,
-            None // None for a full mask of 1.0s
+            None, // None for a full mask of 1.0s
         );
         masks.insert("main".to_string(), (main_mask, EditParameters::default()));
 
@@ -109,9 +111,19 @@ impl PhotoEditor {
             gpu_processor,
         })
     }
-    
-    fn create_gpu_mask(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>, width: u32, height: u32, data: Option<&[f32]>) -> GpuMask {
-        let texture_size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+
+    fn create_gpu_mask(
+        device: Arc<wgpu::Device>,
+        queue: Arc<wgpu::Queue>,
+        width: u32,
+        height: u32,
+        data: Option<&[f32]>,
+    ) -> GpuMask {
+        let texture_size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Mask Texture"),
             size: texture_size,
@@ -119,7 +131,9 @@ impl PhotoEditor {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R32Float,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
 
@@ -143,12 +157,11 @@ impl PhotoEditor {
             },
             texture_size,
         );
-        
+
         let view = texture.create_view(&Default::default());
-        
+
         GpuMask { texture, view }
     }
-
 
     pub fn get_exif_hashmap(&self) -> HashMap<String, String> {
         self.exif.to_hashmap()
@@ -166,26 +179,41 @@ impl PhotoEditor {
             self.gpu_processor.queue(),
             self.image.width,
             self.image.height,
-            None
+            None,
         );
-        self.masks.insert("main".to_string(), (main_mask, EditParameters::default()));
+        self.masks
+            .insert("main".to_string(), (main_mask, EditParameters::default()));
     }
-    
-    fn get_adjustment_set(&mut self, mask_name: Option<&str>) -> Result<&mut EditParameters, PhotoEditorError> {
+
+    fn get_adjustment_set(
+        &mut self,
+        mask_name: Option<&str>,
+    ) -> Result<&mut EditParameters, PhotoEditorError> {
         let name = mask_name.unwrap_or("main");
-        self.masks.get_mut(name)
+        self.masks
+            .get_mut(name)
             .map(|(_, params)| params)
-            .ok_or_else(|| PhotoEditorError::MaskNotFound(format!("The specified mask '{}' does not exist.", name)))
+            .ok_or_else(|| {
+                PhotoEditorError::MaskNotFound(format!(
+                    "The specified mask '{}' does not exist.",
+                    name
+                ))
+            })
     }
-    
+
     // --- Setter methods ---
-    pub fn set_whitebalance(&mut self, temperature: i32, tint: i32, mask_name: Option<&str>) -> Result<(), PhotoEditorError> {
+    pub fn set_whitebalance(
+        &mut self,
+        temperature: i32,
+        tint: i32,
+        mask_name: Option<&str>,
+    ) -> Result<(), PhotoEditorError> {
         let adjustments = self.get_adjustment_set(mask_name)?;
         adjustments.wb_temperature = temperature.clamp(-100, 100);
         adjustments.wb_tint = tint.clamp(-100, 100);
         Ok(())
     }
-    
+
     pub fn set_vignette(&mut self, value: i32) -> Result<(), PhotoEditorError> {
         self.get_adjustment_set(None)?.vignette = value.clamp(-100, 100);
         Ok(())
@@ -227,14 +255,18 @@ impl PhotoEditor {
         mask_name: Option<&str>,
     ) -> Result<(), PhotoEditorError> {
         if curve.is_none() && control_points_x.is_none() {
-             return Err(InterpolationError::MissingCurveOrControlPoints.into());
+            return Err(InterpolationError::MissingCurveOrControlPoints.into());
         }
 
         let final_curve: Array1<i32>;
 
         if let Some(c) = curve {
             if c.len() != CURVE_RESOLUTION {
-                return Err(InterpolationError::InvalidCurveLength { expected: CURVE_RESOLUTION, actual: c.len() }.into());
+                return Err(InterpolationError::InvalidCurveLength {
+                    expected: CURVE_RESOLUTION,
+                    actual: c.len(),
+                }
+                .into());
             }
             final_curve = c;
         } else {
@@ -242,7 +274,11 @@ impl PhotoEditor {
             let y = control_points_y.ok_or(InterpolationError::MissingControlPoints)?;
 
             if x.len() != y.len() {
-                return Err(InterpolationError::MismatchedLengths { x_len: x.len(), y_len: y.len() }.into());
+                return Err(InterpolationError::MismatchedLengths {
+                    x_len: x.len(),
+                    y_len: y.len(),
+                }
+                .into());
             }
             if x.is_empty() {
                 return Err(InterpolationError::EmptyControlPoints.into());
@@ -271,7 +307,11 @@ impl PhotoEditor {
 
         if let Some(c) = curve {
             if c.len() != CURVE_RESOLUTION {
-                return Err(InterpolationError::InvalidCurveLength { expected: CURVE_RESOLUTION, actual: c.len() }.into());
+                return Err(InterpolationError::InvalidCurveLength {
+                    expected: CURVE_RESOLUTION,
+                    actual: c.len(),
+                }
+                .into());
             }
             final_curve = c;
         } else {
@@ -279,7 +319,11 @@ impl PhotoEditor {
             let y = control_points_y.ok_or(InterpolationError::MissingControlPoints)?;
 
             if x.len() != y.len() {
-                return Err(InterpolationError::MismatchedLengths { x_len: x.len(), y_len: y.len() }.into());
+                return Err(InterpolationError::MismatchedLengths {
+                    x_len: x.len(),
+                    y_len: y.len(),
+                }
+                .into());
             }
             if x.is_empty() {
                 return Err(InterpolationError::EmptyControlPoints.into());
@@ -308,7 +352,11 @@ impl PhotoEditor {
 
         if let Some(c) = curve {
             if c.len() != CURVE_RESOLUTION {
-                return Err(InterpolationError::InvalidCurveLength { expected: CURVE_RESOLUTION, actual: c.len() }.into());
+                return Err(InterpolationError::InvalidCurveLength {
+                    expected: CURVE_RESOLUTION,
+                    actual: c.len(),
+                }
+                .into());
             }
             final_curve = c;
         } else {
@@ -316,7 +364,11 @@ impl PhotoEditor {
             let y = control_points_y.ok_or(InterpolationError::MissingControlPoints)?;
 
             if x.len() != y.len() {
-                return Err(InterpolationError::MismatchedLengths { x_len: x.len(), y_len: y.len() }.into());
+                return Err(InterpolationError::MismatchedLengths {
+                    x_len: x.len(),
+                    y_len: y.len(),
+                }
+                .into());
             }
             if x.is_empty() {
                 return Err(InterpolationError::EmptyControlPoints.into());
@@ -324,12 +376,11 @@ impl PhotoEditor {
 
             let x_eval = Array1::from_iter((0..CURVE_RESOLUTION).map(|i| i as i32));
             let interpolated = interpolation::pchip_interpolate(&x, &y, &x_eval)?;
-            final_curve = interpolated.mapv(|v| (v * 2).clamp(0, 131070));
+            final_curve = interpolated.mapv(|v| v.clamp(0, 65535));
         }
 
         self.get_adjustment_set(mask_name)?.saturation_tone_curve = final_curve;
         Ok(())
-
     }
     pub fn set_oklch_lightness_curve(
         &mut self,
@@ -346,7 +397,11 @@ impl PhotoEditor {
 
         if let Some(c) = curve {
             if c.len() != CURVE_RESOLUTION {
-                return Err(InterpolationError::InvalidCurveLength { expected: CURVE_RESOLUTION, actual: c.len() }.into());
+                return Err(InterpolationError::InvalidCurveLength {
+                    expected: CURVE_RESOLUTION,
+                    actual: c.len(),
+                }
+                .into());
             }
             final_curve = c;
         } else {
@@ -354,7 +409,11 @@ impl PhotoEditor {
             let y = control_points_y.ok_or(InterpolationError::MissingControlPoints)?;
 
             if x.len() != y.len() {
-                return Err(InterpolationError::MismatchedLengths { x_len: x.len(), y_len: y.len() }.into());
+                return Err(InterpolationError::MismatchedLengths {
+                    x_len: x.len(),
+                    y_len: y.len(),
+                }
+                .into());
             }
             if x.is_empty() {
                 return Err(InterpolationError::EmptyControlPoints.into());
@@ -362,7 +421,7 @@ impl PhotoEditor {
 
             let x_eval = Array1::from_iter((0..CURVE_RESOLUTION).map(|i| i as i32));
             let interpolated = interpolation::pchip_interpolate(&x, &y, &x_eval)?;
-            final_curve = interpolated.mapv(|v| (v * 2).clamp(0, 131070));
+            final_curve = interpolated.mapv(|v| v.clamp(0, 65535));
         }
 
         self.get_adjustment_set(mask_name)?.lightness_tone_curve = final_curve;
@@ -371,29 +430,33 @@ impl PhotoEditor {
 
     pub fn add_mask(&mut self, name: &str, mask_data: Array2<f32>) {
         let mask_range = self.get_adjustment_set(None).unwrap().mask_range;
-        let binarized_mask_data: Vec<f32> = mask_data.iter().map(|&v| if v >= mask_range { 1.0 } else { 0.0 }).collect();
+        let binarized_mask_data: Vec<f32> = mask_data
+            .iter()
+            .map(|&v| if v >= mask_range { 1.0 } else { 0.0 })
+            .collect();
         let gpu_mask = Self::create_gpu_mask(
             self.gpu_processor.device(),
             self.gpu_processor.queue(),
             self.original_image.width,
             self.original_image.height,
-            Some(&binarized_mask_data)
+            Some(&binarized_mask_data),
         );
-        self.masks.insert(name.to_string(), (gpu_mask, EditParameters::default()));
+        self.masks
+            .insert(name.to_string(), (gpu_mask, EditParameters::default()));
     }
-
 
     pub fn remove_mask(&mut self, name: &str) {
         if name != "main" {
             self.masks.remove(name);
         }
     }
-    
+
     pub fn apply_adjustments(&mut self) -> Result<(), PhotoEditorError> {
-        let processed_image = self.gpu_processor.apply_adjustments(
-            &self.original_image,
-            &self.masks,
-        )?;
+        let masks: Vec<&(GpuMask, EditParameters)> = self.masks.values().collect();
+
+        let processed_image = self
+            .gpu_processor
+            .apply_adjustments(&self.original_image, &masks)?;
 
         self.image = processed_image;
 

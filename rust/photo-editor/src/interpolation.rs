@@ -1,49 +1,53 @@
 // interpolation.rs
 
-
-use ndarray::{Array1};
+use ndarray::Array1;
 use num_traits::{AsPrimitive, FromPrimitive};
-use std::ops::{Sub, Div, Mul, Add};
-use std::fmt::Debug;
 use std::cmp::Ordering;
+use std::fmt::Debug;
+use std::ops::{Add, Div, Mul, Sub};
 
-use crate::errors::InterpolationError; 
+use crate::errors::InterpolationError;
 
 pub fn pchip_interpolate<T>(
-    x_pts: &Array1<T>, 
-    y_pts: &Array1<T>, 
-    x_eval: &Array1<T>
+    x_pts: &Array1<T>,
+    y_pts: &Array1<T>,
+    x_eval: &Array1<T>,
 ) -> Result<Array1<T>, InterpolationError>
 where
     T: Copy + PartialOrd + AsPrimitive<f32> + FromPrimitive + Debug,
-    f32: AsPrimitive<T>, 
+    f32: AsPrimitive<T>,
     for<'a> &'a T: Sub<&'a T, Output = T>,
     for<'a> T: Div<T, Output = T> + Mul<T, Output = T> + Add<T, Output = T> + Sub<T, Output = T>,
 {
     if x_pts.len() != y_pts.len() {
-        return Err(InterpolationError::MismatchedLengths { x_len: x_pts.len(), y_len: y_pts.len() });
+        return Err(InterpolationError::MismatchedLengths {
+            x_len: x_pts.len(),
+            y_len: y_pts.len(),
+        });
     }
     if x_pts.len() < 2 {
-        return Err(InterpolationError::NotEnoughPoints { points: x_pts.len() });
+        return Err(InterpolationError::NotEnoughPoints {
+            points: x_pts.len(),
+        });
     }
 
     // 内部計算はf32で行う (GodotのPackedFloat32Arrayと挙動を合わせるため)
     let x_pts_f32: Array1<f32> = x_pts.mapv(|v| v.as_());
     let y_pts_f32: Array1<f32> = y_pts.mapv(|v| v.as_());
     let x_eval_f32: Array1<f32> = x_eval.mapv(|v| v.as_());
-    
+
     let n = x_pts_f32.len();
     let mut y_eval = Array1::<f32>::zeros(x_eval_f32.len());
 
     // 1. 各区間の傾き (secants) と区間幅 (h) を計算
     let mut del = Vec::with_capacity(n - 1);
     let mut h = Vec::with_capacity(n - 1);
-    
+
     for i in 0..(n - 1) {
         let h_i = x_pts_f32[i + 1] - x_pts_f32[i];
         if h_i <= 0.0 {
             // 単調増加でない場合はエラー
-             return Err(InterpolationError::NotStrictlyIncreasing { index: i });
+            return Err(InterpolationError::NotStrictlyIncreasing { index: i });
         }
         h.push(h_i);
         del.push((y_pts_f32[i + 1] - y_pts_f32[i]) / h_i);
@@ -66,7 +70,7 @@ where
             let w1 = 2.0 * h[i] + h[i - 1];
             // Godot: w2 = dx2 + 2 * dx1
             let w2 = h[i] + 2.0 * h[i - 1];
-            
+
             // Godot: (w1 + w2) / (w1 / s1 + w2 / s2)
             slopes[i] = (w1 + w2) / (w1 / del[i - 1] + w2 / del[i]);
         }
@@ -85,7 +89,11 @@ where
         }
 
         // 区間探索
-        let i = match x_pts_f32.as_slice().unwrap().binary_search_by(|p| p.partial_cmp(&x).unwrap_or(Ordering::Equal)) {
+        let i = match x_pts_f32
+            .as_slice()
+            .unwrap()
+            .binary_search_by(|p| p.partial_cmp(&x).unwrap_or(Ordering::Equal))
+        {
             Ok(idx) => idx,
             Err(idx) => idx - 1,
         };
