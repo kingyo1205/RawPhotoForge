@@ -64,6 +64,12 @@ impl Default for EditParameters {
     }
 }
 
+pub struct Mask {
+    pub name: String,
+    pub gpu_mask: GpuMask,
+    pub edit_parameters: EditParameters,
+}
+
 pub struct GpuMask {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -74,7 +80,7 @@ pub struct PhotoEditor {
     pub original_image: Image,
     pub exif: Exif,
     pub image_format: image::ImageFormat,
-    pub masks: HashMap<String, (GpuMask, EditParameters)>,
+    pub masks: Vec<Mask>,
     gpu_processor: Arc<GpuProcessor>,
 }
 
@@ -92,7 +98,6 @@ impl PhotoEditor {
         )?;
         let original_image = image.clone();
 
-        let mut masks = HashMap::new();
         let main_mask = Self::create_gpu_mask(
             gpu_processor.device(),
             gpu_processor.queue(),
@@ -100,7 +105,13 @@ impl PhotoEditor {
             image.height,
             None, // None for a full mask of 1.0s
         );
-        masks.insert("main".to_string(), (main_mask, EditParameters::default()));
+
+        let mut masks = Vec::new();
+        masks.push(Mask {
+            name: "main".to_string(),
+            gpu_mask: main_mask,
+            edit_parameters: EditParameters::default(),
+        });
 
         Ok(PhotoEditor {
             image,
@@ -173,16 +184,12 @@ impl PhotoEditor {
 
     pub fn reset(&mut self) {
         self.image = self.original_image.clone();
-        self.masks.clear();
-        let main_mask = Self::create_gpu_mask(
-            self.gpu_processor.device(),
-            self.gpu_processor.queue(),
-            self.image.width,
-            self.image.height,
-            None,
-        );
+        self.masks.retain(|m| m.name == "main");
         self.masks
-            .insert("main".to_string(), (main_mask, EditParameters::default()));
+            .iter_mut()
+            .find(|m| m.name == "main".to_string())
+            .unwrap()
+            .edit_parameters = EditParameters::default();
     }
 
     fn get_adjustment_set(
@@ -191,8 +198,9 @@ impl PhotoEditor {
     ) -> Result<&mut EditParameters, PhotoEditorError> {
         let name = mask_name.unwrap_or("main");
         self.masks
-            .get_mut(name)
-            .map(|(_, params)| params)
+            .iter_mut()
+            .find(|m| m.name == name.to_string())
+            .map(|m| &mut m.edit_parameters)
             .ok_or_else(|| {
                 PhotoEditorError::MaskNotFound(format!(
                     "The specified mask '{}' does not exist.",
@@ -441,22 +449,23 @@ impl PhotoEditor {
             self.original_image.height,
             Some(&binarized_mask_data),
         );
-        self.masks
-            .insert(name.to_string(), (gpu_mask, EditParameters::default()));
+        self.masks.push(Mask {
+            name: name.to_string(),
+            gpu_mask: gpu_mask,
+            edit_parameters: EditParameters::default(),
+        });
     }
 
     pub fn remove_mask(&mut self, name: &str) {
         if name != "main" {
-            self.masks.remove(name);
+            self.masks.retain(|m| m.name != name);
         }
     }
 
     pub fn apply_adjustments(&mut self) -> Result<(), PhotoEditorError> {
-        let masks: Vec<&(GpuMask, EditParameters)> = self.masks.values().collect();
-
         let processed_image = self
             .gpu_processor
-            .apply_adjustments(&self.original_image, &masks)?;
+            .apply_adjustments(&self.original_image, &self.masks)?;
 
         self.image = processed_image;
 

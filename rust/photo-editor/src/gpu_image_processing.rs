@@ -1,7 +1,7 @@
 // gpu_image_processing.rs
 
 use crate::errors::PhotoEditorError;
-use crate::{EditParameters, GpuMask, Image};
+use crate::{EditParameters, Image, Mask};
 use ndarray::Array1;
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -221,7 +221,7 @@ impl GpuProcessor {
     pub fn apply_adjustments(
         &self,
         original_image: &Image, // 入力テクスチャ(rgba32f想定)
-        masks_data: &[&(GpuMask, EditParameters)], // マスクとパラメータのペア
+        masks_data: &Vec<Mask>, // マスクとパラメータのペア
     ) -> Result<Image, PhotoEditorError> {
         let t = time::Instant::now();
         let (width, height) = (original_image.width, original_image.height);
@@ -235,7 +235,8 @@ impl GpuProcessor {
         let mut all_sat_luts = Vec::new();
         let mut all_light_luts = Vec::new();
 
-        for (_, params) in masks_data {
+        for mask in masks_data {
+            let params = &mask.edit_parameters;
             // パラメータ変換
             gpu_params.push(GpuEditParameters {
                 r_gain: 1.0 + 0.5 * (params.wb_temperature as f32 / 100.0),
@@ -367,9 +368,9 @@ impl GpuProcessor {
         let mut encoder = self.device.create_command_encoder(&Default::default());
 
         // 各レイヤーにマスクをコピー
-        for (i, (mask, _)) in masks_data.iter().enumerate() {
+        for (i, mask) in masks_data.iter().enumerate() {
             encoder.copy_texture_to_texture(
-                mask.texture.as_image_copy(),
+                mask.gpu_mask.texture.as_image_copy(),
                 wgpu::TexelCopyTextureInfo {
                     texture: &masks_tex,
                     mip_level: 0,
