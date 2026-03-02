@@ -5,7 +5,6 @@ pub mod gpu_image_processing;
 pub mod image;
 pub mod interpolation;
 pub mod metadata;
-
 pub use crate::image::ImageFormat;
 use errors::{InterpolationError, PhotoEditorError};
 pub use gpu_image_processing::GpuProcessor;

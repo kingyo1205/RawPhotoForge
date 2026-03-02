@@ -118,16 +118,14 @@ git clone https://github.com/kingyo1205/RawPhotoForge.git
 cd RawPhotoForge
 
 # Rust GDExtension をビルド
-cd rust/photo-editor-godot
-cargo build --release
+cargo build -r -p photo-editor-godot
 
 # 依存関係ライセンス情報の生成
 cargo about init
 cargo about generate about.hbs > rust_licenses.html
 
 # 生成された共有ライブラリをGodotアドオンにコピー
-cd ../..
-cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/
+cp ./target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/libs/Linux-x86_64/
 
 ```
 

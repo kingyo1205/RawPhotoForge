@@ -119,16 +119,15 @@ git clone https://github.com/kingyo1205/RawPhotoForge.git
 cd RawPhotoForge
 
 # Build Rust GDExtension
-cd rust/photo-editor-godot
-cargo build --release
+cargo build -r -p photo-editor-godot
 
 # Generate license information for Rust dependencies
 cargo about init
 cargo about generate about.hbs > rust_licenses.html
 
 # Copy the generated shared library into the Godot addon directory
-cd ../..
-cp ./rust/photo-editor-godot/target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/
+cp ./target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/libs/Linux-x86_64/
+
 ```
 
 ### Export with Godot

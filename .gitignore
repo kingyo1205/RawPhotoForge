@@ -21,12 +21,12 @@ photo-editor-test/
 .import/
 .export/
 *.uid
+
+
 libs/
 
 # Godot GDExtension build outputs
-rust/raw-photo-forge/addons/photo_editor/*.so
-rust/raw-photo-forge/addons/photo_editor/*.dll
-rust/raw-photo-forge/addons/photo_editor/*.dylib
+rust/raw-photo-forge/addons/photo_editor/libs/
 
 # ==================
 # OS / Editor
