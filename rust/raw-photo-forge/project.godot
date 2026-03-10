@@ -21,8 +21,9 @@ config/icon="uid://51gxuk6u6pfc"
 
 window/size/viewport_width=1300
 window/size/viewport_height=800
-window/stretch/mode="canvas_items"
-window/stretch/scale=1.2
+window/stretch/aspect="expand"
+window/per_pixel_transparency/allowed=true
+display_server/driver.linuxbsd="wayland"
 
 [dotnet]
 
@@ -46,3 +47,4 @@ translations=PackedStringArray("res://translations/translation.csv")
 [rendering]
 
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.09411765, 0.14117648, 0.16862746, 0.7294118)

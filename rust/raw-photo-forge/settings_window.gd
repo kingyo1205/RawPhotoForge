@@ -16,138 +16,138 @@ var gpu_processor
 var settings: Dictionary = {}
 
 func _ready() -> void:
-	# main.gdのGpuProcessorノードを取得
-	gpu_processor = get_node("/root/Control/GpuProcessor")
-	
-	load_settings()
-	
-	close_requested.connect(hide)
-	
-	# UI要素の初期値を設定から反映
-	_update_ui_from_settings()
+    # main.gdのGpuProcessorノードを取得
+    gpu_processor = get_node("/root/Control/GpuProcessor")
+    
+    load_settings()
+    
+    close_requested.connect(hide)
+    
+    # UI要素の初期値を設定から反映
+    _update_ui_from_settings()
 
-	# スライダーとLineEditのシグナル接続
-	ui_preview_size_slider.value_changed.connect(_on_ui_preview_size_slider_changed)
-	ui_preview_size_line_edit.text_submitted.connect(_on_ui_preview_size_line_edit_submitted)
-	drag_preview_size_slider.value_changed.connect(_on_drag_preview_size_slider_changed)
-	drag_preview_size_line_edit.text_submitted.connect(_on_drag_preview_size_line_edit_submitted)
+    # スライダーとLineEditのシグナル接続
+    ui_preview_size_slider.value_changed.connect(_on_ui_preview_size_slider_changed)
+    ui_preview_size_line_edit.text_submitted.connect(_on_ui_preview_size_line_edit_submitted)
+    drag_preview_size_slider.value_changed.connect(_on_drag_preview_size_slider_changed)
+    drag_preview_size_line_edit.text_submitted.connect(_on_drag_preview_size_line_edit_submitted)
 
-	var tab_container = $VBoxContainer/TabContainer
-	tab_container.set_tab_title(0, tr("TR_DEVICE"))
-	tab_container.set_tab_title(1, tr("TR_SETTINGS_TAB_LANGUAGE"))
-	tab_container.set_tab_title(2, tr("TR_SETTINGS_TAB_IMAGE"))
+    var tab_container = $VBoxContainer/TabContainer
+    tab_container.set_tab_title(0, tr("TR_DEVICE"))
+    tab_container.set_tab_title(1, tr("TR_SETTINGS_TAB_LANGUAGE"))
+    tab_container.set_tab_title(2, tr("TR_SETTINGS_TAB_IMAGE"))
 
-	# LanguageOptionButton setup
-	language_option_button.add_item("English")
-	language_option_button.set_item_metadata(0, "en")
-	language_option_button.add_item("日本語")
-	language_option_button.set_item_metadata(1, "ja")
-	
-	# DeviceOptionButton setup
-	var adapters = gpu_processor.get_adapters()
-	for adapter in adapters:
-		device_option_button.add_item(adapter)
-	
-	# SaveButton connection
-	save_button.pressed.connect(_on_save_button_pressed)
+    # LanguageOptionButton setup
+    language_option_button.add_item("English")
+    language_option_button.set_item_metadata(0, "en")
+    language_option_button.add_item("日本語")
+    language_option_button.set_item_metadata(1, "ja")
+    
+    # DeviceOptionButton setup
+    var adapters = gpu_processor.get_adapters()
+    for adapter in adapters:
+        device_option_button.add_item(adapter)
+    
+    # SaveButton connection
+    #save_button.pressed.connect(_on_save_button_pressed)
 
 
-func show_and_center(min_size: Vector2i = Vector2i(0, 0)) -> void:
-	# 表示する前に最新の設定を読み込む
-	load_settings()
-	_update_ui_from_settings()
-	super.popup_centered(min_size)
+func show_and_center(min_size_: Vector2i = Vector2i(0, 0)) -> void:
+    # 表示する前に最新の設定を読み込む
+    load_settings()
+    _update_ui_from_settings()
+    super.popup_centered(min_size_)
 
 func load_settings() -> void:
-	if FileAccess.file_exists(SETTINGS_FILE_PATH):
-		var file = FileAccess.open(SETTINGS_FILE_PATH, FileAccess.READ)
-		var content = file.get_as_text()
-		var json = JSON.new()
-		var error = json.parse(content)
-		if error == OK:
-			settings = json.get_data()
-		else:
-			print("Error parsing settings.json: ", json.get_error_message(), " at line ", json.get_error_line())
-			_load_default_settings()
-	else:
-		_load_default_settings()
-	
-	var locale = settings.get("locale", TranslationServer.get_locale())
-	TranslationServer.set_locale(locale)
+    if FileAccess.file_exists(SETTINGS_FILE_PATH):
+        var file = FileAccess.open(SETTINGS_FILE_PATH, FileAccess.READ)
+        var content = file.get_as_text()
+        var json = JSON.new()
+        var error = json.parse(content)
+        if error == OK:
+            settings = json.get_data()
+        else:
+            print("Error parsing settings.json: ", json.get_error_message(), " at line ", json.get_error_line())
+            _load_default_settings()
+    else:
+        _load_default_settings()
+    
+    var locale = settings.get("locale", TranslationServer.get_locale())
+    TranslationServer.set_locale(locale)
 
 
 func _load_default_settings() -> void:
-	settings = {
-		"wgpu_adapter": 0,
-		"image": {
-			"ui_preview_size": 1280,
-			"drag_preview_size": 400
-		},
-		"locale": "en"
-	}
+    settings = {
+        "wgpu_adapter": 0,
+        "image": {
+            "ui_preview_size": 1280,
+            "drag_preview_size": 400
+        },
+        "locale": "en"
+    }
 
 func _update_ui_from_settings() -> void:
-	var image_settings = settings.get("image", {})
-	var ui_preview_size = image_settings.get("ui_preview_size", 1280)
-	var drag_preview_size = image_settings.get("drag_preview_size", 400)
+    var image_settings = settings.get("image", {})
+    var ui_preview_size = image_settings.get("ui_preview_size", 1280)
+    var drag_preview_size = image_settings.get("drag_preview_size", 400)
 
-	ui_preview_size_slider.value = ui_preview_size
-	ui_preview_size_line_edit.text = str(ui_preview_size)
-	drag_preview_size_slider.value = drag_preview_size
-	drag_preview_size_line_edit.text = str(drag_preview_size)
-	
-	var locale = settings.get("locale", TranslationServer.get_locale())
-	for i in range(language_option_button.item_count):
-		if language_option_button.get_item_metadata(i) == locale:
-			language_option_button.select(i)
-			break
-			
-	var adapter_index = settings.get("wgpu_adapter", 0)
-	if adapter_index < device_option_button.item_count:
-		device_option_button.select(adapter_index)
+    ui_preview_size_slider.value = ui_preview_size
+    ui_preview_size_line_edit.text = str(ui_preview_size)
+    drag_preview_size_slider.value = drag_preview_size
+    drag_preview_size_line_edit.text = str(drag_preview_size)
+    
+    var locale = settings.get("locale", TranslationServer.get_locale())
+    for i in range(language_option_button.item_count):
+        if language_option_button.get_item_metadata(i) == locale:
+            language_option_button.select(i)
+            break
+            
+    var adapter_index = settings.get("wgpu_adapter", 0)
+    if adapter_index < device_option_button.item_count:
+        device_option_button.select(adapter_index)
 
 
 func save_settings() -> void:
-	settings["image"] = {
-		"ui_preview_size": int(ui_preview_size_line_edit.text),
-		"drag_preview_size": int(drag_preview_size_line_edit.text)
-	}
-	settings["locale"] = language_option_button.get_item_metadata(language_option_button.selected)
-	settings["wgpu_adapter"] = device_option_button.selected
-	
-	# 新しいロケールを即座に適用
-	TranslationServer.set_locale(settings["locale"])
-	
-	var file = FileAccess.open(SETTINGS_FILE_PATH, FileAccess.WRITE)
-	var json_string = JSON.stringify(settings, "	")
-	file.store_string(json_string)
+    settings["image"] = {
+        "ui_preview_size": int(ui_preview_size_line_edit.text),
+        "drag_preview_size": int(drag_preview_size_line_edit.text)
+    }
+    settings["locale"] = language_option_button.get_item_metadata(language_option_button.selected)
+    settings["wgpu_adapter"] = device_option_button.selected
+    
+    # 新しいロケールを即座に適用
+    TranslationServer.set_locale(settings["locale"])
+    
+    var file = FileAccess.open(SETTINGS_FILE_PATH, FileAccess.WRITE)
+    var json_string = JSON.stringify(settings, "	")
+    file.store_string(json_string)
 
 func _on_save_button_pressed() -> void:
-	save_settings()
-	info_dialog.dialog_text = tr("TR_SETTINGS_SAVED_INFO")
-	info_dialog.popup_centered()
+    save_settings()
+    info_dialog.dialog_text = tr("TR_SETTINGS_SAVED_INFO")
+    info_dialog.popup_centered()
 
 func _on_ui_preview_size_slider_changed(value: float) -> void:
-	ui_preview_size_line_edit.text = str(int(value))
+    ui_preview_size_line_edit.text = str(int(value))
 
 func _on_ui_preview_size_line_edit_submitted(new_text: String) -> void:
-	if new_text.is_valid_int():
-		var value = clamp(int(new_text), 500, 2000)
-		ui_preview_size_line_edit.text = str(value)
-		ui_preview_size_slider.value = value
-	else:
-		# 不正な値の場合はスライダーの値に戻す
-		ui_preview_size_line_edit.text = str(int(ui_preview_size_slider.value))
+    if new_text.is_valid_int():
+        var value = clamp(int(new_text), 500, 2000)
+        ui_preview_size_line_edit.text = str(value)
+        ui_preview_size_slider.value = value
+    else:
+        # 不正な値の場合はスライダーの値に戻す
+        ui_preview_size_line_edit.text = str(int(ui_preview_size_slider.value))
 
 
 func _on_drag_preview_size_slider_changed(value: float) -> void:
-	drag_preview_size_line_edit.text = str(int(value))
+    drag_preview_size_line_edit.text = str(int(value))
 
 func _on_drag_preview_size_line_edit_submitted(new_text: String) -> void:
-	if new_text.is_valid_int():
-		var value = clamp(int(new_text), 100, 800)
-		drag_preview_size_line_edit.text = str(value)
-		drag_preview_size_slider.value = value
-	else:
-		# 不正な値の場合はスライダーの値に戻す
-		drag_preview_size_line_edit.text = str(int(drag_preview_size_slider.value))
+    if new_text.is_valid_int():
+        var value = clamp(int(new_text), 100, 800)
+        drag_preview_size_line_edit.text = str(value)
+        drag_preview_size_slider.value = value
+    else:
+        # 不正な値の場合はスライダーの値に戻す
+        drag_preview_size_line_edit.text = str(int(drag_preview_size_slider.value))

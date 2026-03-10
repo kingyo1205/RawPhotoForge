@@ -20,7 +20,7 @@ photo-editor-test/
 # ==================
 .import/
 .export/
-*.uid
+
 
 
 libs/

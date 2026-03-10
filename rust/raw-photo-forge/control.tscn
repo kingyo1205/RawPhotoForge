@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://cjp8cnfl2cg1d"]
+[gd_scene load_steps=6 format=3 uid="uid://cjp8cnfl2cg1d"]
 
-[ext_resource type="Script" uid="uid://b4k2ay2meo2uo" path="res://main.gd" id="1_0fbet"]
+[ext_resource type="Script" uid="uid://b3m537dbe838m" path="res://main.gd" id="1_0fbet"]
+[ext_resource type="Theme" uid="uid://dyncsm3aikjq4" path="res://control.tres" id="1_ee4bf"]
 [ext_resource type="PackedScene" uid="uid://dpsk1t2w76b0n" path="res://tone_curve_editor.tscn" id="2_tce"]
 [ext_resource type="PackedScene" uid="uid://b1m7a3j5xjw5w" path="res://settings_window.tscn" id="3_abcde"]
 
@@ -16,6 +17,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = ExtResource("1_ee4bf")
 script = ExtResource("1_0fbet")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -32,7 +34,6 @@ theme = SubResource("Theme_sky72")
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 620)
 layout_mode = 2
 size_flags_vertical = 3
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b1m7a3j5xjw5w"]
 
-[ext_resource type="Script" uid="uid://di6dvm4ekrsv7" path="res://settings_window.gd" id="1_qj26x"]
+[ext_resource type="Script" uid="uid://b2rwrq6qmuqr7" path="res://settings_window.gd" id="1_qj26x"]
 
 [node name="SettingsWindow" type="Window"]
 title = "TR_SETTINGS_TITLE"
