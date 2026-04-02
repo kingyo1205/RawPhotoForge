@@ -1,11 +1,16 @@
 [package]
 name = "photo-editor"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 
 [dependencies]
-image = "0.25.9"
+
+image = { version = "0.25.9", default-features = false, features = [
+    "png",
+    "jpeg",
+    "tiff"
+] }
 kamadak-exif = "0.6.1"
 ndarray = "0.17.1"
 rawler = "0.7.1"

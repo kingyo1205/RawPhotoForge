@@ -106,6 +106,10 @@ var settings: Dictionary = {}
 @onready var settings_window: Window = %SettingsWindow
 
 
+
+
+@onready var file_dialog: FileDialog = $FileDialog
+
 var edit := {
     "exposure": 0.0,
     "contrast": 0.0,
@@ -126,6 +130,7 @@ var edit := {
 enum PreviewLevel { LOW, MID, FULL }
 var preview_level := PreviewLevel.MID
 var base_image: Image
+var base_image_mid: Image
 var _image_loaded: bool = false
 var _original_filename_base: String = ""
 
@@ -306,31 +311,42 @@ func _on_save_dialog_save_pressed() -> void:
     var filters = PackedStringArray()
     var selected_format = format_option_button.get_item_metadata(format_option_button.selected)
     if selected_format == "jpeg":
-        filters.append("*.jpeg;%s" % tr("TR_JPEG_IMAGE"))
+        filters.append("*.jpeg;" + tr("TR_JPEG_IMAGE"))
     elif selected_format == "png":
-        filters.append("*.png;%s" % tr("TR_PNG_IMAGE"))
+        filters.append("*.png;" + tr("TR_PNG_IMAGE"))
     
     
     var save_file_name = "%s_edited.%s" % [_original_filename_base, selected_format]
-    DisplayServer.file_dialog_show(
-        tr("TR_MENU_SAVE"),
-        ".",
-        save_file_name,
-        false,
-        DisplayServer.FILE_DIALOG_MODE_SAVE_FILE,
-        filters,
-        _on_save_file_selected
-    )
+    #DisplayServer.file_dialog_show(
+        #tr("TR_MENU_SAVE"),
+        #".",
+        #save_file_name,
+        #false,
+        #DisplayServer.FILE_DIALOG_MODE_SAVE_FILE,
+        #filters,
+        #_on_save_file_selected
+    #)
+    
+    if file_dialog.file_selected.is_connected(_on_save_file_selected):
+        file_dialog.file_selected.disconnect(_on_save_file_selected)
+    elif file_dialog.file_selected.is_connected(_on_file_selected):
+        file_dialog.file_selected.disconnect(_on_file_selected)
+        
+    file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+    file_dialog.file_selected.connect(_on_save_file_selected)
+    file_dialog.title = tr("TR_MENU_OPEN")
+    file_dialog.current_file = save_file_name
+    file_dialog.filters = filters
+    file_dialog.popup_centered()
+    
+
     
     
     
 
 
-func _on_save_file_selected(status: bool, paths: PackedStringArray, _filter_index) -> void:
-    if not status:
-        return
-    
-    var path = paths[0]
+func _on_save_file_selected(path) -> void:
+
     var format = format_option_button.get_item_text(format_option_button.selected)
     _set_editor_parameters(editor_full)
     editor_full.apply_adjustments()
@@ -446,29 +462,39 @@ func _on_curve_changed(points: Array, key: String) -> void:
     
 func _open_dialog():
     var filters: PackedStringArray = [
-        tr("TR_SAVE_SUPPORT_IMAGE")
-        + " (*.jpeg *.jpg *.png *.webp *.tiff *.tif"
-        + " *.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)",
 
-        tr("TR_SAVE_STANDARD_IMAGE")
-        + " (*.jpeg *.jpg *.png *.webp *.tiff *.tif)",
+        "*.jpeg,*.jpg,*.png,*.webp,*.tiff,*.tif" + "*.ari,*.arw,*.cr2,*.cr3,*.crm,*.crw,*.dcr,*.dcs,*.dng,*.erf,*.iiq,*.kdc,*.mef,*.mos,*.mrw,*.nef,*.nrw,*.orf,*.ori,*.pef,*.raf,*.raw,*.rw2,*.rwl,*.srw,*.3fr,*.fff,*.x3f,*.qtk;" + tr("TR_SAVE_SUPPORT_IMAGE"),
 
-        tr("TR_SAVE_RAW_IMAGE")
-        + " (*.ari *.arw *.cr2 *.cr3 *.crm *.crw *.dcr *.dcs *.dng *.erf *.iiq *.kdc *.mef *.mos *.mrw *.nef *.nrw *.orf *.ori *.pef *.raf *.raw *.rw2 *.rwl *.srw *.3fr *.fff *.x3f *.qtk)"
+
+        
+        "*.jpeg,*.jpg,*.png,*.webp,*.tiff,*.tif;" + tr("TR_SAVE_STANDARD_IMAGE"),
+
+        
+        "*.ari,*.arw,*.cr2,*.cr3,*.crm,*.crw,*.dcr,*.dcs,*.dng,*.erf,*.iiq,*.kdc,*.mef,*.mos,*.mrw,*.nef,*.nrw,*.orf,*.ori,*.pef,*.raf,*.raw,*.rw2,*.rwl,*.srw,*.3fr,*.fff,*.x3f,*.qtk;" + tr("TR_SAVE_RAW_IMAGE")
     ]
-    DisplayServer.file_dialog_show(
-        tr("TR_MENU_OPEN"),
-        ".",
-        "",
-        false,
-        DisplayServer.FILE_DIALOG_MODE_OPEN_FILE,
-        filters,
-        _open_image
-    )
+    
+    if file_dialog.file_selected.is_connected(_on_save_file_selected):
+        file_dialog.file_selected.disconnect(_on_save_file_selected)
+    elif file_dialog.file_selected.is_connected(_on_file_selected):
+        file_dialog.file_selected.disconnect(_on_file_selected)
+        
+    file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+    file_dialog.file_selected.connect(_on_file_selected)
+    file_dialog.title = tr("TR_MENU_OPEN")
+    file_dialog.current_file = ""
+    file_dialog.filters = filters
+    file_dialog.popup_centered()
 
+func _on_file_selected(path: String):
+    print(path)
+    _load_image(path)
     
 func _open_image(status: bool, paths: PackedStringArray, _filter_index):
+    print("aaa")
+    print(paths)
     if status:
+        print("bb")
+       
         _load_image(paths[0])
 
 
@@ -476,7 +502,7 @@ func _load_image(path: String):
     var bytes = FileAccess.get_file_as_bytes(
         path
     )
-
+    
     _original_filename_base = path.get_file().get_basename()
     var _original_file_ext = path.get_file().get_extension()
     
@@ -492,6 +518,8 @@ func _load_image(path: String):
     _update_metadata()
     _set_image_loaded(true)
     _update_all_slider_labels()
+    
+    base_image_mid = editor_mid.get_image()
 
 
 func _update_metadata():
@@ -575,7 +603,7 @@ func _on_image_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
         if event.pressed:
             if base_image:
-                tex_rect.texture = ImageTexture.create_from_image(base_image)
+                tex_rect.texture = ImageTexture.create_from_image(base_image_mid)
         else:
             preview_level = PreviewLevel.MID
             _update_image()

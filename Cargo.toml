@@ -1,10 +1,6 @@
 [workspace]
 members = [
     "rust/photo-editor",
-    "rust/photo-editor-godot"
+    "rust/photo-editor-godot",
 ]
 
-# ローカル専用
-exclude = [
-  "rust/photo-editor-test"
-]

@@ -1,12 +1,11 @@
 // lib.rs
 
-
+use anyhow::Result;
+use godot::builtin::{PackedByteArray, PackedStringArray, PackedVector2Array, VarDictionary};
 use godot::prelude::*;
-use godot::builtin::{PackedByteArray, PackedVector2Array, VarDictionary, PackedStringArray};
-use photo_editor::{self, PhotoEditor as PhotoEditorImpl, GpuProcessor as GpuProcessorImpl};
-use photo_editor::image::ImageFormat as ImageFormatImpl;
 use ndarray::{Array1, Array2};
-use anyhow::{Result};
+use photo_editor::image::ImageFormat as ImageFormatImpl;
+use photo_editor::{self, GpuProcessor as GpuProcessorImpl, PhotoEditor as PhotoEditorImpl};
 use std::sync::Arc;
 
 /// photo-editorクレートのImageFormat enumのGodotラッパー。
@@ -14,23 +13,79 @@ use std::sync::Arc;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, GodotConvert, Var, Export)]
 #[godot(via = GString)]
 pub enum ImageFormat {
-    JPEG, PNG, WEBP, TIFF,
-    ARI, ARW, CR2, CR3, CRM, CRW, DCR, DCS, DNG, ERF, IIQ, KDC, MEF, MOS, MRW, NEF, NRW, ORF, ORI, PEF, RAF, RAW, RW2, RWL, SRW, _3FR, FFF, X3F, QTK
+    JPEG,
+    PNG,
+    WEBP,
+    TIFF,
+
+    ARI,
+    ARW,
+    CR2,
+    CR3,
+    CRM,
+    CRW,
+    DCR,
+    DCS,
+    DNG,
+    ERF,
+    IIQ,
+    KDC,
+    MEF,
+    MOS,
+    MRW,
+    NEF,
+    NRW,
+    ORF,
+    ORI,
+    PEF,
+    RAF,
+    RAW,
+    RW2,
+    RWL,
+    SRW,
+    _3FR,
+    FFF,
+    X3F,
+    QTK,
 }
 
 // photo-editorのImageFormatとの相互変換
 impl From<ImageFormat> for ImageFormatImpl {
     fn from(format: ImageFormat) -> Self {
         match format {
-            ImageFormat::JPEG => Self::JPEG, ImageFormat::PNG => Self::PNG, ImageFormat::WEBP => Self::WEBP, ImageFormat::TIFF => Self::TIFF,
-            
-            ImageFormat::ARI => Self::ARI, ImageFormat::ARW => Self::ARW, ImageFormat::CR2 => Self::CR2, ImageFormat::CR3 => Self::CR3,
-            ImageFormat::CRM => Self::CRM, ImageFormat::CRW => Self::CRW, ImageFormat::DCR => Self::DCR, ImageFormat::DCS => Self::DCS,
-            ImageFormat::DNG => Self::DNG, ImageFormat::ERF => Self::ERF, ImageFormat::IIQ => Self::IIQ, ImageFormat::KDC => Self::KDC,
-            ImageFormat::MEF => Self::MEF, ImageFormat::MOS => Self::MOS, ImageFormat::MRW => Self::MRW, ImageFormat::NEF => Self::NEF,
-            ImageFormat::NRW => Self::NRW, ImageFormat::ORF => Self::ORF, ImageFormat::ORI => Self::ORI, ImageFormat::PEF => Self::PEF,
-            ImageFormat::RAF => Self::RAF, ImageFormat::RAW => Self::RAW, ImageFormat::RW2 => Self::RW2, ImageFormat::RWL => Self::RWL,
-            ImageFormat::SRW => Self::SRW, ImageFormat::_3FR => Self::_3FR, ImageFormat::FFF => Self::FFF, ImageFormat::X3F => Self::X3F,
+            ImageFormat::JPEG => Self::JPEG,
+            ImageFormat::PNG => Self::PNG,
+            ImageFormat::WEBP => Self::WEBP,
+            ImageFormat::TIFF => Self::TIFF,
+
+            ImageFormat::ARI => Self::ARI,
+            ImageFormat::ARW => Self::ARW,
+            ImageFormat::CR2 => Self::CR2,
+            ImageFormat::CR3 => Self::CR3,
+            ImageFormat::CRM => Self::CRM,
+            ImageFormat::CRW => Self::CRW,
+            ImageFormat::DCR => Self::DCR,
+            ImageFormat::DCS => Self::DCS,
+            ImageFormat::DNG => Self::DNG,
+            ImageFormat::ERF => Self::ERF,
+            ImageFormat::IIQ => Self::IIQ,
+            ImageFormat::KDC => Self::KDC,
+            ImageFormat::MEF => Self::MEF,
+            ImageFormat::MOS => Self::MOS,
+            ImageFormat::MRW => Self::MRW,
+            ImageFormat::NEF => Self::NEF,
+            ImageFormat::NRW => Self::NRW,
+            ImageFormat::ORF => Self::ORF,
+            ImageFormat::ORI => Self::ORI,
+            ImageFormat::PEF => Self::PEF,
+            ImageFormat::RAF => Self::RAF,
+            ImageFormat::RAW => Self::RAW,
+            ImageFormat::RW2 => Self::RW2,
+            ImageFormat::RWL => Self::RWL,
+            ImageFormat::SRW => Self::SRW,
+            ImageFormat::_3FR => Self::_3FR,
+            ImageFormat::FFF => Self::FFF,
+            ImageFormat::X3F => Self::X3F,
             ImageFormat::QTK => Self::QTK,
         }
     }
@@ -38,17 +93,14 @@ impl From<ImageFormat> for ImageFormatImpl {
 
 /// GPUプロセッサのGodotラッパー
 #[derive(GodotClass)]
-#[class(base=Node, init)]
+#[class(base=Node)]
 pub struct GpuProcessor {
     base: Base<Node>,
     processor: Option<Arc<GpuProcessorImpl>>,
     error_message: Option<String>,
 }
-
 #[godot_api]
-impl GpuProcessor {
-    fn base(&self) -> &Base<Node> { &self.base }
-    fn base_mut(&mut self) -> &mut Base<Node> { &mut self.base }
+impl INode for GpuProcessor {
     fn init(base: Base<Node>) -> Self {
         Self {
             base,
@@ -56,7 +108,10 @@ impl GpuProcessor {
             error_message: None,
         }
     }
+}
 
+#[godot_api]
+impl GpuProcessor {
     /// 指定されたアダプターでGPUプロセッサを初期化します。
     #[func]
     pub fn initialize(&mut self, adapter_index: i32) -> bool {
@@ -81,43 +136,42 @@ impl GpuProcessor {
     pub fn get_error(&self) -> GString {
         self.error_message.as_deref().unwrap_or("").into()
     }
-    
+
     /// 利用可能なGPUアダプターのリストを返します。
     #[func]
     pub fn get_adapters() -> PackedStringArray {
-        GpuProcessorImpl::get_adapter_list().iter().map(GString::from).collect()
+        GpuProcessorImpl::get_adapter_string_list()
+            .iter()
+            .map(GString::from)
+            .collect()
     }
 }
 
-
 /// photo_editorクレートのPhotoEditor構造体のGodotラッパー
 #[derive(GodotClass)]
-#[class(base=Node, init)]
+#[class(base=Node)]
 pub struct PhotoEditor {
     base: Base<Node>,
     editor: Option<PhotoEditorImpl>,
 }
 
 #[godot_api]
-impl PhotoEditor {
-    fn base(&self) -> &Base<Node> {
-        &self.base
-    }
-
-    fn base_mut(&mut self) -> &mut Base<Node> {
-        &mut self.base
-    }
-
+impl INode for PhotoEditor {
     fn init(base: Base<Node>) -> Self {
-        Self {
-            base,
-            editor: None,
-        }
+        Self { base, editor: None }
     }
+}
 
+#[godot_api]
+impl PhotoEditor {
     /// 画像データを渡して新しいPhotoEditorインスタンスを作成します。
     #[func]
-    pub fn open_image(&mut self, gpu_processor: Gd<GpuProcessor>, file_data: PackedByteArray, format_str: GString) -> bool {
+    pub fn open_image(
+        &mut self,
+        gpu_processor: Gd<GpuProcessor>,
+        file_data: PackedByteArray,
+        format_str: GString,
+    ) -> bool {
         let format_str = format_str.to_string();
         let format = match ImageFormatImpl::from_ext(&format_str) {
             Ok(f) => f,
@@ -169,8 +223,14 @@ impl PhotoEditor {
             }
             let byte_array = PackedByteArray::from(raw_bytes);
 
-            let image = godot::classes::Image::create_from_data(width, height, false, godot::classes::image::Format::RGBF, &byte_array);
-            
+            let image = godot::classes::Image::create_from_data(
+                width,
+                height,
+                false,
+                godot::classes::image::Format::RGBF,
+                &byte_array,
+            );
+
             Variant::from(image)
         } else {
             godot_warn!("Editor not initialized");
@@ -241,7 +301,11 @@ impl PhotoEditor {
     #[func]
     pub fn set_whitebalance(&mut self, temperature: i32, tint: i32, mask_name: GString) {
         if let Some(editor) = self.editor.as_mut() {
-            let mask = if mask_name.is_empty() { None } else { Some(mask_name.to_string()) };
+            let mask = if mask_name.is_empty() {
+                None
+            } else {
+                Some(mask_name.to_string())
+            };
             if let Err(e) = editor.set_whitebalance(temperature, tint, mask.as_deref()) {
                 godot_error!("Failed to set white balance: {}", e);
             }
@@ -273,14 +337,35 @@ impl PhotoEditor {
             godot_warn!("Editor not initialized");
         }
     }
-    
+
     /// 明るさ関連の調整を設定します。
     #[func]
-    pub fn set_tone(&mut self, exposure: f32, contrast: i32, shadow: i32, highlight: i32, black: i32, white: i32, mask_name: GString) {
+    pub fn set_tone(
+        &mut self,
+        exposure: f32,
+        contrast: i32,
+        shadow: i32,
+        highlight: i32,
+        black: i32,
+        white: i32,
+        mask_name: GString,
+    ) {
         if let Some(editor) = self.editor.as_mut() {
-            let mask = if mask_name.is_empty() { None } else { Some(mask_name.to_string()) };
-            if let Err(e) = editor.set_tone(exposure, contrast, shadow, highlight, black, white, mask.as_deref()) {
-                 godot_error!("Failed to set tone: {}", e);
+            let mask = if mask_name.is_empty() {
+                None
+            } else {
+                Some(mask_name.to_string())
+            };
+            if let Err(e) = editor.set_tone(
+                exposure,
+                contrast,
+                shadow,
+                highlight,
+                black,
+                white,
+                mask.as_deref(),
+            ) {
+                godot_error!("Failed to set tone: {}", e);
             }
         } else {
             godot_warn!("Editor not initialized");
@@ -291,7 +376,13 @@ impl PhotoEditor {
         editor: &mut PhotoEditorImpl,
         points: PackedVector2Array,
         mask_name: GString,
-        setter: impl Fn(&mut PhotoEditorImpl, Option<Array1<i32>>, Option<Array1<i32>>, Option<Array1<i32>>, Option<&str>) -> Result<()>,
+        setter: impl Fn(
+            &mut PhotoEditorImpl,
+            Option<Array1<i32>>,
+            Option<Array1<i32>>,
+            Option<Array1<i32>>,
+            Option<&str>,
+        ) -> Result<()>,
     ) {
         let points_vec = points.to_vec();
         let mut x = Vec::new();
@@ -302,44 +393,72 @@ impl PhotoEditor {
         }
         let x_arr = Some(Array1::from_vec(x));
         let y_arr = Some(Array1::from_vec(y));
-        let mask = if mask_name.is_empty() { None } else { Some(mask_name.to_string()) };
+        let mask = if mask_name.is_empty() {
+            None
+        } else {
+            Some(mask_name.to_string())
+        };
 
         if let Err(e) = setter(editor, None, x_arr, y_arr, mask.as_deref()) {
             godot_error!("Failed to set curve from points: {}", e);
         }
     }
-    
+
     #[func]
-    pub fn set_brightness_tone_curve_from_points(&mut self, points: PackedVector2Array, mask_name: GString) {
+    pub fn set_brightness_tone_curve_from_points(
+        &mut self,
+        points: PackedVector2Array,
+        mask_name: GString,
+    ) {
         if let Some(editor) = self.editor.as_mut() {
-            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| Ok(e.set_brightness_tone_curve(None, x, y, m)?));
+            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| {
+                Ok(e.set_brightness_tone_curve(None, x, y, m)?)
+            });
         } else {
             godot_warn!("Editor not initialized");
         }
     }
 
     #[func]
-    pub fn set_oklch_hue_curve_from_points(&mut self, points: PackedVector2Array, mask_name: GString) {
+    pub fn set_oklch_hue_curve_from_points(
+        &mut self,
+        points: PackedVector2Array,
+        mask_name: GString,
+    ) {
         if let Some(editor) = self.editor.as_mut() {
-            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| Ok(e.set_oklch_hue_curve(None, x, y, m)?));
+            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| {
+                Ok(e.set_oklch_hue_curve(None, x, y, m)?)
+            });
         } else {
             godot_warn!("Editor not initialized");
         }
     }
 
     #[func]
-    pub fn set_oklch_saturation_curve_from_points(&mut self, points: PackedVector2Array, mask_name: GString) {
+    pub fn set_oklch_saturation_curve_from_points(
+        &mut self,
+        points: PackedVector2Array,
+        mask_name: GString,
+    ) {
         if let Some(editor) = self.editor.as_mut() {
-            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| Ok(e.set_oklch_saturation_curve(None, x, y, m)?));
+            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| {
+                Ok(e.set_oklch_saturation_curve(None, x, y, m)?)
+            });
         } else {
             godot_warn!("Editor not initialized");
         }
     }
 
     #[func]
-    pub fn set_oklch_lightness_curve_from_points(&mut self, points: PackedVector2Array, mask_name: GString) {
+    pub fn set_oklch_lightness_curve_from_points(
+        &mut self,
+        points: PackedVector2Array,
+        mask_name: GString,
+    ) {
         if let Some(editor) = self.editor.as_mut() {
-            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| Ok(e.set_oklch_lightness_curve(None, x, y, m)?));
+            Self::set_curve_from_points(editor, points, mask_name, |e, _, x, y, m| {
+                Ok(e.set_oklch_lightness_curve(None, x, y, m)?)
+            });
         } else {
             godot_warn!("Editor not initialized");
         }
@@ -351,33 +470,42 @@ impl PhotoEditor {
             let width = mask_image.get_width() as usize;
             let height = mask_image.get_height() as usize;
 
-            if width != editor.image.width as usize || height != editor.image.height as usize{
-                godot_error!("Mask dimensions ({}, {}) must match image dimensions ({}, {})", width, height, editor.image.width, editor.image.height);
+            if width != editor.image.width as usize || height != editor.image.height as usize {
+                godot_error!(
+                    "Mask dimensions ({}, {}) must match image dimensions ({}, {})",
+                    width,
+                    height,
+                    editor.image.width,
+                    editor.image.height
+                );
                 return;
             }
-            
+
             let data = mask_image.get_data();
             let data_vec = data.to_vec();
-            
+
             let mask_data: Vec<f32> = match mask_image.get_format() {
-                 godot::classes::image::Format::L8 => {
-                     data_vec.iter().map(|&val| val as f32 / 255.0).collect()
-                 },
-                 godot::classes::image::Format::RGB8 => {
-                      data_vec.iter().step_by(3).map(|&r| r as f32 / 255.0).collect()
-                 },
-                 godot::classes::image::Format::RGBA8 => {
-                      data_vec.iter().step_by(4).map(|&r| r as f32 / 255.0).collect()
-                 },
-                 _ => {
-                     godot_error!("Unsupported mask image format. Please use L8, RGB8, or RGBA8.");
-                     return;
-                 }
+                godot::classes::image::Format::L8 => {
+                    data_vec.iter().map(|&val| val as f32 / 255.0).collect()
+                }
+                godot::classes::image::Format::RGB8 => data_vec
+                    .iter()
+                    .step_by(3)
+                    .map(|&r| r as f32 / 255.0)
+                    .collect(),
+                godot::classes::image::Format::RGBA8 => data_vec
+                    .iter()
+                    .step_by(4)
+                    .map(|&r| r as f32 / 255.0)
+                    .collect(),
+                _ => {
+                    godot_error!("Unsupported mask image format. Please use L8, RGB8, or RGBA8.");
+                    return;
+                }
             };
-            
+
             let mask_array = Array2::from_shape_vec((height, width), mask_data).unwrap();
             editor.add_mask(&name.to_string(), mask_array);
-
         } else {
             godot_warn!("Editor not initialized");
         }
@@ -393,7 +521,6 @@ impl PhotoEditor {
     }
 }
 
-// Godot extension entry point
 struct PhotoEditorGodotLibrary;
 
 #[gdextension]

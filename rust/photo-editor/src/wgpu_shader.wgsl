@@ -9,11 +9,10 @@
 @group(0) @binding(3) var masks_tex: texture_2d_array<f32>;
 @group(0) @binding(4) var<storage, read> masks_params: array<GpuEditParameters>;
 
-@group(0) @binding(5) var<storage, read> tone_lut: array<i32>;
-@group(0) @binding(6) var<storage, read> brightness_curve: array<i32>;
-@group(0) @binding(7) var<storage, read> hue_curve: array<i32>;
-@group(0) @binding(8) var<storage, read> saturation_curve: array<i32>;
-@group(0) @binding(9) var<storage, read> lightness_curve: array<i32>;
+@group(0) @binding(5) var<storage, read> brightness_curve: array<i32>;
+@group(0) @binding(6) var<storage, read> hue_curve: array<i32>;
+@group(0) @binding(7) var<storage, read> saturation_curve: array<i32>;
+@group(0) @binding(8) var<storage, read> lightness_curve: array<i32>;
 
 struct BaseParams {
     width: u32,
@@ -27,6 +26,12 @@ struct GpuEditParameters {
     b_gain: f32,
     vignette: i32,
     lens_distortion: f32,
+    exposure: f32,
+    contrast: f32,
+    shadow: f32,
+    highlight: f32,
+    black: f32,
+    white: f32,
 };
 
 
@@ -188,13 +193,147 @@ fn lut_fetch(which: u32, mask_index: u32, idx: u32) -> u32 {
     let base = mask_index * 65536u + idx;
 
     switch(which) {
-        case 0u: { return u32(clamp(tone_lut[base], 0, 65535)); }
-        case 1u: { return u32(clamp(brightness_curve[base], 0, 65535)); }
-        case 2u: { return u32(clamp(hue_curve[base], 0, 65535)); }
-        case 3u: { return u32(clamp(saturation_curve[base], 0, 65535)); }
-        case 4u: { return u32(clamp(lightness_curve[base], 0, 65535)); }
+        case 0u: { return u32(clamp(brightness_curve[base], 0, 65535)); }
+        case 1u: { return u32(clamp(hue_curve[base], 0, 65535)); }
+        case 2u: { return u32(clamp(saturation_curve[base], 0, 65535)); }
+        case 3u: { return u32(clamp(lightness_curve[base], 0, 65535)); }
         default  { return 0; }
     }
+}
+
+//--------------------------------------------------------------------------------
+// Tone
+//--------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------
+// Filmic (Uncharted2)
+//--------------------------------------------------------------------------------
+fn filmic(x: f32) -> f32 {
+    let A = 0.22;
+    let B = 0.30;
+    let C = 0.10;
+    let D = 0.20;
+    let E = 0.01;
+    let F = 0.30;
+
+    return ((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E/F;
+}
+
+fn filmic_rgb(rgb: vec3<f32>) -> vec3<f32> {
+    return vec3<f32>(
+        filmic(rgb.r),
+        filmic(rgb.g),
+        filmic(rgb.b)
+    );
+}
+
+//--------------------------------------------------------------------------------
+// Tone + Filmic + Local Contrast(軽量)
+//--------------------------------------------------------------------------------
+
+fn curve(v_in: f32, 
+    contrast: f32,
+    shadow: f32,
+    highlight: f32,
+    black: f32,
+    white: f32) -> f32 {
+    var v = v_in;
+
+    // Blacks
+    {
+        let w = 1.0 - smoothstep(0.0, 0.25, v);
+        v = mix(v, v + black * 0.2, w);
+    }
+
+    // Shadows
+    {
+        let w = 1.0 - smoothstep(0.0, 0.5, v);
+        let lifted = v + shadow * (1.0 - v) * (1.0 - v);
+        v = mix(v, lifted, w);
+    }
+
+    // Contrast
+    {
+        let pivot = 0.18;
+        v = (v - pivot) * (1.0 + contrast) + pivot;
+    }
+
+    // Highlights
+    {
+        let w = smoothstep(0.5, 1.0, v);
+        let compressed = v - highlight * v * v;
+        v = mix(v, compressed, w);
+    }
+
+    // Whites
+    {
+        let w = smoothstep(0.75, 1.0, v);
+        v = mix(v, v + white * 0.2, w);
+    }
+
+    return max(v, 0.0);
+}
+
+fn tone(
+    rgb_vec4: vec4<f32>,
+    exposure: f32,   // -6.0 ~ +6.0 (EV)
+    contrast: f32,   // -1.0 ~ +1.0
+    shadow: f32,     // -1.0 ~ +1.0
+    highlight: f32,  // -1.0 ~ +1.0
+    black: f32,      // -1.0 ~ +1.0
+    white: f32,      // -1.0 ~ +1.0
+    xy: vec2<i32>
+) -> vec4<f32> {
+
+    var color = rgb_vec4.rgb;
+
+    // --- 露出(EV) ---
+    let exposure_mul = pow(2.0, exposure);
+    color *= exposure_mul;
+
+    // 輝度(リニア)
+    let luma = dot(color, vec3<f32>(0.2126, 0.7152, 0.0722));
+
+    // --- シャドウ/ハイライトマスク ---
+    let shadow_mask = clamp(1.0 - luma, 0.0, 1.0);
+    // highlight: 明部ほど1に近い
+    let highlight_mask = clamp(luma, 0.0, 1.0);
+
+    // --- シャドウ補正 ---
+    let shadow_gain = 1.0 + shadow * shadow_mask;
+    color *= shadow_gain;
+
+    // --- ハイライト補正 ---
+    let highlight_gain = 1.0 + highlight * highlight_mask;
+    color *= highlight_gain;
+
+    // --- ブラック ---
+    if (black != 0.0) {
+        let t = clamp(luma, 0.0, 1.0);
+        let black_mask = pow(1.0 - t, 2.0);
+        color += black * black_mask;
+    }
+
+    // --- ホワイト ---
+    if (white != 0.0) {
+        let t = clamp(luma, 0.0, 1.0);
+        let white_mask = pow(t, 2.0);
+        color += white * white_mask;
+    }
+
+    // --- コントラスト ---
+    if (contrast != 0.0) {
+        let pivot = 0.5;
+        let c = 1.0 + contrast;
+
+        color = (color - vec3<f32>(pivot)) * c + vec3<f32>(pivot);
+    }
+
+    // --- クリップ ---
+    color = clamp(color, vec3<f32>(0.0), vec3<f32>(1.0));
+
+    return vec4<f32>(color, rgb_vec4.a);
 }
 
 //--------------------------------------------------------------------------------
@@ -228,20 +367,23 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         var g_f32 = rgb_vec4.g * p.g_gain;
         var b_f32 = rgb_vec4.b * p.b_gain;
 
-        var r_u32 = u32(r_f32 * 65535);
-        var g_u32 = u32(g_f32 * 65535);
-        var b_u32 = u32(b_f32 * 65535);
-        // Curves
 
         // tone
+        rgb_vec4 = tone(vec4<f32>(r_f32, g_f32, b_f32, 1.0), p.exposure, p.contrast, p.shadow, p.highlight, p.black, p.white, xy);
+
+
+        var r_u32 = u32(rgb_vec4.r * 65535);
+        var g_u32 = u32(rgb_vec4.g * 65535);
+        var b_u32 = u32(rgb_vec4.b * 65535);
+        
+
+        
+        
+        // Curves
+        // brightness
         r_u32 = lut_fetch(0u, mask_index, r_u32);
         g_u32 = lut_fetch(0u, mask_index, g_u32);
         b_u32 = lut_fetch(0u, mask_index, b_u32);
-
-        // brightness
-        r_u32 = lut_fetch(1u, mask_index, r_u32);
-        g_u32 = lut_fetch(1u, mask_index, g_u32);
-        b_u32 = lut_fetch(1u, mask_index, b_u32);
 
         r_f32 = f32(r_u32) / 65535.0;
         g_f32 = f32(g_u32) / 65535.0;
@@ -264,9 +406,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         var c_u32 = u32(c_f32 * 65535);
         var h_u32 = u32(h_f32 * 65535);
         
-        let new_hue = lut_fetch(2u, mask_index, h_u32);
-        let saturation_gain = lut_fetch(3u, mask_index, h_u32);
-        let lightness_gain = lut_fetch(4u, mask_index, h_u32);
+        let new_hue = lut_fetch(1u, mask_index, h_u32);
+        let saturation_gain = lut_fetch(2u, mask_index, h_u32);
+        let lightness_gain = lut_fetch(3u, mask_index, h_u32);
 
         oklch_vec4.z = f32(new_hue) / 65535.0;
         oklch_vec4.y = c_f32 * (f32(saturation_gain) / 32767.5);

@@ -337,3 +337,8 @@ text = "TR_BUTTON_CANCEL"
 unique_name_in_owner = true
 
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
+
+[node name="FileDialog" type="FileDialog" parent="."]
+title = "Open File(s)"
+file_mode = 1
+access = 2

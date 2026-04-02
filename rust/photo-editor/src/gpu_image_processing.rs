@@ -1,14 +1,11 @@
 // gpu_image_processing.rs
 
 use crate::errors::PhotoEditorError;
-use crate::{EditParameters, Image, Mask};
-use ndarray::Array1;
+use crate::{Image, Mask};
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::time;
 use wgpu::util::DeviceExt;
-
-use crate::interpolation;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -26,9 +23,16 @@ pub struct GpuEditParameters {
     pub b_gain: f32,
     pub vignette: i32,
     pub lens_distortion: f32,
+    pub exposure: f32,
+    pub contrast: f32,
+    pub shadow: f32,
+    pub highlight: f32,
+    pub black: f32,
+    pub white: f32,
 }
 
 pub struct GpuProcessor {
+    adapter: Arc<wgpu::Adapter>,
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
     pipeline: wgpu::ComputePipeline,
@@ -45,23 +49,14 @@ impl GpuProcessor {
             .nth(adapter_index)
             .ok_or_else(|| PhotoEditorError::gpu_initialization_no_source())?;
 
-        // ここ重要: テクスチャ配列を使うので features 必須
-        let required_features =
-            wgpu::Features::TEXTURE_BINDING_ARRAY | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY;
-
-        // adapterが対応してないとrequest_deviceで落ちるので、先にチェック
-        if !adapter.features().contains(required_features) {
-            return Err(PhotoEditorError::gpu_initialization_no_source());
-        }
-
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: None,
-            required_features,
             required_limits: adapter.limits().clone(),
             ..Default::default()
         }))
         .map_err(PhotoEditorError::gpu_initialization)?;
 
+        let adapter = Arc::new(adapter);
         let device = Arc::new(device);
         let queue = Arc::new(queue);
 
@@ -124,7 +119,7 @@ impl GpuProcessor {
                     },
                     count: None,
                 },
-                // 5: tone LUT storage buffer (read-only)
+                // 5: brightness LUT storage buffer (read-only)
                 wgpu::BindGroupLayoutEntry {
                     binding: 5,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -135,7 +130,7 @@ impl GpuProcessor {
                     },
                     count: None,
                 },
-                // 6: brightness LUT storage buffer (read-only)
+                // 6: hue LUT storage buffer (read-only)
                 wgpu::BindGroupLayoutEntry {
                     binding: 6,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -146,7 +141,7 @@ impl GpuProcessor {
                     },
                     count: None,
                 },
-                // 7: hue LUT storage buffer (read-only)
+                // 7: saturation LUT storage buffer (read-only)
                 wgpu::BindGroupLayoutEntry {
                     binding: 7,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -157,20 +152,9 @@ impl GpuProcessor {
                     },
                     count: None,
                 },
-                // 8: saturation LUT storage buffer (read-only)
+                // 8: lightness LUT storage buffer (read-only)
                 wgpu::BindGroupLayoutEntry {
                     binding: 8,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                // 9: lightness LUT storage buffer (read-only)
-                wgpu::BindGroupLayoutEntry {
-                    binding: 9,
                     visibility: wgpu::ShaderStages::COMPUTE,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Storage { read_only: true },
@@ -204,6 +188,7 @@ impl GpuProcessor {
         });
 
         Ok(Self {
+            adapter,
             device,
             queue,
             pipeline,
@@ -211,9 +196,14 @@ impl GpuProcessor {
         })
     }
 
+    pub fn adapter(&self) -> Arc<wgpu::Adapter> {
+        self.adapter.clone()
+    }
+
     pub fn device(&self) -> Arc<wgpu::Device> {
         self.device.clone()
     }
+
     pub fn queue(&self) -> Arc<wgpu::Queue> {
         self.queue.clone()
     }
@@ -229,7 +219,6 @@ impl GpuProcessor {
 
         // 1. 各種バッファ用のベクタ準備
         let mut gpu_params = Vec::new();
-        let mut all_tone_luts = Vec::new();
         let mut all_brightness_luts = Vec::new();
         let mut all_hue_luts = Vec::new();
         let mut all_sat_luts = Vec::new();
@@ -244,11 +233,15 @@ impl GpuProcessor {
                 b_gain: 1.0 - 0.5 * (params.wb_temperature as f32 / 100.0),
                 vignette: params.vignette,
                 lens_distortion: params.lens_distortion as f32,
+                exposure: params.exposure,
+                contrast: params.contrast as f32 / 100.0,
+                shadow: params.shadow as f32 / 100.0,
+                highlight: params.highlight as f32 / 100.0,
+                black: params.black as f32 / 100.0,
+                white: params.white as f32 / 100.0,
             });
 
             // LUTの生成
-
-            all_tone_luts.extend(self.create_tone_lut(params)?.to_vec());
             all_brightness_luts.extend(params.brightness_tone_curve.to_vec());
             all_hue_luts.extend(params.hue_tone_curve.to_vec());
             all_sat_luts.extend(params.saturation_tone_curve.to_vec());
@@ -269,7 +262,6 @@ impl GpuProcessor {
             });
 
         let param_buf = self.create_storage_buffer("Params", &gpu_params);
-        let tone_buf = self.create_storage_buffer("Tone LUT", &all_tone_luts);
         let bright_buf = self.create_storage_buffer("Bright LUT", &all_brightness_luts);
         let hue_buf = self.create_storage_buffer("Hue LUT", &all_hue_luts);
         let sat_buf = self.create_storage_buffer("Sat LUT", &all_sat_luts);
@@ -343,22 +335,18 @@ impl GpuProcessor {
                 },
                 wgpu::BindGroupEntry {
                     binding: 5,
-                    resource: tone_buf.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 6,
                     resource: bright_buf.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 7,
+                    binding: 6,
                     resource: hue_buf.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 8,
+                    binding: 7,
                     resource: sat_buf.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 9,
+                    binding: 8,
                     resource: light_buf.as_entire_binding(),
                 },
             ],
@@ -400,7 +388,7 @@ impl GpuProcessor {
         let output_img =
             Image::from_texture(self.device(), self.queue(), output_tex, output_texture_view);
 
-        println!("{:?}", time::Instant::now() - t);
+        println!("apply_adjustments: {:?}", time::Instant::now() - t);
         Ok(output_img)
     }
 
@@ -414,7 +402,7 @@ impl GpuProcessor {
             })
     }
 
-    pub fn get_adapter_list() -> Vec<String> {
+    pub fn get_adapter_string_list() -> Vec<String> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         instance
             .enumerate_adapters(wgpu::Backends::all())
@@ -429,43 +417,8 @@ impl GpuProcessor {
             .collect()
     }
 
-    fn create_tone_lut(&self, params: &EditParameters) -> Result<Array1<i32>, PhotoEditorError> {
-        let x_lum = Array1::from_iter((0..65536).map(|i| i as f32 / 65535.0));
-        let mut y_lum = x_lum.clone();
-
-        y_lum = y_lum * (2.0f32).powf(params.exposure);
-
-        let p5 = 0.05f32;
-        let p25 = 0.25f32;
-        let p50 = 0.50f32;
-        let p75 = 0.75f32;
-        let p95 = 0.95f32;
-        let black_l = (p5 + (p50 - p5) * (params.black as f32 / 100.0)).clamp(0.0, 1.0);
-        let shadow_l = (p25 + (p50 - p25) * (params.shadow as f32 / 100.0)).clamp(0.0, 1.0);
-        let mid_l = p50;
-        let highlight_l = (p75 - (p75 - p50) * (params.highlight as f32 / 100.0)).clamp(0.0, 1.0);
-        let white_l = (p95 - (p95 - p50) * (params.white as f32 / 100.0)).clamp(0.0, 1.0);
-
-        let mut points = vec![
-            (0.0, 0.0),
-            (black_l, (black_l + p5) / 2.0),
-            (shadow_l, (shadow_l + p25) / 2.0),
-            (mid_l, mid_l),
-            (highlight_l, (highlight_l + p75) / 2.0),
-            (white_l, (white_l + p95) / 2.0),
-            (1.0, 1.0),
-        ];
-        points.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-        points.dedup_by_key(|p| p.0);
-
-        let xs: Array1<f32> = points.iter().map(|p| p.0).collect();
-        let ys: Array1<f32> = points.iter().map(|p| p.1).collect();
-
-        let lum_mapped =
-            interpolation::pchip_interpolate(&xs, &ys, &y_lum.mapv(|v| v.clamp(0.0, 1.0)))?;
-        let c_factor = 1.0f32 + params.contrast as f32 / 100.0f32;
-        let lum_contrasted = lum_mapped.mapv(|v| 0.5f32 + (v - 0.5f32) * c_factor);
-
-        Ok(lum_contrasted.mapv(|v| (v.clamp(0.0f32, 1.0f32) * 65535.0f32) as i32))
+    pub fn get_adapter_list() -> Vec<wgpu::Adapter> {
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        instance.enumerate_adapters(wgpu::Backends::all())
     }
 }
