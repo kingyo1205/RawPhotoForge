@@ -7,7 +7,7 @@
 RawPhotoForge is a fully local RAW photo editing software.
 The project was originally implemented in Python, but the **Rust version is now the latest and actively developed version**.
 
-The Rust implementation is designed around **wgpu**, avoiding vendor-specific GPU APIs such as CUDA.
+The Rust implementation is designed around **wgpu**, avoiding vendor-specific GPU APIs.
 This ensures portability, performance, and long-term maintainability.
 
 ---
