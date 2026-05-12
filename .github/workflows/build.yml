@@ -76,7 +76,7 @@ jobs:
         run: brew install tree
 
       - name: Install cargo-about
-        run: cargo install cargo-about
+        run: cargo install --locked --features cli cargo-about
 
       - name: Build Rust GDExtension
         run: cargo build --release -p photo-editor-godot
