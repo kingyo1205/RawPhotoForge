@@ -312,7 +312,7 @@ async function initializeApp() {
     updateAllSliderLabels();
 
 
-    const canvasContext = ui.mainCanvas.getContext("webgpu") as unknown as GPUCanvasContext | null;
+    canvasContext = ui.mainCanvas.getContext("webgpu");
     if (!canvasContext) {
         alert(i18n.t("TR_ERROR_GET_WEBGPU_CANVAS_CONTEXT"));
         return;

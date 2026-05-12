@@ -1292,13 +1292,13 @@ async function initializeApp() {
   setupEventListeners();
   setupToneCurveEditors();
   updateAllSliderLabels();
-  const canvasContext2 = ui.mainCanvas.getContext("webgpu");
-  if (!canvasContext2) {
+  canvasContext = ui.mainCanvas.getContext("webgpu");
+  if (!canvasContext) {
     alert(i18n.t("TR_ERROR_GET_WEBGPU_CANVAS_CONTEXT"));
     return;
   }
   presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-  canvasContext2.configure({
+  canvasContext.configure({
     device: gpuProcessor.getDevice(),
     format: presentationFormat,
     alphaMode: "premultiplied"
