@@ -1530,10 +1530,10 @@ function setupToneCurveEditors() {
   toneCurveEditors["hue"] = new ToneCurveEditor("hue-tone-curve-editor", CurveMode.HUE, onCurveChange("hue_tone_curve_points"), onDragStart, onDragEnd);
   toneCurveEditors["saturation"] = new ToneCurveEditor("saturation-tone-curve-editor", CurveMode.SATURATION, onCurveChange("saturation_tone_curve_points"), onDragStart, onDragEnd);
   toneCurveEditors["lightness"] = new ToneCurveEditor("lightness-tone-curve-editor", CurveMode.LIGHTNESS, onCurveChange("lightness_tone_curve_points"), onDragStart, onDragEnd);
-  toneCurveEditors["brightness"].setBackground("/assets/tone_curve/brightness_gradient.png");
-  toneCurveEditors["hue"].setBackground("/assets/tone_curve/hue_bars.png");
-  toneCurveEditors["saturation"].setBackground("/assets/tone_curve/hue_vs_saturation.png");
-  toneCurveEditors["lightness"].setBackground("/assets/tone_curve/hue_vs_lightness.png");
+  toneCurveEditors["brightness"].setBackground("./assets/tone_curve/brightness_gradient.png");
+  toneCurveEditors["hue"].setBackground("./assets/tone_curve/hue_bars.png");
+  toneCurveEditors["saturation"].setBackground("./assets/tone_curve/hue_vs_saturation.png");
+  toneCurveEditors["lightness"].setBackground("./assets/tone_curve/hue_vs_lightness.png");
   Object.values(toneCurveEditors).forEach((editor) => {
     editState.brightness_tone_curve_points = editor.points;
   });
