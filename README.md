@@ -1,78 +1,204 @@
-
 # RawPhotoForge
-**High-performance & fast & Non-destructive RAW photo editor**
 
-![RawPhotoForge Screenshot](images/screenshot-main.png)
+GPU Photo Editor Project
 
-RawPhotoForge is a fully local RAW photo editing software.
-The project was originally implemented in Python, but the **Rust version is now the latest and actively developed version**.
+![Screenshot](images/screenshot-main.png)
 
-The Rust implementation is designed around **wgpu**, avoiding vendor-specific GPU APIs.
-This ensures portability, performance, and long-term maintainability.
+RawPhotoForge is a photo editing project
+that utilizes GPU acceleration.
+
+Currently:
+
+* WebGPU-based Web version
+* Rust + Godot-based Desktop version
+
+are under development.
+
+The project focuses on
+high performance,
+non-destructive editing,
+and cross-platform design.
 
 ---
 
 ## Repository Structure
 
-```
-
+```text
 RawPhotoForge/
-├── python-legacy/   # Legacy Python implementation (up to v0.5.0)
-└── rust/            # Current Rust implementation (active development)
-
+├── web/              # Web version
+├── rust/             # Rust + Godot Desktop version
+└── python-legacy/    # Legacy Python version
 ```
+
+### web
+
+* WebGPU-based
+* TypeScript
+* Runs in the browser
+* Static hosting
+
+### rust
+
+* Core: Rust
+* GPU: wgpu
+* UI: Godot Engine + GDExtension
+* RAW support
 
 ### python-legacy
-- Original implementation
-- Python-based
-- Preserved for historical releases
-- **No longer maintained**
 
-### rust (Latest)
-- Core: Rust
-- GPU: wgpu (vendor-independent)
-- UI: Godot Engine via GDExtension
+* Initial implementation
+* Python-based
+* Preserved for existing releases
+* No longer actively maintained
 
 ---
 
-## Rust Project Layout
+## Projects
 
+### RawPhotoForge Web
 
-```
+A browser-based GPU photo editing application.
+
+#### Features
+
+* WebGPU-based
+* TypeScript
+* Static hosting
+* No installation required
+* Cross-platform
+
+#### Tech Stack
+
+* TypeScript
+* WebGPU
+
+Deno is used for development.
+
+---
+
+### RawPhotoForge Desktop
+
+A native RAW development application
+built with Rust + Godot.
+
+#### Features
+
+* RAW support
+* Rust
+* wgpu
+* Godot Engine
+* GDExtension
+* GPU acceleration
+* Non-destructive editing
+
+---
+
+#### Rust Version Structure
+
+```text
 rust/
-├── photo-editor           # Core image processing library
-├── photo-editor-godot     # Godot GDExtension wrapper
+├── photo-editor           # Image processing core
+├── photo-editor-godot     # GDExtension for Godot
 └── raw-photo-forge        # Godot project (UI)
 ```
 
+##### photo-editor
 
-- `photo-editor`
-  - RAW image processing
-  - GPU-based image operations
-  - Metadata handling
-- `photo-editor-godot`
-  - Bridge between Rust core and Godot
-- `raw-photo-forge`
-  - User interface
-  - Preview and interaction
-  - Application settings
+* RAW image processing
+* GPU image operations
+* Metadata processing
+
+##### photo-editor-godot
+
+* Integration layer between the Rust core and Godot
+
+##### raw-photo-forge
+
+* UI
+* Preview
+* Various settings
+
+---
+
+#### Tech Stack
+
+* Rust
+* wgpu
+* Godot Engine
+* GDExtension
+
+---
+
+#### About Godot Engine
+
+* The UI uses **Godot Engine**
+* Integrated with Rust via **GDExtension**
+* Godot Engine itself is distributed under the MIT License. See the official Godot website for details
+
+---
+
+#### Build Instructions
+
+RawPhotoForge Desktop consists of:
+a Rust-based core and
+a UI built with Godot(GDExtension).
+
+Below are the steps for building from source
+on a Linux environment.
+
+##### Requirements
+
+* Rust
+* Cargo
+* Godot Engine (standard version, .NET version not required)
+* Linux (tested on x86_64)
+
+##### Steps
+
+```bash
+git clone https://github.com/kingyo1205/RawPhotoForge.git
+cd RawPhotoForge
+
+# Build the Rust GDExtension
+cargo build -r -p photo-editor-godot
+
+# Generate dependency license information
+cargo about init
+cargo about generate about.hbs > rust_licenses.html
+
+# Copy the generated shared library into the Godot addon
+cp ./target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/libs/Linux-x86_64/
+```
+
+##### Exporting with Godot
+
+1. Open the `rust/raw-photo-forge/` directory as a project in Godot
+2. Confirm that the GDExtension is loaded correctly
+3. Use Godot's export feature to generate binaries
 
 ---
 
 ## License
 
-### Project License
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+### Main Project
+
+This project is released under the
+**GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
 See the `LICENSE` file for details.
 
 ### Dependency Licenses (Rust)
-Third-party Rust dependencies and their licenses are documented in:
 
-- **`rust_licenses.html`**
+A list of licenses for the dependencies
+used in the Rust version is provided in:
 
-This file is generated using `cargo-about`.
+* `rust_licenses.html`
+
+This file is generated using
+`cargo-about`.
 
 Example:
+
 ```bash
 cargo about generate about.hbs > rust_licenses.html
 ```
@@ -80,76 +206,37 @@ cargo about generate about.hbs > rust_licenses.html
 ---
 
 ## AI Tools Used
-The development of RawPhotoForge is supported by the following AI tools:
 
-- ChatGPT
-- Gemini
-- Gemini CLI
-- Claude
+The following AI tools are used
+during the development of RawPhotoForge.
 
----
-
-## Godot Engine
-
-* The UI is built using **Godot Engine**
-* Rust and Godot are connected via **GDExtension**
-* Godot Engine is licensed separately under the MIT License
-  See the official Godot website for details
-
+* ChatGPT
+* Gemini
+* Gemini CLI
+* Claude
 
 ---
 
+## Philosophy
 
-## Build from Source
-
-RawPhotoForge consists of a Rust-based core and a Godot UI using GDExtension.
-Below are the steps to build the project from source on Linux.
-
-### Requirements
-
-- Rust
-- Cargo
-- Godot Engine (standard version, .NET not required)
-- Linux (tested on x86_64)
-
-### Steps
-
-```bash
-git clone https://github.com/kingyo1205/RawPhotoForge.git
-cd RawPhotoForge
-
-# Build Rust GDExtension
-cargo build -r -p photo-editor-godot
-
-# Generate license information for Rust dependencies
-cargo about init
-cargo about generate about.hbs > rust_licenses.html
-
-# Copy the generated shared library into the Godot addon directory
-cp ./target/release/libphoto_editor_godot.so ./rust/raw-photo-forge/addons/photo_editor/libs/Linux-x86_64/
-
-```
-
-### Export with Godot
-
-1. Open `rust/raw-photo-forge/` as a project in Godot
-2. Make sure the GDExtension is loaded correctly
-3. Use Godot’s export feature to build the final binary
-
+* GPU accelerated
+* GPU vendor-free
+* Cross-platform
+* Non-destructive editing
+* Local-first
+* Open source
 
 ---
 
 ## Notes
 
-* Designed as a modern, open-source RAW editor
-* Architecture is still evolving
+* The project is being developed with the goal of becoming an alternative to commercial RAW editing software
+* The architecture and implementation are continuously evolving
 
 ---
 
-## Project Status
+## Development Status
 
-* Python version: legacy (archived)
-* Rust version: **active development (latest)**
-
-
-
+* Python version: Development ended
+* Web version: Under active development
+* Rust version: Under active development

@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "deno.window",
+            "dom"
+        ]
+    },
+    "tasks": {
+        "dev": "deno run -A dev.ts",
+        "build": "deno run -A build.ts"
+    }
+}

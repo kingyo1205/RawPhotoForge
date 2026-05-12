@@ -5,370 +5,868 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="icon" href="icon.png" />
     <title>RawPhotoForge</title>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-            color: #e0e0e0; line-height: 1.6; overflow-x: hidden;
+            background:
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
         }
-        .hero { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;
-            background: radial-gradient(ellipse at top, rgba(255,120,0,0.15), transparent), radial-gradient(ellipse at bottom, rgba(255,80,20,0.1), transparent);
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background:
+                radial-gradient(
+                    ellipse at top,
+                    rgba(255,120,0,0.15),
+                    transparent
+                ),
+                radial-gradient(
+                    ellipse at bottom,
+                    rgba(255,80,20,0.1),
+                    transparent
+                );
         }
+
         .hero::before {
-            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
-            background: repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255,120,0,0.03) 100px, rgba(255,120,0,0.03) 102px),
-                        repeating-linear-gradient(0deg, transparent, transparent 100px, rgba(255,120,0,0.03) 100px, rgba(255,120,0,0.03) 102px);
+            content: '';
+            position: absolute;
+            inset: 0;
+
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 100px,
+                    rgba(255,120,0,0.03) 100px,
+                    rgba(255,120,0,0.03) 102px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 100px,
+                    rgba(255,120,0,0.03) 100px,
+                    rgba(255,120,0,0.03) 102px
+                );
+
             pointer-events: none;
         }
-        .hero-content { position: relative; z-index: 1; max-width: 1200px; }
-        h1 { font-size: 5rem; font-weight: 900; margin-bottom: 1rem;
-            background: linear-gradient(135deg, #ff7800 0%, #ffb347 50%, #ff6b35 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-            text-shadow: 0 0 40px rgba(255,120,0,0.3); animation: glow 3s ease-in-out infinite alternate;
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
         }
-        @keyframes glow { from { filter: drop-shadow(0 0 20px rgba(255,120,0,0.4)); } to { filter: drop-shadow(0 0 40px rgba(255,120,0,0.6)); } }
-        .subtitle { font-size: 1.8rem; color: #ff9f66; margin-bottom: 2rem; font-weight: 300; letter-spacing: 2px; }
-        .description { font-size: 1.2rem; max-width: 800px; margin: 0 auto 3rem; color: #b0b0b0; line-height: 1.8; }
-        .cta-buttons { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-top:3rem; }
-        .btn { padding:1.2rem 3rem; font-size:1.1rem; font-weight:600; text-decoration:none; border-radius:50px; transition:all .3s; display:inline-block; position:relative; overflow:hidden; }
-        .btn-primary { background: linear-gradient(135deg,#ff7800,#ff6b35); color:white; box-shadow: 0 10px 30px rgba(255,120,0,0.4); }
-        .btn-secondary { background: rgba(255,120,0,0.1); color:#ff9f66; border:2px solid #ff7800; }
-        .section { padding:5rem 2rem; position:relative; }
-        .section::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:80%; height:1px; background:linear-gradient(90deg, transparent, #ff7800, transparent); }
-        .container { max-width:1200px; margin:0 auto; }
-        .section-title { font-size:3rem; text-align:center; margin-bottom:3rem; color:#ff9f66; position:relative; display:inline-block; left:50%; transform:translateX(-50%); }
-        .features-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:2rem; margin-top:3rem; }
-        .feature-card { background:linear-gradient(135deg, rgba(255,120,0,0.05), rgba(255,107,53,0.05)); border:1px solid rgba(255,120,0,0.2); border-radius:20px; padding:2.5rem; transition:all .3s; position:relative; overflow:hidden; }
-        .feature-card:hover { transform:translateY(-10px); box-shadow:0 20px 40px rgba(255,120,0,0.2); border-color:#ff7800; }
-        .feature-icon { font-size:3rem; margin-bottom:1.5rem; display:block; }
-        .feature-title { font-size:1.5rem; color:#ff9f66; margin-bottom:1rem; font-weight:600; }
-        .feature-description { color:#b0b0b0; line-height:1.6; }
-        .tech-stack { display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center; margin-top:3rem; }
-        .tech-badge { background:rgba(255,120,0,0.1); border:2px solid rgba(255,120,0,0.3); padding:1rem 2rem; border-radius:30px; font-weight:600; color:#ff9f66; transition:all .3s; }
-        .usage-section { background:rgba(255,120,0,0.02); border-radius:30px; padding:3rem; margin-top:3rem; }
-        .step { margin-bottom:3rem; padding-left:3rem; position:relative; }
-        .step::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#ff7800,#ff6b35); }
-        .step-number { font-size:2rem; font-weight:900; color:#ff7800; margin-bottom:1rem; }
-        .step-title { font-size:1.8rem; color:#ff9f66; margin-bottom:1rem; }
-        .step-content { color:#b0b0b0; line-height:1.8; }
-        .code-block { background:rgba(0,0,0,0.5); border:1px solid rgba(255,120,0,0.2); border-radius:10px; padding:1.5rem; margin:1rem 0; font-family:'Courier New',monospace; color:#ff9f66; overflow-x:auto; }
-        .warning-box { background:rgba(255,200,0,0.1); border-left:4px solid #ffc800; padding:1.5rem; margin:1rem 0; border-radius:5px; }
-        .info-box { background:rgba(100,150,255,0.1); border-left:4px solid #6496ff; padding:1.5rem; margin:1rem 0; border-radius:5px; }
-        .download-buttons { display:flex; gap:1rem; flex-wrap:wrap; margin:1.5rem 0; }
-        .btn-small { padding:.8rem 1.5rem; font-size:1rem; font-weight:600; text-decoration:none; border-radius:30px; transition:all .3s; display:inline-block; }
-        .btn-download { background: linear-gradient(135deg,#ff7800,#ff6b35); color:white; box-shadow:0 5px 15px rgba(255,120,0,0.3); }
-        .language-switch { position:fixed; top:2rem; right:2rem; z-index:1000; display:flex; align-items:center; gap:.5rem; background:rgba(0,0,0,0.3); padding:.5rem 1rem; border-radius:50px; backdrop-filter:blur(5px); }
-        .lang-text { font-weight:600; color:#ff9f66; user-select:none; }
-        .switch { position:relative; display:inline-block; width:50px; height:24px; }
-        .switch input { opacity:0; width:0; height:0; }
-        .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#555; transition:.4s; }
-        .slider:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background-color:white; transition:.4s; }
-        input:checked + .slider { background-color:#ff7800; }
-        input:checked + .slider:before { transform:translateX(26px); }
-        .slider.round { border-radius:34px; } .slider.round:before { border-radius:50%; }
-        @media (max-width:768px) { h1 { font-size:3rem; } .subtitle { font-size:1.3rem; } .section-title { font-size:2rem; } .step { padding-left:1.5rem; } .download-buttons { flex-direction:column; } .btn-small { width:100%; text-align:center; } }
-        .scroll-indicator { position:absolute; bottom:2rem; left:50%; transform:translateX(-50%); animation:bounce 2s infinite; }
-        @keyframes bounce { 0%,20%,50%,80%,100%{ transform:translateX(-50%) translateY(0);} 40%{ transform:translateX(-50%) translateY(-20px);} 60%{ transform:translateX(-50%) translateY(-10px);} }
-        .scroll-indicator span { display:block; width:30px; height:50px; border:3px solid #ff7800; border-radius:25px; position:relative; }
-        .scroll-indicator span::before { content:''; position:absolute; top:10px; left:50%; transform:translateX(-50%); width:6px; height:6px; background:#ff7800; border-radius:50%; animation:scroll 2s infinite; }
-        @keyframes scroll { 0%{ opacity:1; transform:translateX(-50%) translateY(0);} 100%{ opacity:0; transform:translateX(-50%) translateY(20px);} }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff7800 0%,
+                    #ffb347 50%,
+                    #ff6b35 100%
+                );
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+
+            text-shadow: 0 0 40px rgba(255,120,0,0.3);
+
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 20px rgba(255,120,0,0.4));
+            }
+
+            to {
+                filter: drop-shadow(0 0 40px rgba(255,120,0,0.6));
+            }
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #ff9f66;
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all .3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff7800,
+                    #ff6b35
+                );
+
+            color: white;
+
+            box-shadow:
+                0 10px 30px rgba(255,120,0,0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,120,0,0.1);
+            color: #ff9f66;
+            border: 2px solid #ff7800;
+        }
+
+        .btn:hover,
+        .btn-small:hover,
+        .tech-badge:hover {
+            transform: translateY(-4px);
+        }
+
+        .section {
+            padding: 5rem 2rem;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 80%;
+            height: 1px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #ff7800,
+                    transparent
+                );
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #ff9f66;
+
+            position: relative;
+            display: inline-block;
+            left: 50%;
+
+            transform: translateX(-50%);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(320px,1fr));
+
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,120,0,0.05),
+                    rgba(255,107,53,0.05)
+                );
+
+            border: 1px solid rgba(255,120,0,0.2);
+            border-radius: 20px;
+
+            padding: 2.5rem;
+
+            transition: all .3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+
+            box-shadow:
+                0 20px 40px rgba(255,120,0,0.2);
+
+            border-color: #ff7800;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            color: #ff9f66;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: #b0b0b0;
+            line-height: 1.8;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            background: rgba(255,120,0,0.1);
+            border: 2px solid rgba(255,120,0,0.3);
+
+            padding: 1rem 2rem;
+
+            border-radius: 30px;
+
+            font-weight: 600;
+            color: #ff9f66;
+
+            transition: all .3s;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .btn-small {
+            padding: .8rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all .3s;
+            display: inline-block;
+        }
+
+        .btn-download {
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff7800,
+                    #ff6b35
+                );
+
+            color: white;
+
+            box-shadow:
+                0 5px 15px rgba(255,120,0,0.3);
+        }
+
+        .language-switch {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+
+            background: rgba(0,0,0,0.3);
+
+            padding: .5rem 1rem;
+
+            border-radius: 50px;
+
+            backdrop-filter: blur(5px);
+        }
+
+        .lang-text {
+            font-weight: 600;
+            color: #ff9f66;
+            user-select: none;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+
+            background-color: #555;
+
+            transition: .4s;
+        }
+
+        .slider::before {
+            position: absolute;
+
+            content: "";
+
+            height: 18px;
+            width: 18px;
+
+            left: 3px;
+            bottom: 3px;
+
+            background-color: white;
+
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #ff7800;
+        }
+
+        input:checked + .slider::before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round::before {
+            border-radius: 50%;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%,20%,50%,80%,100% {
+                transform:
+                    translateX(-50%)
+                    translateY(0);
+            }
+
+            40% {
+                transform:
+                    translateX(-50%)
+                    translateY(-20px);
+            }
+
+            60% {
+                transform:
+                    translateX(-50%)
+                    translateY(-10px);
+            }
+        }
+
+        .scroll-indicator span {
+            display: block;
+
+            width: 30px;
+            height: 50px;
+
+            border: 3px solid #ff7800;
+            border-radius: 25px;
+
+            position: relative;
+        }
+
+        .scroll-indicator span::before {
+            content: '';
+
+            position: absolute;
+
+            top: 10px;
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 6px;
+            height: 6px;
+
+            background: #ff7800;
+            border-radius: 50%;
+
+            animation: scroll 2s infinite;
+        }
+
+        @keyframes scroll {
+            0% {
+                opacity: 1;
+
+                transform:
+                    translateX(-50%)
+                    translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+
+                transform:
+                    translateX(-50%)
+                    translateY(20px);
+            }
+        }
+
+        @media (max-width:768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .subtitle {
+                font-size: 1.3rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
+
 <body>
+
     <div class="language-switch">
         <span class="lang-text">JA</span>
+
         <label class="switch">
             <input type="checkbox" id="lang-toggle">
             <span class="slider round"></span>
         </label>
+
         <span class="lang-text">EN</span>
     </div>
 
     <section class="hero">
         <div class="hero-content">
-            <h1 data-i18n-key="title">RawPhotoForge</h1>
-            <div class="subtitle" data-i18n-key="subtitle">High-performance RAW Photo Editor (Rust & Godot)</div>
+
+            <h1 data-i18n-key="title">
+                RawPhotoForge
+            </h1>
+
+            <div class="subtitle" data-i18n-key="subtitle">
+                GPU Photo Editor Project
+            </div>
+
             <p class="description" data-i18n-key="description"></p>
+
             <div class="cta-buttons">
-                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-primary" target="_blank" data-i18n-key="githubLink">GitHub</a>
-                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-secondary" target="_blank" data-i18n-key="releasesLink">Releases</a>
+
+                <a
+                    href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
+                    class="btn btn-primary"
+                    target="_blank"
+                    data-i18n-key="openWebApp"
+                >
+                    Open Web App
+                </a>
+
+                <a
+                    href="https://github.com/kingyo1205/RawPhotoForge"
+                    class="btn btn-secondary"
+                    target="_blank"
+                >
+                    Repository
+                </a>
+
             </div>
         </div>
-        <div class="scroll-indicator"><span></span></div>
+
+        <div class="scroll-indicator">
+            <span></span>
+        </div>
     </section>
 
     <section class="section">
         <div class="container">
-            <h2 class="section-title" data-i18n-key="featuresTitle">Features</h2>
+
+            <h2 class="section-title" data-i18n-key="editionsTitle">
+                Editions
+            </h2>
+
             <div class="features-grid">
+
                 <div class="feature-card">
-                    <span class="feature-icon">⚡</span>
-                    <h3 class="feature-title" data-i18n-key="feature1Title"></h3>
-                    <p class="feature-description" data-i18n-key="feature1Desc"></p>
+
+                    <span class="feature-icon">
+                        🌐
+                    </span>
+
+                    <h3 class="feature-title">
+                        RawPhotoForge Web
+                    </h3>
+
+                    <p class="feature-description" data-i18n-key="webVersionDesc"></p>
+
+                    <div class="download-buttons">
+                        <a
+                            href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
+                            class="btn-small btn-download"
+                            target="_blank"
+                        >
+                            Open App
+                        </a>
+                    </div>
                 </div>
+
                 <div class="feature-card">
-                    <span class="feature-icon">🎨</span>
-                    <h3 class="feature-title" data-i18n-key="feature2Title"></h3>
-                    <p class="feature-description" data-i18n-key="feature2Desc"></p>
+
+                    <span class="feature-icon">
+                        🦀
+                    </span>
+
+                    <h3 class="feature-title">
+                        RawPhotoForge Desktop
+                    </h3>
+
+                    <p class="feature-description" data-i18n-key="desktopVersionDesc"></p>
+
+                    <div class="download-buttons">
+                        <a
+                            href="https://github.com/kingyo1205/RawPhotoForge/releases"
+                            class="btn-small btn-download"
+                            target="_blank"
+                        >
+                            Releases
+                        </a>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🤖</span>
-                    <h3 class="feature-title" data-i18n-key="feature3Title"></h3>
-                    <p class="feature-description" data-i18n-key="feature3Desc"></p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📊</span>
-                    <h3 class="feature-title" data-i18n-key="feature5Title"></h3>
-                    <p class="feature-description" data-i18n-key="feature5Desc"></p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🦀</span>
-                    <h3 class="feature-title" data-i18n-key="feature6Title"></h3>
-                    <p class="feature-description" data-i18n-key="feature6Desc"></p>
-                </div>
+
             </div>
         </div>
     </section>
 
     <section class="section">
         <div class="container">
-            <h2 class="section-title" data-i18n-key="techStackTitle">Tech Stack</h2>
+
+            <h2 class="section-title" data-i18n-key="techStackTitle">
+                Tech Stack
+            </h2>
+
             <div class="tech-stack">
-                <div class="tech-badge" data-i18n-key="badge_rust"></div>
-                <div class="tech-badge" data-i18n-key="badge_wgpu"></div>
-                <div class="tech-badge" data-i18n-key="badge_godot"></div>
-                <div class="tech-badge" data-i18n-key="badge_gdext"></div>
-                <div class="tech-badge" data-i18n-key="badge_rawler"></div>
-                <div class="tech-badge" data-i18n-key="badge_linux"></div>
-                <div class="tech-badge" data-i18n-key="badge_en"></div>
-                <div class="tech-badge" data-i18n-key="badge_ja"></div>
+                <div class="tech-badge">TypeScript</div>
+                <div class="tech-badge">WebGPU</div>
+                <div class="tech-badge">Rust</div>
+                <div class="tech-badge">wgpu</div>
+                <div class="tech-badge">Godot Engine</div>
+                <div class="tech-badge">GDExtension</div>
             </div>
-            <div class="tech-stack" style="margin-top:2rem;">
-                <div class="tech-badge" data-i18n-key="badge_highperf"></div>
+
+            <div class="tech-stack">
+                <div class="tech-badge" data-i18n-key="badge_static"></div>
+                <div class="tech-badge" data-i18n-key="badge_crossplatform"></div>
+                <div class="tech-badge" data-i18n-key="badge_gpu"></div>
                 <div class="tech-badge" data-i18n-key="badge_nondestructive"></div>
-                <div class="tech-badge" data-i18n-key="badge_license"></div>
             </div>
+
         </div>
     </section>
 
-    <section class="section">
+    <section
+        class="section"
+        style="text-align:center; padding:5rem 2rem;"
+    >
         <div class="container">
-            <h2 class="section-title" data-i18n-key="usageTitle">How to use</h2>
-            <div class="usage-section">
-                <div class="warning-box">
-                    <strong data-i18n-key="usageWarningTitle"></strong><br>
-                    <span data-i18n-key="usageWarningText"></span>
-                </div>
 
-                <div class="step">
-                    <div class="step-number">01</div>
-                    <h3 class="step-title" data-i18n-key="step1Title"></h3>
-                    <div class="step-content">
-                        <p data-i18n-key="step1Desc1"></p>
-                        <div class="download-buttons">
-                            <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn-small btn-download" target="_blank" data-i18n-key="step1Btn"></a>
-                        </div>
-                        <div class="warning-box">
-                            <strong data-i18n-key="step1WarningTitle"></strong><br>
-                            <span data-i18n-key="step1WarningText"></span>
-                        </div>
-                    </div>
-                </div>
+            <h2
+                class="section-title"
+                data-i18n-key="getStartedTitle"
+            ></h2>
 
-                <div class="step">
-                    <div class="step-number">02</div>
-                    <h3 class="step-title" data-i18n-key="step2Title"></h3>
-                    <div class="step-content">
-                        <p data-i18n-key="step2Desc1"></p>
-                        <div class="code-block" data-i18n-key="step2Cmd"></div>
-                        <p data-i18n-key="step2Desc2"></p>
-                        <div class="code-block" data-i18n-key="step2CmdWin"></div>
-                    </div>
-                </div>
+            <p
+                style="
+                    font-size:1.2rem;
+                    color:#b0b0b0;
+                    margin-bottom:2rem;
+                "
+                data-i18n-key="getStartedDesc"
+            ></p>
 
-                <div class="step">
-                    <div class="step-number">03</div>
-                    <h3 class="step-title" data-i18n-key="step3Title"></h3>
-                    <div class="step-content">
-                        <p data-i18n-key="step3Desc1"></p>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-number">04</div>
-                    <h3 class="step-title" data-i18n-key="step4Title"></h3>
-                    <div class="step-content">
-                        <p data-i18n-key="step4Desc"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section" style="text-align:center; padding:5rem 2rem;">
-        <div class="container">
-            <h2 class="section-title" data-i18n-key="getStartedTitle"></h2>
-            <p style="font-size:1.2rem; color:#b0b0b0; margin-bottom:2rem;" data-i18n-key="getStartedDesc"></p>
             <div class="cta-buttons">
-                <a href="https://github.com/kingyo1205/RawPhotoForge/releases" class="btn btn-primary" target="_blank" data-i18n-key="getStartedBtn1"></a>
-                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank" data-i18n-key="getStartedBtn2"></a>
+
+                <a
+                    href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
+                    class="btn btn-primary"
+                    target="_blank"
+                    data-i18n-key="openWebApp"
+                ></a>
+
+                <a
+                    href="https://github.com/kingyo1205/RawPhotoForge/releases"
+                    class="btn btn-secondary"
+                    target="_blank"
+                    data-i18n-key="getStartedBtn1"
+                ></a>
+
+                <a
+                    href="https://github.com/kingyo1205/RawPhotoForge"
+                    class="btn btn-secondary"
+                    target="_blank"
+                    data-i18n-key="getStartedBtn2"
+                ></a>
+
             </div>
-            <p style="opacity:0.8;margin-top:1.2rem;font-size:0.9rem;" data-i18n-key="legacyNote"></p>
+
+            <p
+                style="
+                    opacity:0.8;
+                    margin-top:1.2rem;
+                    font-size:0.9rem;
+                "
+                data-i18n-key="legacyNote"
+            ></p>
+
         </div>
     </section>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const translations = {
-            title: { ja: 'RawPhotoForge', en: 'RawPhotoForge' },
-            subtitle: {
-                ja: 'High-performance RAW Photo Editor (Rust & Godot)',
-                en: 'High-performance RAW Photo Editor (Rust & Godot)'
-            },
-            description: {
-                ja: 'RawPhotoForgeはRustとGodotで開発された高性能RAW現像ソフトウェア。wgpuによるGPUアクセラレーションを活用し、完全ローカルで高速かつ非破壊のRAW編集を実現します。多機能でプロフェッショナルな現像ワークフローを目指しています。',
-                en: 'RawPhotoForge is a high-performance RAW photo editor written in Rust and Godot. It leverages GPU acceleration via wgpu to provide fast, fully local, non-destructive RAW editing and a professional feature set.'
-            },
-            githubLink: { ja: 'GitHub で見る', en: 'View on GitHub' },
-            releasesLink: { ja: 'リリースページ', en: 'Releases Page' },
+        document.addEventListener('DOMContentLoaded', () => {
 
-            featuresTitle: { ja: '特徴', en: 'Features' },
-            feature1Title: { ja: '超高速処理', en: 'High-Speed Processing' },
-            feature1Desc: {
-                ja: 'RustとwgpuによるGPUアクセラレーションで、リアルタイムに近いプレビューで快適に編集できます。',
-                en: 'GPU-accelerated processing via Rust and wgpu enables near real-time previews and comfortable editing.'
-            },
-            feature2Title: { ja: '高度な色調整', en: 'Advanced Color Controls' },
-            feature2Desc: {
-                ja: 'トーンカーブ、露出、ホワイトバランス、oklchでの色相・彩度・輝度など、プロレベルの編集ツールを提供します。非破壊編集設計で何度でも調整可能です。',
-                en: 'Provides pro-level tools: tone curves, exposure, white balance, OKLCH-based hue/saturation/luminance. Non-destructive by design.'
-            },
-            feature3Title: { ja: 'AIマスク(今後実装予定)', en: 'AI Mask (Planned)' },
-            feature3Desc: {
-                ja: 'AIベースのマスク機能は将来のリリースで追加予定です。モデルはONNX/Burn経由での統合を想定しています。',
-                en: 'AI-based masking is planned for future releases. Integration via ONNX/Burn is intended.'
-            },
-            feature5Title: { ja: 'メタデータ表示', en: 'Metadata Display' },
-            feature5Desc: {
-                ja: 'EXIFを詳細に表示し、撮影情報の確認・整理に役立ちます。',
-                en: 'Displays EXIF metadata in detail to help inspect and organize shooting information.'
-            },
-            feature6Title: { ja: 'Rustベース実装', en: 'Rust-based Implementation' },
-            feature6Desc: {
-                ja: 'コアはRustで実装。photo-editorコアとGodotのGDExtensionを分離した設計で保守性を高めています。',
-                en: 'Core implemented in Rust. Photo-editor core and Godot GDExtension are separated to improve maintainability.'
-            },
+            const translations = {
 
-            techStackTitle: { ja: '技術スタック', en: 'Tech Stack' },
-            badge_rust: { ja: 'Rust', en: 'Rust' },
-            badge_wgpu: { ja: 'wgpu', en: 'wgpu' },
-            badge_godot: { ja: 'Godot Engine', en: 'Godot Engine' },
-            badge_gdext: { ja: 'GDExtension', en: 'GDExtension' },
-            badge_rawler: { ja: 'rawler', en: 'rawler' },
-            badge_linux: { ja: 'Linux', en: 'Linux' },
-            badge_en: { ja: 'English', en: 'English' },
-            badge_ja: { ja: '日本語', en: 'Japanese' },
-            badge_highperf: { ja: 'High-performance', en: 'High-performance' },
-            badge_nondestructive: { ja: 'Non-destructive', en: 'Non-destructive' },
-            badge_license: { ja: 'AGPL-3.0', en: 'AGPL-3.0' },
+                title: {
+                    ja: 'RawPhotoForge',
+                    en: 'RawPhotoForge'
+                },
 
-            usageTitle: { ja: '使い方', en: 'How to use' },
-            usageWarningTitle: { ja: '⚠️ 注意', en: '⚠️ Note' },
-            usageWarningText: {
-                ja: '現在はリリースからダウンロード可能なバイナリ配布を推奨します。Linux(x86_64)バイナリでの動作はKubuntu 25.10で確認済み。Windows向けバイナリは今後追加予定です。',
-                en: 'We recommend using the provided binary assets from official releases. Linux (x86_64) binaries have been tested on Kubuntu 25.10. Windows binaries will be added in future releases.'
-            },
+                subtitle: {
+                    ja: 'GPU Photo Editor Project',
+                    en: 'GPU Photo Editor Project'
+                },
 
-            step1Title: { ja: 'ダウンロード', en: 'Download' },
-            step1Desc1: {
-                ja: 'GitHub Releasesから配布アセット（バイナリ）をダウンロードしてください。必ずリリースのアセットを使用してください（Source codeではありません）。',
-                en: 'Download the binary asset from GitHub Releases. Use the release asset, not the auto-generated source zip.'
-            },
-            step1Btn: { ja: '📥 リリースページへ', en: '📥 Go to Releases Page' },
-            step1WarningTitle: { ja: '重要', en: 'Important' },
-            step1WarningText: {
-                ja: 'アセット名の例: RawPhotoForge_v1.0.0-alpha_Linux_x86_64.zip。Source codeのzipではなく、必ずビルド済みアセットをダウンロードしてください。',
-                en: 'Example asset name: RawPhotoForge_v1.0.0-alpha_Linux_x86_64.zip. Do not use the Source code (zip/tar.gz).'
-            },
+                description: {
+                    ja:
+                        'RawPhotoForgeはWebGPUベースのWeb版と、Rust + Godotベースのデスクトップ版を開発しているGPU写真編集プロジェクトです。高速なGPUアクセラレーション、非破壊編集、クロスプラットフォーム設計を重視しています。',
+                    en:
+                        'RawPhotoForge is a GPU photo editing project developing both a WebGPU-based web version and a Rust + Godot desktop version. The project focuses on fast GPU acceleration, non-destructive editing, and cross-platform design.'
+                },
 
-            step2Title: { ja: '解凍して実行', en: 'Unpack & Run' },
-            step2Desc1: {
-                ja: 'ダウンロードしたzipを解凍し、配布された実行ファイルを実行します。Linuxでは実行ビットを付けてください。',
-                en: 'Unpack the downloaded archive and run the supplied executable. On Linux, set the executable bit.'
-            },
-            step2Cmd: { ja: 'chmod +x ./RawPhotoForge\n./RawPhotoForge', en: 'chmod +x ./RawPhotoForge\n./RawPhotoForge' },
-            step2Desc2: {
-                ja: 'Windows版が提供されている場合は、同梱の実行ファイル(.exe)をダブルクリックまたはPowerShellから実行してください。',
-                en: 'If a Windows build is provided, run the included .exe (double-click or via PowerShell).'
-            },
-            step2CmdWin: { ja: '.\\RawPhotoForge.exe', en: '.\\RawPhotoForge.exe' },
+                editionsTitle: {
+                    ja: 'Editions',
+                    en: 'Editions'
+                },
 
-            step3Title: { ja: 'AIモデル', en: 'Optional models' },
-            step3Desc1: {
-                ja: 'AIマスク等の外部モデルは将来的に利用可能になります。使用時はリリース情報やドキュメントに従ってモデルファイルを配置してください（現時点では必須ではありません）。',
-                en: 'External models for AI masks will be available in future releases. Follow release notes and docs for placement when available.'
-            },
+                webVersionDesc: {
+                    ja:
+                        'WebGPUベースのブラウザ版。PPM画像対応。静的ホスティング対応。インストール不要。',
+                    en:
+                        'Browser-based editor using WebGPU. Supports PPM images. Static hosting compatible. No installation required.'
+                },
 
-            step4Title: { ja: '問題報告', en: 'Report issues' },
-            step4Desc: {
-                ja: '不具合や動作報告はGitHub Issuesにお願いします。環境情報(OS/driver/GPU)を添えると対応が早くなります。',
-                en: 'Please report issues on GitHub Issues. Include environment info (OS/driver/GPU) for faster triage.'
-            },
+                desktopVersionDesc: {
+                    ja:
+                        'Rust + Godotベースのネイティブ版。RAW対応。wgpuによるGPUアクセラレーション。高性能な非破壊編集。',
+                    en:
+                        'Native desktop version built with Rust and Godot. RAW support. GPU acceleration via wgpu. High-performance non-destructive editing.'
+                },
 
-            getStartedTitle: { ja: '始めよう', en: 'Get started' },
-            getStartedDesc: {
-                ja: '今すぐRawPhotoForgeをダウンロードして、速くて高機能なRAW現像を体験しよう。Windowsバイナリは今後追加予定。',
-                en: 'Download RawPhotoForge now and experience fast, feature-rich RAW editing. Windows binaries coming soon.'
-            },
-            getStartedBtn1: { ja: 'リリースページへ', en: 'Releases' },
-            getStartedBtn2: { ja: 'GitHubで詳細を見る', en: 'Project' },
+                techStackTitle: {
+                    ja: '技術スタック',
+                    en: 'Tech Stack'
+                },
 
-            legacyNote: {
-                ja: 'Legacy: Python版はリポジトリ内の <code>python-legacy/</code> に残しています（参考用）。現在の主力はRust+Godot実装です。',
-                en: 'Legacy: The Python version is retained in the repository under <code>python-legacy/</code> for reference. The current main implementation is Rust+Godot.'
-            }
-        };
+                badge_static: {
+                    ja: '静的ホスティング',
+                    en: 'Static Hosting'
+                },
 
-        const langToggle = document.getElementById('lang-toggle');
-        const translatableElements = document.querySelectorAll('[data-i18n-key]');
+                badge_crossplatform: {
+                    ja: 'クロスプラットフォーム',
+                    en: 'Cross Platform'
+                },
 
-        const setLanguage = (lang) => {
-            document.documentElement.lang = lang;
-            // update title separately
-            if (translations.title && translations.title[lang]) {
-                document.title = translations.title[lang];
-            }
-            translatableElements.forEach(el => {
-                const key = el.getAttribute('data-i18n-key');
-                if (!key) return;
-                const entry = translations[key];
-                if (!entry) return;
-                // If code-blocks that show commands, keep newlines
-                if (el.classList.contains('code-block') && entry[lang]) {
-                    // replace newline with <br> for code block display
-                    el.innerHTML = entry[lang].replace(/\n/g, '<br>');
-                } else {
-                    el.innerHTML = entry[lang];
+                badge_gpu: {
+                    ja: 'GPU Accelerated',
+                    en: 'GPU Accelerated'
+                },
+
+                badge_nondestructive: {
+                    ja: '非破壊編集',
+                    en: 'Non-destructive'
+                },
+
+                getStartedTitle: {
+                    ja: '始めよう',
+                    en: 'Get Started'
+                },
+
+                getStartedDesc: {
+                    ja:
+                        '今すぐRawPhotoForgeを使って、高速なGPU写真編集を体験しよう。',
+                    en:
+                        'Start using RawPhotoForge now and experience fast GPU photo editing.'
+                },
+
+                openWebApp: {
+                    ja: 'Webアプリを開く',
+                    en: 'Open Web App'
+                },
+
+                getStartedBtn1: {
+                    ja: 'Desktop Releases',
+                    en: 'Desktop Releases'
+                },
+
+                getStartedBtn2: {
+                    ja: 'GitHub Repository',
+                    en: 'GitHub Repository'
+                },
+
+                legacyNote: {
+                    ja:
+                        'Legacy: Python版はリポジトリ内の <code>python-legacy/</code> に保存されています。',
+                    en:
+                        'Legacy: The Python version is preserved in the repository under <code>python-legacy/</code>.'
                 }
+            };
+
+            const langToggle =
+                document.getElementById('lang-toggle');
+
+            const translatableElements =
+                document.querySelectorAll('[data-i18n-key]');
+
+            const setLanguage = (lang) => {
+
+                document.documentElement.lang = lang;
+
+                if (
+                    translations.title &&
+                    translations.title[lang]
+                ) {
+                    document.title =
+                        translations.title[lang];
+                }
+
+                translatableElements.forEach(el => {
+
+                    const key =
+                        el.getAttribute('data-i18n-key');
+
+                    if (!key) {
+                        return;
+                    }
+
+                    const entry = translations[key];
+
+                    if (!entry) {
+                        return;
+                    }
+
+                    el.innerHTML = entry[lang];
+                });
+
+                localStorage.setItem('lang', lang);
+
+                langToggle.checked = (lang === 'en');
+            };
+
+            langToggle.addEventListener('change', event => {
+
+                setLanguage(
+                    event.target.checked ? 'en' : 'ja'
+                );
             });
-            localStorage.setItem('lang', lang);
-            langToggle.checked = (lang === 'en');
-        };
 
-        langToggle.addEventListener('change', (event) => {
-            setLanguage(event.target.checked ? 'en' : 'ja');
+            const getInitialLanguage = () => {
+
+                const saved =
+                    localStorage.getItem('lang');
+
+                if (saved) {
+                    return saved;
+                }
+
+                const nav =
+                    navigator.language ||
+                    navigator.userLanguage ||
+                    'en';
+
+                return nav
+                    .toLowerCase()
+                    .startsWith('ja')
+                    ? 'ja'
+                    : 'en';
+            };
+
+            setLanguage(getInitialLanguage());
         });
-
-        const getInitialLanguage = () => {
-            const saved = localStorage.getItem('lang');
-            if (saved) return saved;
-            const nav = navigator.language || navigator.userLanguage || 'en';
-            return nav.toLowerCase().startsWith('ja') ? 'ja' : 'en';
-        };
-
-        setLanguage(getInitialLanguage());
-    });
     </script>
+
 </body>
 </html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RawPhotoForge Web</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app-container">
+        <div class="menu-bar">
+            <div class="menu-item">
+                <span data-i18n="TR_MENU_FILE">ファイル</span>
+                <div class="menu-popup">
+                    <div data-i18n="TR_MENU_OPEN" id="open-file">写真を開く</div>
+                    <div data-i18n="TR_MENU_SAVE" id="save-file">写真を保存</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span data-i18n="TR_MENU_EDIT">編集</span>
+                <div class="menu-popup">
+                    <div data-i18n="TR_MENU_RESET_ALL" id="reset-all">すべての編集をリセット</div>
+                </div>
+            </div>
+            <div class="menu-item" id="settings-menu">
+                <span data-i18n="TR_MENU_SETTING">設定</span>
+            </div>
+            <div class="RawPhotoForge-link">
+                <a href="https://github.com/kingyo1205/RawPhotoForge" style="color: rgb(0, 200, 255); font-size: small;">https://github.com/kingyo1205/RawPhotoForge</a>
+            </div>
+
+        </div>
+        <div class="main-content">
+            <div class="image-area-container">
+                <div class="aspect-ratio-container">
+                    <canvas height="300px" width="400px" id="main-canvas"></canvas>
+                </div>
+            </div>
+            <div id="edit-panel" class="panel-container">
+                <div class="tab-container">
+                    <div class="tab-header">
+                        <button class="tab-button active" data-tab="tone" data-i18n="TR_TAB_TONE">トーン</button>
+                        <button class="tab-button" data-tab="brightness" data-i18n="TR_TAB_BRIGHTNESS">明るさ</button>
+                        <button class="tab-button" data-tab="hue" data-i18n="TR_TAB_HUE">色相</button>
+                        <button class="tab-button" data-tab="saturation" data-i18n="TR_TAB_SATURATION">彩度</button>
+                        <button class="tab-button" data-tab="lightness" data-i18n="TR_TAB_LIGHTNESS">輝度</button>
+                        <button class="tab-button" data-tab="wb" data-i18n="TR_TAB_WB">WB</button>
+                        <button class="tab-button" data-tab="effect" data-i18n="TR_TAB_EFFECT">効果</button>
+                    </div>
+                    <div class="tab-content">
+                        <div id="tab-tone" class="tab-pane active">
+                            <div class="scroll-container">
+                                <div class="vbox">
+                                    <label id="exposure-label" data-i18n="TR_EXPOSURE">露出 0.00</label>
+                                    <input type="range" id="exposure-slider" min="-6" max="6" step="0.05" value="0">
+                                    <label id="contrast-label" data-i18n="TR_CONTRAST">コントラスト 0</label>
+                                    <input type="range" id="contrast-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="shadow-label" data-i18n="TR_SHADOW">シャドウ 0</label>
+                                    <input type="range" id="shadow-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="highlight-label" data-i18n="TR_HIGHLIGHT">ハイライト 0</label>
+                                    <input type="range" id="highlight-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="black-label" data-i18n="TR_BLACK_LEVEL">黒レベル 0</label>
+                                    <input type="range" id="black-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="white-label" data-i18n="TR_WHITE_LEVEL">白レベル 0</label>
+                                    <input type="range" id="white-slider" min="-100" max="100" step="1" value="0">
+                                    <button id="reset-tone-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-brightness" class="tab-pane">
+                            <div class="vbox">
+                                <div id="brightness-tone-curve-editor" class="tone-curve-editor"></div>
+                                <button id="reset-brightness-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                            </div>
+                        </div>
+                        <div id="tab-hue" class="tab-pane">
+                            <div class="vbox">
+                                <div id="hue-tone-curve-editor" class="tone-curve-editor"></div>
+                                <button id="reset-hue-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                            </div>
+                        </div>
+                        <div id="tab-saturation" class="tab-pane">
+                            <div class="vbox">
+                                <div id="saturation-tone-curve-editor" class="tone-curve-editor"></div>
+                                <button id="reset-saturation-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                            </div>
+                        </div>
+                        <div id="tab-lightness" class="tab-pane">
+                            <div class="vbox">
+                                <div id="lightness-tone-curve-editor" class="tone-curve-editor"></div>
+                                <button id="reset-lightness-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                            </div>
+                        </div>
+                        <div id="tab-wb" class="tab-pane">
+                            <div class="scroll-container">
+                                <div class="vbox">
+                                    <label id="temperature-label" data-i18n="TR_TEMPERATURE">色温度 0</label>
+                                    <input type="range" id="temperature-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="tint-label" data-i18n="TR_TINT">色かぶり補正 0</label>
+                                    <input type="range" id="tint-slider" min="-100" max="100" step="1" value="0">
+                                    <button id="reset-wb-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-effect" class="tab-pane">
+                            <div class="scroll-container">
+                                <div class="vbox">
+                                    <label id="vignette-label" data-i18n="TR_VIGNETTE">周辺減光 0</label>
+                                    <input type="range" id="vignette-slider" min="-100" max="100" step="1" value="0">
+                                    <label id="lens-distortion-label" data-i18n="TR_LENS_DISTORTION">レンズ歪み補正 0</label>
+                                    <input type="range" id="lens-distortion-slider" min="-100" max="100" step="1"
+                                        value="0">
+                                    <button id="reset-effect-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="file-input" accept=".ppm,.jpeg,.jpg,.png,.webp,.bmp" style="display: none;">
+
+    <div id="save-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box">
+            <div class="dialog-header" data-i18n="TR_DIALOG_SAVE_TITLE">写真を保存</div>
+            <div class="dialog-content">
+                <label for="format-select" data-i18n="TR_SELECT_FORMAT">フォーマットを選択</label>
+                <select id="format-select">
+                    <option value="jpeg">JPEG</option>
+                    <option value="png">PNG</option>
+                </select>
+            </div>
+            <div class="dialog-footer">
+                <button id="save-dialog-save" data-i18n="TR_BUTTON_SAVE">保存</button>
+                <button id="save-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box">
+            <div class="dialog-header" data-i18n="TR_SETTINGS_TITLE">設定</div>
+            <div class="dialog-content">
+                <div class="settings-grid">
+                    <h3 data-i18n="TR_SETTINGS_TAB_IMAGE">画像</h3>
+                    
+                    <label for="ui-preview-size-slider" data-i18n="TR_SETTINGS_UI_PREVIEW_SIZE">UIプレビューサイズ</label>
+                    <div class="slider-container">
+                        <input type="range" id="ui-preview-size-slider" min="500" max="2000" step="10">
+                        <input type="number" id="ui-preview-size-input" class="slider-value-input" min="500" max="2000">
+                    </div>
+
+                    <label for="drag-preview-size-slider" data-i18n="TR_SETTINGS_DRAG_PREVIEW_SIZE">ドラッグ中プレビューサイズ</label>
+                    <div class="slider-container">
+                        <input type="range" id="drag-preview-size-slider" min="100" max="800" step="10">
+                        <input type="number" id="drag-preview-size-input" class="slider-value-input" min="100" max="800">
+                    </div>
+
+                    <h3 data-i18n="TR_SETTINGS_TAB_LANGUAGE">言語</h3>
+                    <label for="language-select" data-i18n="TR_SETTINGS_LANGUAGE_LABEL">言語</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="settings-dialog-save" data-i18n="TR_SETTINGS_SAVE_BUTTON">保存</button>
+                <button id="settings-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box">
+            <div class="dialog-header" data-i18n="TR_INFO_DIALOG_TITLE">情報</div>
+            <div class="dialog-content">
+                <p id="info-dialog-text"></p>
+            </div>
+            <div class="dialog-footer">
+                <button id="info-dialog-ok" data-i18n="TR_BUTTON_OK">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/main.ts"></script>
+</body>
+
+</html>
