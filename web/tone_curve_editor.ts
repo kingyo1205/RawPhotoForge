@@ -9,7 +9,7 @@ export enum CurveMode {
 
 export type Point = { x: number; y: number };
 
-// タッチ操作しやすいように当たり判定を少し大きくする
+
 const POINT_RADIUS = 8.0;
 
 export class ToneCurveEditor {
@@ -20,7 +20,7 @@ export class ToneCurveEditor {
     private ctx: CanvasRenderingContext2D;
     private draggingIndex = -1;
 
-    // タッチ操作用
+
     private lastTap = 0;
     private touchIdentifier: number | null = null;
     private hasMoved = false;
@@ -76,20 +76,20 @@ export class ToneCurveEditor {
     }
 
     private addEventListeners(): void {
-        // Mouse Events
+
         this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
         this.canvas.addEventListener('mouseup', this.onPointerUp.bind(this));
         this.canvas.addEventListener('mouseleave', this.onPointerUp.bind(this));
         this.canvas.addEventListener('dblclick', this.onDoubleClick.bind(this));
 
-        // Touch Events
+
         this.canvas.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
         this.canvas.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
         this.canvas.addEventListener('touchend', this.onTouchEnd.bind(this));
         this.canvas.addEventListener('touchcancel', this.onPointerUp.bind(this));
 
-        // Context Menu
+
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
@@ -131,7 +131,7 @@ export class ToneCurveEditor {
         for (let i = 0; i < this.points.length; i++) {
             const sp = this.toScreen(this.points[i]);
             const distance = Math.sqrt(Math.pow(sp.x - pos.x, 2) + Math.pow(sp.y - pos.y, 2));
-            if (distance <= POINT_RADIUS * 1.5) { // タッチしやすいように当たり判定を拡大
+            if (distance <= POINT_RADIUS * 1.5) {
                 return i;
             }
         }
@@ -221,13 +221,13 @@ export class ToneCurveEditor {
         const touch = event.changedTouches[0];
         this.touchIdentifier = touch.identifier;
         const pos = this.getPointerPosition(touch);
-        
+
         const currentTime = new Date().getTime();
         const tapLength = currentTime - this.lastTap;
 
         if (tapLength < 300 && tapLength > 0) {
             this.deletePointAt(pos);
-            this.lastTap = 0; // ダブルタップ後はリセット
+            this.lastTap = 0;
         } else {
             this.onPointerDown(pos);
         }
@@ -249,7 +249,7 @@ export class ToneCurveEditor {
         event.preventDefault();
         const touch = Array.from(event.changedTouches).find(t => t.identifier === this.touchIdentifier);
         if (!touch) return;
-        
+
         this.onPointerUp();
     }
 

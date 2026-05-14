@@ -60,7 +60,7 @@ export class GpuImageProcessor {
             throw new Error("A suitable GPU adapter could not be found.");
         }
 
-        const device = await adapter.requestDevice();
+        const device = await adapter.requestDevice({ requiredLimits: limitsToRecord(adapter.limits) });
         const queue = device.queue;
 
 
@@ -267,3 +267,16 @@ export class GpuImageProcessor {
         return new Image(this, outputTex, width, height);
     }
 }
+
+
+function limitsToRecord(limits: GPUSupportedLimits): Record<string, number> {
+    const result: Record<string, number> = {};
+    for (const key in limits) {
+        const value = (limits as any)[key];
+        if (typeof value === "number") {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+

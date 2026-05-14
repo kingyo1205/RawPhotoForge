@@ -1,12 +1,13 @@
 
 import { GpuImageProcessor } from './core/gpu_image_processor.ts';
 import { PhotoEditor } from './core/photo_editor.ts';
+import { loadPpm, Float32ArrayImage, resizeFloat32RGBALongEdge, imageBitmapToFloat32RGBA } from './core/image.ts';
 import { ToneCurveEditor, CurveMode, Point } from './tone_curve_editor.ts';
 import translation from "./translations/translation.json" with { type: "text" };
 
 type Translations = Record<string, Record<string, string>>;
 
-// --- Settings ---
+
 interface Settings {
     uiPreviewSize: number;
     dragPreviewSize: number;
@@ -34,8 +35,8 @@ class I18n {
     }
 
     t(key: string): string {
-        return this.data[this.lang]?.[key] 
-            ?? this.data["en"]?.[key] 
+        return this.data[this.lang]?.[key]
+            ?? this.data["en"]?.[key]
             ?? key;
     }
 
@@ -101,7 +102,7 @@ let canvasContext: GPUCanvasContext | null = null;
 let presentationFormat: GPUTextureFormat;
 let renderPipeline: GPURenderPipeline | null = null;
 let isRendering = false;
- 
+
 const data: Translations = JSON.parse(translation);
 console.log(data);
 const i18n: I18n = new I18n(data, "en");
@@ -247,7 +248,7 @@ function saveSettings() {
     settings.uiPreviewSize = parseInt(ui.uiPreviewSizeInput.value, 10);
     settings.dragPreviewSize = parseInt(ui.dragPreviewSizeInput.value, 10);
     settings.locale = ui.languageSelect.value;
-    
+
     try {
         localStorage.setItem(SETTINGS_FILE_PATH, JSON.stringify(settings));
         return true;
@@ -297,7 +298,7 @@ async function initializeApp() {
         childList: true,
         subtree: true
     });
-    
+
     try {
         gpuProcessor = await GpuImageProcessor.create();
         console.log('WebGPU initialized successfully.');
@@ -449,7 +450,7 @@ function setupEventListeners() {
     ui.resetSaturationButton.addEventListener('click', () => resetCurve('saturation'));
     ui.resetLightnessButton.addEventListener('click', () => resetCurve('lightness'));
 
-    // Settings Dialog
+
     ui.settingsMenu.addEventListener('click', () => {
         updateSettingsUI();
         ui.settingsDialog.style.display = 'flex';
@@ -463,17 +464,17 @@ function setupEventListeners() {
             ui.settingsDialog.style.display = 'none';
             showInfoDialog(i18n.t("TR_SETTINGS_SAVED_INFO"));
             if (currentImageFile) {
-                loadImage(currentImageFile); 
+                loadImage(currentImageFile);
             }
         }
     });
 
-    // Info Dialog
+
     ui.infoDialogOk.addEventListener('click', () => {
         ui.infoDialog.style.display = 'none';
     });
 
-    // Sync sliders and number inputs in settings
+
     ui.uiPreviewSizeSlider.addEventListener('input', () => {
         ui.uiPreviewSizeInput.value = ui.uiPreviewSizeSlider.value;
     });
@@ -526,43 +527,31 @@ function setupToneCurveEditors() {
 
 
 async function loadImage(file: File) {
-    let originalImageBitmap: ImageBitmap | undefined;
-
-    if (file.name.toLowerCase().endsWith(".ppm")) {
-        editorFull = await PhotoEditor.create(gpuProcessor, file);
-
-
-    } else {
-        originalImageBitmap = await createImageBitmap(file);
-        editorFull = await PhotoEditor.create(gpuProcessor, originalImageBitmap);
-    }
-
-
-    ui.mainCanvas.width = editorFull.image.width;
-    ui.mainCanvas.height = editorFull.image.height;
+    let originalImageBitmap: ImageBitmap;
+    let float32ArrayImage;
 
     const midResLongEdge = settings.uiPreviewSize;
     const lowResLongEdge = settings.dragPreviewSize;
 
-    if (originalImageBitmap) {
-        const midResBitmap = await resizeBitmap(originalImageBitmap, midResLongEdge);
-        editorMid = await PhotoEditor.create(gpuProcessor, midResBitmap);
+    if (file.name.toLowerCase().endsWith(".ppm")) {
+        float32ArrayImage = await loadPpm(file)
 
-        const lowResBitmap = await resizeBitmap(originalImageBitmap, lowResLongEdge);
-        editorLow = await PhotoEditor.create(gpuProcessor, lowResBitmap);
+
     } else {
+        originalImageBitmap = await createImageBitmap(file);
+        float32ArrayImage = await imageBitmapToFloat32RGBA(originalImageBitmap);
 
-
-
-
-        const midResBitmap = await editorFull.save();
-        editorMid = await PhotoEditor.create(gpuProcessor, await resizeBitmap(midResBitmap, midResLongEdge));
-        midResBitmap.close();
-
-        const lowResBitmap = await editorFull.save();
-        editorLow = await PhotoEditor.create(gpuProcessor, await resizeBitmap(lowResBitmap, lowResLongEdge));
-        lowResBitmap.close();
     }
+
+    editorFull = await PhotoEditor.create(gpuProcessor, float32ArrayImage);
+
+    editorMid = await PhotoEditor.create(gpuProcessor, resizeFloat32RGBALongEdge(float32ArrayImage, midResLongEdge));
+
+    editorLow = await PhotoEditor.create(gpuProcessor, resizeFloat32RGBALongEdge(float32ArrayImage, lowResLongEdge));
+
+
+    ui.mainCanvas.width = editorFull.image.width;
+    ui.mainCanvas.height = editorFull.image.height;
 
 
     imageLoaded = true;
@@ -809,9 +798,6 @@ async function saveImage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
-
-
-
 
 
 

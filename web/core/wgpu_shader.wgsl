@@ -278,9 +278,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let main_p = masks_params[0];
 
     // Lens Distortion (Main only)
-    var col = lens_distortion_sample(xy, main_p.lens_distortion);
-    // srgb to linear
-    var rgb_vec4 = srgb_to_linear(col);
+    var rgb_vec4 = lens_distortion_sample(xy, main_p.lens_distortion);
+    
 
     // Vignette (Main only)
     rgb_vec4 = vignette(rgb_vec4, main_p.vignette, xy);

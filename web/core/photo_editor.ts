@@ -3,7 +3,7 @@
 
 
 import { GpuImageProcessor } from "./gpu_image_processor.ts";
-import { Image } from "./image.ts";
+import { Float32ArrayImage, Image } from "./image.ts";
 import { pchipInterpolate } from "./interpolation.ts";
 
 export const CURVE_RESOLUTION: number = 65536;
@@ -62,17 +62,11 @@ export class PhotoEditor {
 
     public static async create(
         gpuProcessor: GpuImageProcessor,
-        imageData: ImageBitmap | File
+        imageData: Float32ArrayImage,
     ): Promise<PhotoEditor> {
-        if (imageData instanceof ImageBitmap) {
-            const image = await Image.createFromImageBitmap(gpuProcessor, imageData);
-            return new PhotoEditor(gpuProcessor, image);
-        } else {
-            const image = await Image.createFromPpm(gpuProcessor, imageData);
-            return new PhotoEditor(gpuProcessor, image);
-        }
 
-
+        const image = await Image.createFromFloatData(gpuProcessor, imageData);
+        return new PhotoEditor(gpuProcessor, image);
     }
 
     public createGpuMask(

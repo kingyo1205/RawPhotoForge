@@ -2,6 +2,12 @@
 
 import type { GpuImageProcessor } from "./gpu_image_processor.ts";
 
+export interface Float32ArrayImage {
+    data: Float32Array<ArrayBuffer>,
+    width: number,
+    height: number
+}
+
 export class Image {
     private gpuProcessor: GpuImageProcessor;
     public readonly texture: GPUTexture;
@@ -23,140 +29,15 @@ export class Image {
     }
 
 
-    public static async createFromImageBitmap(
+    public static async createFromFloatData(
         gpuProcessor: GpuImageProcessor,
-        imageBitmap: ImageBitmap,
+        imageData: Float32ArrayImage
     ): Promise<Image> {
         const device = gpuProcessor.getDevice();
-
-
-        const tempTexture = device.createTexture({
-            label: "Temp Image Texture",
-            size: [imageBitmap.width, imageBitmap.height],
-            format: 'rgba8unorm',
-            usage:
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.COPY_DST |
-                GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-
-        // @ts-ignore
-        device.queue.copyExternalImageToTexture(
-            { source: imageBitmap },
-            { texture: tempTexture },
-            [imageBitmap.width, imageBitmap.height]
-        );
-
-
-        const finalTexture = device.createTexture({
-            label: "Image Texture (rgba32float)",
-            size: [imageBitmap.width, imageBitmap.height],
-            format: 'rgba32float',
-            usage:
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.COPY_DST |
-                GPUTextureUsage.COPY_SRC,
-        });
-
-
-
-        const conversionShader = `
-            @group(0) @binding(0) var inputTex: texture_2d<f32>;
-            @group(0) @binding(1) var outputTex: texture_storage_2d<rgba32float, write>;
-
-            @compute @workgroup_size(8, 8, 1)
-            fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
-                let color_normalized = textureLoad(inputTex, gid.xy, 0);
-                textureStore(outputTex, gid.xy, color_normalized);
-            }
-        `;
-        const pipeline = await device.createComputePipelineAsync({
-            layout: 'auto',
-            compute: { module: device.createShaderModule({ code: conversionShader }), entryPoint: 'main' }
-        });
-        const bindGroup = device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: tempTexture.createView() },
-                { binding: 1, resource: finalTexture.createView() }
-            ]
-        });
-
-        const commandEncoder = device.createCommandEncoder();
-        const passEncoder = commandEncoder.beginComputePass();
-        passEncoder.setPipeline(pipeline);
-        passEncoder.setBindGroup(0, bindGroup);
-        passEncoder.dispatchWorkgroups(Math.ceil(imageBitmap.width / 8), Math.ceil(imageBitmap.height / 8));
-        passEncoder.end();
-        device.queue.submit([commandEncoder.finish()]);
-
-
-        tempTexture.destroy();
-
-        return new Image(gpuProcessor, finalTexture, imageBitmap.width, imageBitmap.height);
-    }
-
-    public static async createFromPpm(
-        gpuProcessor: GpuImageProcessor,
-        file: File
-    ): Promise<Image> {
-        const device = gpuProcessor.getDevice();
-
-
-        const buffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-
-
-        let offset = 0;
-
-        function readLine(): string {
-            let start = offset;
-            while (bytes[offset] !== 0x0A) offset++;
-            const line = new TextDecoder().decode(bytes.slice(start, offset));
-            offset++;
-            return line.trim();
-        }
-
-        const magic = readLine();
-        if (magic !== "P6") {
-            throw new Error("PPM format must be P6");
-        }
-
-        const sizeLine = readLine();
-        const [width, height] = sizeLine.split(" ").map(Number);
-
-        const maxLine = readLine();
-        const maxVal = Number(maxLine);
-        if (maxVal !== 65535) {
-            throw new Error("Only 16bit PPM (max=65535) supported");
-        }
-
-
-
-        const pixelCount = width * height * 3;
-        const data16 = new Uint16Array(pixelCount);
-
-        let p = offset;
-        for (let i = 0; i < pixelCount; i++) {
-            data16[i] = (bytes[p] << 8) | bytes[p + 1];
-            p += 2;
-        }
-
-
-        const floatData = new Float32Array(width * height * 4);
-
-        for (let i = 0, j = 0; i < pixelCount; i += 3, j += 4) {
-            floatData[j + 0] = data16[i + 0] / 65535.0;
-            floatData[j + 1] = data16[i + 1] / 65535.0;
-            floatData[j + 2] = data16[i + 2] / 65535.0;
-            floatData[j + 3] = 1.0;
-        }
-
 
         const texture = device.createTexture({
-            label: "PPM Image Texture (rgba32float)",
-            size: [width, height],
+            label: "Image Texture (rgba32float)",
+            size: [imageData.width, imageData.height],
             format: "rgba32float",
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
@@ -168,17 +49,17 @@ export class Image {
 
         device.queue.writeTexture(
             { texture },
-            floatData,
+            imageData.data,
             {
-                bytesPerRow: width * 4 * 4,
+                bytesPerRow: imageData.width * 4 * 4,
             },
             {
-                width,
-                height,
+                width: imageData.width,
+                height: imageData.height,
             }
         );
 
-        return new Image(gpuProcessor, texture, width, height);
+        return new Image(gpuProcessor, texture, imageData.width, imageData.height);
     }
 
     public clone(): Image {
@@ -249,4 +130,175 @@ export class Image {
 
         return output;
     }
+}
+
+export async function loadPpm(file: File): Promise<Float32ArrayImage> {
+
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    let offset = 0;
+
+    function readLine(): string {
+        let start = offset;
+        while (bytes[offset] !== 0x0A) offset++;
+        const line = new TextDecoder().decode(bytes.slice(start, offset));
+        offset++;
+        return line.trim();
+    }
+
+    const magic = readLine();
+    if (magic !== "P6") {
+        throw new Error("PPM format must be P6");
+    }
+
+    const sizeLine = readLine();
+    const [width, height] = sizeLine.split(" ").map(Number);
+
+    const maxLine = readLine();
+    const maxVal = Number(maxLine);
+    if (maxVal !== 65535) {
+        throw new Error("Only 16bit PPM (max=65535) supported");
+    }
+
+
+    const pixelCount = width * height * 3;
+    const data16 = new Uint16Array(pixelCount);
+
+    let p = offset;
+    for (let i = 0; i < pixelCount; i++) {
+        data16[i] = (bytes[p] << 8) | bytes[p + 1];
+        p += 2;
+    }
+
+    const floatData = new Float32Array(width * height * 4);
+
+    for (let i = 0, j = 0; i < pixelCount; i += 3, j += 4) {
+        floatData[j + 0] = data16[i + 0] / 65535.0;
+        floatData[j + 1] = data16[i + 1] / 65535.0;
+        floatData[j + 2] = data16[i + 2] / 65535.0;
+        floatData[j + 3] = 1.0;
+    }
+
+    return { data: floatData, width: width, height: height }
+}
+
+
+export function resizeFloat32RGBALongEdge(
+    src: Float32ArrayImage,
+    targetLongEdge: number
+): Float32ArrayImage {
+
+    const srcWidth = src.width;
+    const srcHeight = src.height
+
+    const src_data = src.data;
+
+
+    let dstWidth: number;
+    let dstHeight: number;
+
+    if (srcWidth >= srcHeight) {
+        dstWidth = targetLongEdge;
+        dstHeight = Math.round(srcHeight * (targetLongEdge / srcWidth));
+    } else {
+        dstHeight = targetLongEdge;
+        dstWidth = Math.round(srcWidth * (targetLongEdge / srcHeight));
+    }
+
+    const dst = new Float32Array(dstWidth * dstHeight * 4);
+
+    const scaleX = srcWidth / dstWidth;
+    const scaleY = srcHeight / dstHeight;
+
+    for (let y = 0; y < dstHeight; y++) {
+        const sy = (y + 0.5) * scaleY - 0.5;
+
+        const y0 = Math.max(Math.floor(sy), 0);
+        const y1 = Math.min(y0 + 1, srcHeight - 1);
+
+        const ty = sy - y0;
+
+        for (let x = 0; x < dstWidth; x++) {
+            const sx = (x + 0.5) * scaleX - 0.5;
+
+            const x0 = Math.max(Math.floor(sx), 0);
+            const x1 = Math.min(x0 + 1, srcWidth - 1);
+
+            const tx = sx - x0;
+
+            const i00 = (y0 * srcWidth + x0) * 4;
+            const i10 = (y0 * srcWidth + x1) * 4;
+            const i01 = (y1 * srcWidth + x0) * 4;
+            const i11 = (y1 * srcWidth + x1) * 4;
+
+            const di = (y * dstWidth + x) * 4;
+
+            for (let c = 0; c < 4; c++) {
+                const c00 = src_data[i00 + c];
+                const c10 = src_data[i10 + c];
+                const c01 = src_data[i01 + c];
+                const c11 = src_data[i11 + c];
+
+                const cx0 = c00 * (1.0 - tx) + c10 * tx;
+                const cx1 = c01 * (1.0 - tx) + c11 * tx;
+
+                dst[di + c] = cx0 * (1.0 - ty) + cx1 * ty;
+            }
+        }
+    }
+
+    return {
+        data: dst,
+        width: dstWidth,
+        height: dstHeight,
+    };
+}
+
+
+export async function imageBitmapToFloat32RGBA(
+    imageBitmap: ImageBitmap
+): Promise<Float32ArrayImage> {
+
+    const width = imageBitmap.width;
+    const height = imageBitmap.height;
+
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+        throw new Error("Failed to get 2D context");
+    }
+
+    ctx.drawImage(imageBitmap, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const src = imageData.data;
+
+    const dst = new Float32Array(width * height * 4);
+
+    for (let i = 0; i < src.length; i += 4) {
+
+
+        dst[i + 0] = srgbToLinear(src[i + 0] / 255.0);
+        dst[i + 1] = srgbToLinear(src[i + 1] / 255.0);
+        dst[i + 2] = srgbToLinear(src[i + 2] / 255.0);
+
+
+        dst[i + 3] = src[i + 3] / 255.0;
+    }
+
+    return {
+        data: dst,
+        width,
+        height,
+    };
+}
+
+function srgbToLinear(v: number): number {
+    if (v <= 0.04045) {
+        return v / 12.92;
+    }
+
+    return Math.pow((v + 0.055) / 1.055, 2.4);
 }
