@@ -760,7 +760,6 @@ var ToneCurveEditor = class {
   canvas;
   ctx;
   draggingIndex = -1;
-  // タッチ操作用
   lastTap = 0;
   touchIdentifier = null;
   hasMoved = false;

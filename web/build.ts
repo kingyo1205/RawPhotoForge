@@ -6,13 +6,13 @@ const ENTRY_HTML = "index.html";
 
 async function initDist() {
 
-    
+
     try {
         await Deno.remove(DIST_DIR, { recursive: true });
     } catch {
-        
+
     }
-    
+
 
     await Deno.mkdir(DIST_DIR, { recursive: true });
     await copy("assets", join(DIST_DIR, "assets"))
