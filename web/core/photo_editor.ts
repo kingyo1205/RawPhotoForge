@@ -213,7 +213,24 @@ export class PhotoEditor {
     }
 
     public async applyAdjustments() {
-        this.image = await this.gpuProcessor.applyAdjustments(this.originalImage, this.masks);
+        const oldImage = this.image;
+
+        this.image = await this.gpuProcessor.applyAdjustments(
+            this.originalImage,
+            this.masks
+        );
+
+        if (oldImage !== this.originalImage) {
+            oldImage.destroy();
+        }
+    }
+
+    public destroy(): void {
+        if (this.image !== this.originalImage) {
+            this.image.destroy();
+        }
+
+        this.originalImage.destroy();
     }
 }
 

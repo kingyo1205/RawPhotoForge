@@ -263,7 +263,17 @@ export class GpuImageProcessor {
 
         this.queue.submit([commandEncoder.finish()]);
 
+        await this.queue.onSubmittedWorkDone();
 
+        baseParamsBuf.destroy();
+        paramBuf.destroy();
+        brightBuf.destroy();
+        hueBuf.destroy();
+        satBuf.destroy();
+        lightBuf.destroy();
+
+        masksTex.destroy();
+        
         return new Image(this, outputTex, width, height);
     }
 }

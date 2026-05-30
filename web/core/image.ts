@@ -15,6 +15,8 @@ export class Image {
     public readonly width: number;
     public readonly height: number;
 
+    private destroyed = false;
+
     constructor(
         gpuProcessor: GpuImageProcessor,
         texture: GPUTexture,
@@ -129,6 +131,15 @@ export class Image {
         readbackBuffer.destroy();
 
         return output;
+    }
+
+    public destroy(): void {
+        if (this.destroyed) {
+            return;
+        }
+
+        this.texture.destroy();
+        this.destroyed = true;
     }
 }
 
