@@ -54,6 +54,7 @@
     "TR_SETTINGS_SAVED_INFO": "Settings have been saved.",
     "TR_SETTINGS_TAB_LICENSE": "License",
     "TR_SETTINGS_LICENSE_RPF": "RawPhotoForge License",
+    "TR_SETTINGS_LICENSE_THIRD": "Third-party Licenses",
     "TR_SETTINGS_SOURCE_CODE": "Source Code"
   },
   "ja": {
@@ -111,6 +112,7 @@
     "TR_SETTINGS_SAVED_INFO": "設定を保存しました。",
     "TR_SETTINGS_TAB_LICENSE": "ライセンス",
     "TR_SETTINGS_LICENSE_RPF": "RawPhotoForgeライセンス",
+    "TR_SETTINGS_LICENSE_THIRD": "サードパーティライセンス",
     "TR_SETTINGS_SOURCE_CODE": "ソースコード"
   }
 }

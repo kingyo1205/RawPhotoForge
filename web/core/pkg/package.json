@@ -1,0 +1,15 @@
+{
+  "name": "photo-editor-web",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "photo_editor_web_bg.wasm",
+    "photo_editor_web.js",
+    "photo_editor_web.d.ts"
+  ],
+  "main": "photo_editor_web.js",
+  "types": "photo_editor_web.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

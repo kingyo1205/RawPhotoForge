@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "photo-editor",
+    "photo-editor-godot",
+    "photo-editor-test"
+]
+

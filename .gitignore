@@ -1,3 +1,6 @@
+node_modules/
+
+
 # ==================
 # Python
 # ==================
@@ -6,13 +9,16 @@ __pycache__/
 *.pyo
 .env
 venv/
+dist/
 build/
 
 # ==================
 # Rust
 # ==================
 target/
-photo-editor-test/
+
+rust/photo-editor-web/pkg
+
 
 # ==================
 # Godot
@@ -21,11 +27,12 @@ photo-editor-test/
 .export/
 
 
-
 libs/
 
 # Godot GDExtension build outputs
-rust/raw-photo-forge/addons/photo_editor/libs/
+rust-godot-legacy/raw-photo-forge/addons/photo_editor/libs/
+
+
 
 # ==================
 # OS / Editor

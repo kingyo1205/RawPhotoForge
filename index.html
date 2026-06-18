@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="icon.png" />
     <title>RawPhotoForge</title>
 
@@ -31,16 +32,12 @@
             text-align: center;
             padding: 2rem;
             background:
-                radial-gradient(
-                    ellipse at top,
-                    rgba(255,120,0,0.15),
-                    transparent
-                ),
-                radial-gradient(
-                    ellipse at bottom,
-                    rgba(255,80,20,0.1),
-                    transparent
-                );
+                radial-gradient(ellipse at top,
+                    rgba(255, 120, 0, 0.15),
+                    transparent),
+                radial-gradient(ellipse at bottom,
+                    rgba(255, 80, 20, 0.1),
+                    transparent);
         }
 
         .hero::before {
@@ -49,20 +46,16 @@
             inset: 0;
 
             background:
-                repeating-linear-gradient(
-                    90deg,
+                repeating-linear-gradient(90deg,
                     transparent,
                     transparent 100px,
-                    rgba(255,120,0,0.03) 100px,
-                    rgba(255,120,0,0.03) 102px
-                ),
-                repeating-linear-gradient(
-                    0deg,
+                    rgba(255, 120, 0, 0.03) 100px,
+                    rgba(255, 120, 0, 0.03) 102px),
+                repeating-linear-gradient(0deg,
                     transparent,
                     transparent 100px,
-                    rgba(255,120,0,0.03) 100px,
-                    rgba(255,120,0,0.03) 102px
-                );
+                    rgba(255, 120, 0, 0.03) 100px,
+                    rgba(255, 120, 0, 0.03) 102px);
 
             pointer-events: none;
         }
@@ -79,29 +72,27 @@
             margin-bottom: 1rem;
 
             background:
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     #ff7800 0%,
                     #ffb347 50%,
-                    #ff6b35 100%
-                );
+                    #ff6b35 100%);
 
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
 
-            text-shadow: 0 0 40px rgba(255,120,0,0.3);
+            text-shadow: 0 0 40px rgba(255, 120, 0, 0.3);
 
             animation: glow 3s ease-in-out infinite alternate;
         }
 
         @keyframes glow {
             from {
-                filter: drop-shadow(0 0 20px rgba(255,120,0,0.4));
+                filter: drop-shadow(0 0 20px rgba(255, 120, 0, 0.4));
             }
 
             to {
-                filter: drop-shadow(0 0 40px rgba(255,120,0,0.6));
+                filter: drop-shadow(0 0 40px rgba(255, 120, 0, 0.6));
             }
         }
 
@@ -141,20 +132,18 @@
 
         .btn-primary {
             background:
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     #ff7800,
-                    #ff6b35
-                );
+                    #ff6b35);
 
             color: white;
 
             box-shadow:
-                0 10px 30px rgba(255,120,0,0.4);
+                0 10px 30px rgba(255, 120, 0, 0.4);
         }
 
         .btn-secondary {
-            background: rgba(255,120,0,0.1);
+            background: rgba(255, 120, 0, 0.1);
             color: #ff9f66;
             border: 2px solid #ff7800;
         }
@@ -182,12 +171,10 @@
             height: 1px;
 
             background:
-                linear-gradient(
-                    90deg,
+                linear-gradient(90deg,
                     transparent,
                     #ff7800,
-                    transparent
-                );
+                    transparent);
         }
 
         .container {
@@ -211,7 +198,7 @@
         .features-grid {
             display: grid;
             grid-template-columns:
-                repeat(auto-fit, minmax(320px,1fr));
+                repeat(auto-fit, minmax(320px, 1fr));
 
             gap: 2rem;
             margin-top: 3rem;
@@ -219,13 +206,11 @@
 
         .feature-card {
             background:
-                linear-gradient(
-                    135deg,
-                    rgba(255,120,0,0.05),
-                    rgba(255,107,53,0.05)
-                );
+                linear-gradient(135deg,
+                    rgba(255, 120, 0, 0.05),
+                    rgba(255, 107, 53, 0.05));
 
-            border: 1px solid rgba(255,120,0,0.2);
+            border: 1px solid rgba(255, 120, 0, 0.2);
             border-radius: 20px;
 
             padding: 2.5rem;
@@ -237,7 +222,7 @@
             transform: translateY(-10px);
 
             box-shadow:
-                0 20px 40px rgba(255,120,0,0.2);
+                0 20px 40px rgba(255, 120, 0, 0.2);
 
             border-color: #ff7800;
         }
@@ -269,8 +254,8 @@
         }
 
         .tech-badge {
-            background: rgba(255,120,0,0.1);
-            border: 2px solid rgba(255,120,0,0.3);
+            background: rgba(255, 120, 0, 0.1);
+            border: 2px solid rgba(255, 120, 0, 0.3);
 
             padding: 1rem 2rem;
 
@@ -301,16 +286,14 @@
 
         .btn-download {
             background:
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     #ff7800,
-                    #ff6b35
-                );
+                    #ff6b35);
 
             color: white;
 
             box-shadow:
-                0 5px 15px rgba(255,120,0,0.3);
+                0 5px 15px rgba(255, 120, 0, 0.3);
         }
 
         .language-switch {
@@ -324,7 +307,7 @@
             align-items: center;
             gap: .5rem;
 
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
 
             padding: .5rem 1rem;
 
@@ -379,11 +362,11 @@
             transition: .4s;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: #ff7800;
         }
 
-        input:checked + .slider::before {
+        input:checked+.slider::before {
             transform: translateX(26px);
         }
 
@@ -406,22 +389,24 @@
         }
 
         @keyframes bounce {
-            0%,20%,50%,80%,100% {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
                 transform:
-                    translateX(-50%)
-                    translateY(0);
+                    translateX(-50%) translateY(0);
             }
 
             40% {
                 transform:
-                    translateX(-50%)
-                    translateY(-20px);
+                    translateX(-50%) translateY(-20px);
             }
 
             60% {
                 transform:
-                    translateX(-50%)
-                    translateY(-10px);
+                    translateX(-50%) translateY(-10px);
             }
         }
 
@@ -461,16 +446,14 @@
                 opacity: 1;
 
                 transform:
-                    translateX(-50%)
-                    translateY(0);
+                    translateX(-50%) translateY(0);
             }
 
             100% {
                 opacity: 0;
 
                 transform:
-                    translateX(-50%)
-                    translateY(20px);
+                    translateX(-50%) translateY(20px);
             }
         }
 
@@ -527,20 +510,12 @@
 
             <div class="cta-buttons">
 
-                <a
-                    href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
-                    class="btn btn-primary"
-                    target="_blank"
-                    data-i18n-key="openWebApp"
-                >
+                <a href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html" class="btn btn-primary"
+                    target="_blank" data-i18n-key="openWebApp">
                     Open Web App
                 </a>
 
-                <a
-                    href="https://github.com/kingyo1205/RawPhotoForge"
-                    class="btn btn-secondary"
-                    target="_blank"
-                >
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank">
                     Repository
                 </a>
 
@@ -552,64 +527,7 @@
         </div>
     </section>
 
-    <section class="section">
-        <div class="container">
 
-            <h2 class="section-title" data-i18n-key="editionsTitle">
-                Editions
-            </h2>
-
-            <div class="features-grid">
-
-                <div class="feature-card">
-
-                    <span class="feature-icon">
-                        🌐
-                    </span>
-
-                    <h3 class="feature-title">
-                        RawPhotoForge Web
-                    </h3>
-
-                    <p class="feature-description" data-i18n-key="webVersionDesc"></p>
-
-                    <div class="download-buttons">
-                        <a
-                            href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
-                            class="btn-small btn-download"
-                            target="_blank"
-                        >
-                            Open App
-                        </a>
-                    </div>
-                </div>
-
-                <div class="feature-card">
-
-                    <span class="feature-icon">
-                        🦀
-                    </span>
-
-                    <h3 class="feature-title">
-                        RawPhotoForge Desktop
-                    </h3>
-
-                    <p class="feature-description" data-i18n-key="desktopVersionDesc"></p>
-
-                    <div class="download-buttons">
-                        <a
-                            href="https://github.com/kingyo1205/RawPhotoForge/releases"
-                            class="btn-small btn-download"
-                            target="_blank"
-                        >
-                            Releases
-                        </a>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
 
     <section class="section">
         <div class="container">
@@ -619,12 +537,10 @@
             </h2>
 
             <div class="tech-stack">
-                <div class="tech-badge">TypeScript</div>
-                <div class="tech-badge">WebGPU</div>
                 <div class="tech-badge">Rust</div>
                 <div class="tech-badge">wgpu</div>
-                <div class="tech-badge">Godot Engine</div>
-                <div class="tech-badge">GDExtension</div>
+                <div class="tech-badge">WebGPU</div>
+                <div class="tech-badge">TypeScript</div>
             </div>
 
             <div class="tech-stack">
@@ -637,59 +553,32 @@
         </div>
     </section>
 
-    <section
-        class="section"
-        style="text-align:center; padding:5rem 2rem;"
-    >
+    <section class="section" style="text-align:center; padding:5rem 2rem;">
         <div class="container">
 
-            <h2
-                class="section-title"
-                data-i18n-key="getStartedTitle"
-            ></h2>
+            <h2 class="section-title" data-i18n-key="getStartedTitle"></h2>
 
-            <p
-                style="
+            <p style="
                     font-size:1.2rem;
                     color:#b0b0b0;
                     margin-bottom:2rem;
-                "
-                data-i18n-key="getStartedDesc"
-            ></p>
+                " data-i18n-key="getStartedDesc"></p>
 
             <div class="cta-buttons">
 
-                <a
-                    href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html"
-                    class="btn btn-primary"
-                    target="_blank"
-                    data-i18n-key="openWebApp"
-                ></a>
+                <a href="https://kingyo1205.github.io/RawPhotoForge/web/dist/index.html" class="btn btn-primary"
+                    target="_blank" data-i18n-key="openWebApp"></a>
 
-                <a
-                    href="https://github.com/kingyo1205/RawPhotoForge/releases"
-                    class="btn btn-secondary"
-                    target="_blank"
-                    data-i18n-key="getStartedBtn1"
-                ></a>
-
-                <a
-                    href="https://github.com/kingyo1205/RawPhotoForge"
-                    class="btn btn-secondary"
-                    target="_blank"
-                    data-i18n-key="getStartedBtn2"
-                ></a>
+                <a href="https://github.com/kingyo1205/RawPhotoForge" class="btn btn-secondary" target="_blank"
+                    data-i18n-key="getStartedBtn2"></a>
 
             </div>
 
-            <p
-                style="
+            <p style="
                     opacity:0.8;
                     margin-top:1.2rem;
                     font-size:0.9rem;
-                "
-                data-i18n-key="legacyNote"
-            ></p>
+                " data-i18n-key="legacyNote"></p>
 
         </div>
     </section>
@@ -711,29 +600,11 @@
 
                 description: {
                     ja:
-                        'RawPhotoForgeはWebGPUベースのWeb版と、Rust + Godotベースのデスクトップ版を開発しているGPU写真編集プロジェクトです。高速なGPUアクセラレーション、非破壊編集、クロスプラットフォーム設計を重視しています。',
+                        'RawPhotoForgeはGPU写真編集プロジェクトです。高速なGPUアクセラレーション、非破壊編集、クロスプラットフォーム設計を重視しています。',
                     en:
-                        'RawPhotoForge is a GPU photo editing project developing both a WebGPU-based web version and a Rust + Godot desktop version. The project focuses on fast GPU acceleration, non-destructive editing, and cross-platform design.'
+                        'RawPhotoForge is a GPU photo editing project. It emphasizes high-speed GPU acceleration, non-destructive editing, and cross-platform design.'
                 },
 
-                editionsTitle: {
-                    ja: 'Editions',
-                    en: 'Editions'
-                },
-
-                webVersionDesc: {
-                    ja:
-                        'WebGPUベースのブラウザ版。PPM画像対応。静的ホスティング対応。インストール不要。',
-                    en:
-                        'Browser-based editor using WebGPU. Supports PPM images. Static hosting compatible. No installation required.'
-                },
-
-                desktopVersionDesc: {
-                    ja:
-                        'Rust + Godotベースのネイティブ版。RAW対応。wgpuによるGPUアクセラレーション。高性能な非破壊編集。',
-                    en:
-                        'Native desktop version built with Rust and Godot. RAW support. GPU acceleration via wgpu. High-performance non-destructive editing.'
-                },
 
                 techStackTitle: {
                     ja: '技術スタック',
@@ -777,10 +648,6 @@
                     en: 'Open Web App'
                 },
 
-                getStartedBtn1: {
-                    ja: 'Desktop Releases',
-                    en: 'Desktop Releases'
-                },
 
                 getStartedBtn2: {
                     ja: 'GitHub Repository',
@@ -789,9 +656,9 @@
 
                 legacyNote: {
                     ja:
-                        'Legacy: Python版はリポジトリ内の <code>python-legacy/</code> に保存されています。',
+                        'Legacy: Python版はリポジトリ内の <code>python-legacy/</code> に、Rust+Godot版は <code>rust-godot-legacy/</code> に保存されています。',
                     en:
-                        'Legacy: The Python version is preserved in the repository under <code>python-legacy/</code>.'
+                        'Legacy: The Python version is stored in <code>python-legacy/</code> within the repository, and the Rust+Godot version is stored in <code>rust-godot-legacy/</code>.'
                 }
             };
 
@@ -869,4 +736,5 @@
     </script>
 
 </body>
+
 </html>

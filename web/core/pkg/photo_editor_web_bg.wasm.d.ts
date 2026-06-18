@@ -1,0 +1,37 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_webgpuprocessor_free: (a: number, b: number) => void;
+export const __wbg_webphotoeditor_free: (a: number, b: number) => void;
+export const webgpuprocessor_create: () => any;
+export const webphotoeditor_apply: (a: number) => [number, number];
+export const webphotoeditor_create_from_rgb_f32: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+export const webphotoeditor_exif_json: (a: number) => [number, number, number, number];
+export const webphotoeditor_get_rgb_f32: (a: number) => any;
+export const webphotoeditor_get_rgba_f32: (a: number) => any;
+export const webphotoeditor_height: (a: number) => number;
+export const webphotoeditor_new: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+export const webphotoeditor_save_jpeg: (a: number) => any;
+export const webphotoeditor_save_png: (a: number) => any;
+export const webphotoeditor_set_brightness_tone_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+export const webphotoeditor_set_lens_distortion_correction: (a: number, b: number) => [number, number];
+export const webphotoeditor_set_oklch_hue_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+export const webphotoeditor_set_oklch_lightness_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+export const webphotoeditor_set_oklch_saturation_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+export const webphotoeditor_set_tone: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
+export const webphotoeditor_set_vignette: (a: number, b: number) => [number, number];
+export const webphotoeditor_set_whitebalance: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+export const webphotoeditor_width: (a: number) => number;
+export const init: () => void;
+export const wasm_bindgen__convert__closures_____invoke__ha192e2c04b15c66f: (a: number, b: number, c: any) => [number, number];
+export const wasm_bindgen__convert__closures_____invoke__h33bbbfefce72b70c: (a: number, b: number, c: any, d: any) => void;
+export const wasm_bindgen__convert__closures_____invoke__h76b0af6b282393ef: (a: number, b: number, c: any) => void;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_destroy_closure: (a: number, b: number) => void;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;
