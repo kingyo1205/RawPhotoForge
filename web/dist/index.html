@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RawPhotoForge Web</title>
-  <script type="module" crossorigin src="/RawPhotoForge/web/dist/assets/index-D1A7KBtt.js"></script>
-  <link rel="stylesheet" crossorigin href="/RawPhotoForge/web/dist/assets/index-BPaa-0Dl.css">
+  <script type="module" crossorigin src="/RawPhotoForge/web/dist/assets/index-paFKpUUZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/RawPhotoForge/web/dist/assets/index-D_CWgdCK.css">
 </head>
 
 <body>
@@ -50,6 +50,7 @@
                         <button class="tab-button" data-tab="lightness" data-i18n="TR_TAB_LIGHTNESS">輝度</button>
                         <button class="tab-button" data-tab="wb" data-i18n="TR_TAB_WB">WB</button>
                         <button class="tab-button" data-tab="effect" data-i18n="TR_TAB_EFFECT">効果</button>
+                        <button class="tab-button" data-tab="metadata" data-i18n="TR_TAB_METADATA">メタデータ</button>
                     </div>
                     <div class="tab-content">
                         <div id="tab-tone" class="tab-pane active">
@@ -116,6 +117,15 @@
                                         value="0">
                                     <button id="reset-effect-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-metadata" class="tab-pane">
+                            <div class="scroll-container">
+                                <table id="metadata-table" class="metadata-table">
+                                    <tbody>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

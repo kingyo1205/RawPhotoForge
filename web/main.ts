@@ -244,7 +244,6 @@ const ui = {
     infoDialogText: document.getElementById('info-dialog-text') as HTMLParagraphElement,
     infoDialogOk: document.getElementById('info-dialog-ok') as HTMLButtonElement,
 
-    metadataTree: document.getElementById('metadata-tree') as HTMLDivElement,
 };
 
 function applyI18n(i18n: I18n) {
@@ -609,6 +608,46 @@ function setupToneCurveEditors() {
     });
 }
 
+function updateMetadataTableFromJson(
+    json: string
+): void {
+    const tbody = document.querySelector(
+        "#metadata-table tbody"
+    ) as HTMLTableSectionElement;
+
+    tbody.innerHTML = "";
+
+    let metadata: Record<string, unknown>;
+
+    try {
+        metadata = JSON.parse(json);
+    } catch {
+        const tr = document.createElement("tr");
+
+        const td = document.createElement("td");
+        td.colSpan = 2;
+        td.textContent = "Failed to parse JSON.";
+
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+    }
+
+    for (const [key, value] of Object.entries(metadata)) {
+        const tr = document.createElement("tr");
+
+        const keyTd = document.createElement("td");
+        keyTd.textContent = key;
+
+        const valueTd = document.createElement("td");
+        valueTd.textContent = String(value);
+
+        tr.appendChild(keyTd);
+        tr.appendChild(valueTd);
+
+        tbody.appendChild(tr);
+    }
+}
 
 async function loadImage(file: File) {
 
@@ -649,6 +688,8 @@ async function loadImage(file: File) {
 
 
     imageLoaded = true;
+
+    updateMetadataTableFromJson(editorFull.exif_json());
     resetAllEdits();
 
 }

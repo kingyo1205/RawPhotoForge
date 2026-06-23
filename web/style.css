@@ -69,7 +69,8 @@ body::before {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    height: 100svh; /* Dynamic viewport height */
+    height: 100svh;
+    /* Dynamic viewport height */
     width: 100vw;
     position: relative;
     isolation: isolate;
@@ -459,13 +460,27 @@ body::before {
     height: 100%;
 }
 
-#metadata-tree {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    font-size: 13px;
-    white-space: pre;
-    color: #dce3ff;
-    line-height: 1.55;
-    text-shadow: 0 0 10px rgba(110, 168, 255, 0.08);
+.metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.metadata-table td {
+    border-bottom: 1px solid #444;
+    padding: 6px;
+    vertical-align: top;
+}
+
+.metadata-table td:first-child {
+    width: 40%;
+    font-weight: bold;
+    word-break: break-word;
+}
+
+.metadata-table td:last-child {
+    width: 60%;
+    word-break: break-word;
 }
 
 .dialog-overlay {
@@ -672,13 +687,16 @@ input:focus-visible {
         gap: 8px;
         padding: 8px;
     }
+
     .panel-container {
         min-width: 300px;
     }
+
     .tab-header {
         padding: 8px;
         gap: 4px;
     }
+
     .tab-button {
         padding: 8px 10px;
         font-size: 12px;
