@@ -57,7 +57,7 @@ const M2 = mat3x3<f32>(
 
 const M2_INV = mat3x3<f32>(
     1.0, 1.0, 1.0,
-    0.3963377774, -0.1055613458, -0.089484177,
+    0.3963377774, -0.1055613458, -0.0894841775,
     0.2158037573, -0.0638541728, -1.2914855480
 );
 
@@ -166,16 +166,16 @@ fn lens_distortion_sample(xy: vec2<i32>, distortion: f32) -> vec4<f32> {
 fn vignette(rgb_vec4: vec4<f32>, vignette_value: f32, xy: vec2<i32>) -> vec4<f32> {
     let vign_strength = (-f32(vignette_value) / 100.0) * 2.0;
     if vign_strength != 0.0 {
-        let coord = (vec2<f32>(xy) / vec2<f32>(f32(base_params.width), f32(base_params.height)) - 0.5) * 2.0;
+        let coord = (vec2<f32>(xy) / vec2<f32>(f32(base_params.width), f32(base_params.height)) - 0.5) * 1.5;
         let dist = length(coord);
-        let falloff = pow(clamp((dist - 0.25) / 0.75, 0.0, 1.0), 4.0);
-        let rgb_vec4 = vec4<f32>(rgb_vec4.rgb * clamp(1.0 - (vign_strength * falloff), 0.0, 2.0), 1.0);
+        let falloff = pow(clamp((dist - 0.25) / 0.75, 0.0, 1.0), 1.5);
+        let rgb_vec4 = vec4<f32>(rgb_vec4.rgb * clamp(1.0 - (vign_strength * falloff), 0.0, 4.0), 1.0);
 
         return rgb_vec4;
     } else {
         return rgb_vec4;
     }
-} 
+}
 
 //--------------------------------------------------------------------------------
 // Curve
