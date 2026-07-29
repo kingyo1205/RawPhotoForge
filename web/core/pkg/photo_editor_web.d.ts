@@ -83,9 +83,9 @@ export interface InitOutput {
     readonly webphotoeditor_set_whitebalance: (a: number, b: number, c: number, d: number, e: number) => [number, number];
     readonly webphotoeditor_width: (a: number) => number;
     readonly init: () => void;
-    readonly wasm_bindgen__convert__closures_____invoke__ha192e2c04b15c66f: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h33bbbfefce72b70c: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h76b0af6b282393ef: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h2dd1d8210877e39f: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h2b7d574d429adee3: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h604c9726e9c45ea3: (a: number, b: number, c: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

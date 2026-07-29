@@ -318,6 +318,9 @@ function updateSettingsUI() {
 async function initializeApp() {
     loadSettings();
     applySettings();
+    setupEventListeners();
+    setupToneCurveEditors();
+    updateAllSliderLabels();
 
     const observer = new MutationObserver((mutations) => {
         for (const m of mutations) {
@@ -350,9 +353,7 @@ async function initializeApp() {
 
     gpu = await WebGpuContext.create();
 
-    setupEventListeners();
-    setupToneCurveEditors();
-    updateAllSliderLabels();
+
 
 
     canvasContext = ui.mainCanvas.getContext("webgpu");

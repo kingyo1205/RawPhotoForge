@@ -1,8 +1,8 @@
 
 import { GpuImageProcessor } from './core/gpu_image_processor.ts';
+import { imageBitmapToFloat32RGBA, loadPpm, resizeFloat32RGBALongEdge } from './core/image.ts';
 import { PhotoEditor } from './core/photo_editor.ts';
-import { loadPpm, Float32ArrayImage, resizeFloat32RGBALongEdge, imageBitmapToFloat32RGBA } from './core/image.ts';
-import { ToneCurveEditor, CurveMode, Point } from './tone_curve_editor.ts';
+import { CurveMode, ToneCurveEditor } from './tone_curve_editor.ts';
 import translation from "./translations/translation.json" with { type: "text" };
 
 type Translations = Record<string, Record<string, string>>;
@@ -278,6 +278,10 @@ function updateSettingsUI() {
 async function initializeApp() {
     loadSettings();
     applySettings();
+    setupEventListeners();
+    setupToneCurveEditors();
+    updateAllSliderLabels();
+
 
     const observer = new MutationObserver((mutations) => {
         for (const m of mutations) {
@@ -308,9 +312,6 @@ async function initializeApp() {
         return;
     }
 
-    setupEventListeners();
-    setupToneCurveEditors();
-    updateAllSliderLabels();
 
 
     canvasContext = ui.mainCanvas.getContext("webgpu");
