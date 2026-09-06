@@ -9,7 +9,6 @@ __pycache__/
 *.pyo
 .env
 venv/
-dist/
 build/
 
 # ==================
