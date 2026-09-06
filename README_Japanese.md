@@ -92,6 +92,7 @@ Rust版で使用している依存関係の
 
 - `rust_licenses.html`
 
+
 このファイルは
 `cargo-about`
 を使用して生成しています。
@@ -101,6 +102,16 @@ Rust版で使用している依存関係の
 ```bash
 cargo about generate about.hbs > rust_licenses.html
 ```
+
+### AIマスクの依存関係とライセンス
+AIマスク機能では、以下のソフトウェア、モデルおよび関連リソースを使用しています。
+#### SAM 2
+- [https://github.com/facebookresearch/sam2](https://github.com/facebookresearch/sam2)
+- [https://huggingface.co/facebook/sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large)
+- [https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX](https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX)
+#### Transformers.js
+- [https://github.com/huggingface/transformers.js](https://github.com/huggingface/transformers.js)
+- [https://www.jsdelivr.com/package/npm/@huggingface/transformers](https://www.jsdelivr.com/package/npm/@huggingface/transformers)
 
 ---
 

@@ -29,6 +29,7 @@ pub struct GpuEditParameters {
     pub highlight: f32,
     pub black: f32,
     pub white: f32,
+    pub mask_range: f32,
 }
 
 pub struct GpuProcessor {
@@ -244,6 +245,7 @@ impl GpuProcessor {
                 highlight: params.highlight as f32 / 100.0,
                 black: params.black as f32 / 100.0,
                 white: params.white as f32 / 100.0,
+                mask_range: params.mask_range,
             });
 
             // LUTの生成

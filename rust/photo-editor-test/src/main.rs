@@ -1,4 +1,6 @@
+#![allow(unused)]
 use ndarray::Array1;
+
 use photo_editor::{self, GpuProcessor};
 use std::fs;
 use std::io;

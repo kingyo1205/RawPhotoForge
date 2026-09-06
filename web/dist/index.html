@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RawPhotoForge</title>
-  <script type="module" crossorigin src="/RawPhotoForge/web/dist/assets/index-CDTL7n19.js"></script>
-  <link rel="stylesheet" crossorigin href="/RawPhotoForge/web/dist/assets/index-D_CWgdCK.css">
+    <title>RawPhotoForge</title>
+  <script type="module" crossorigin src="/RawPhotoForge/web/dist/assets/index-DFSRx-06.js"></script>
+  <link rel="stylesheet" crossorigin href="/RawPhotoForge/web/dist/assets/index-rlEav9os.css">
 </head>
 
 <body>
@@ -32,7 +32,6 @@
                 <a href="https://github.com/kingyo1205/RawPhotoForge"
                     style="color: rgb(0, 200, 255); font-size: small;">https://github.com/kingyo1205/RawPhotoForge</a>
             </div>
-
         </div>
         <div class="main-content">
             <div class="image-area-container">
@@ -50,6 +49,7 @@
                         <button class="tab-button" data-tab="lightness" data-i18n="TR_TAB_LIGHTNESS">輝度</button>
                         <button class="tab-button" data-tab="wb" data-i18n="TR_TAB_WB">WB</button>
                         <button class="tab-button" data-tab="effect" data-i18n="TR_TAB_EFFECT">効果</button>
+                        <button class="tab-button" data-tab="ai-mask" data-i18n="TR_TAB_AI_MASK">AIマスク</button>
                         <button class="tab-button" data-tab="metadata" data-i18n="TR_TAB_METADATA">メタデータ</button>
                     </div>
                     <div class="tab-content">
@@ -120,11 +120,44 @@
                             </div>
                         </div>
 
+                        <div id="tab-ai-mask" class="tab-pane">
+                            <div class="scroll-container">
+                                <div class="vbox">
+                                    <label id="ai-mask-status"></label>
+                                    <label data-i18n="TR_MASK_SELECT">マスク選択</label>
+                                    <select id="mask-select">
+                                        <option value="main">main</option>
+                                    </select>
+
+                                    <button id="btn-create-mask" data-i18n="TR_BTN_CREATE_MASK">AIマスク作成</button>
+                                    <div id="ai-mask-action-container"
+                                        style="display: none; gap: 12px; flex-direction: column;">
+                                        <button id="btn-exec-inference" style="border-color: rgba(0,255,204,0.5);"
+                                            data-i18n="TR_BTN_EXEC_INFERENCE">推論実行 (クリック終了)</button>
+                                        <button id="btn-cancel-mask" style="border-color: rgba(255,100,100,0.5);"
+                                            data-i18n="TR_BTN_CANCEL_MASK">キャンセル</button>
+                                    </div>
+
+                                    <button id="btn-delete-mask" data-i18n="TR_BTN_DELETE_MASK">選択中のマスクを削除</button>
+                                    <button id="btn-invert-mask"
+                                        data-i18n="TR_BTN_INVERT_MASK">選択中のマスクを反転して新規作成</button>
+
+                                    <label style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="chk-show-mask">
+                                        <span data-i18n="TR_CHK_SHOW_MASK">マスクを表示する</span>
+                                    </label>
+
+                                    <label id="mask-range-label" data-i18n="TR_MASK_RANGE">マスク範囲 (二値化閾値): 0.0</label>
+                                    <input type="range" id="mask-range-slider" min="-10.0" max="10.0" step="0.1"
+                                        value="0.0">
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="tab-metadata" class="tab-pane">
                             <div class="scroll-container">
                                 <table id="metadata-table" class="metadata-table">
-                                    <tbody>
-                                    </tbody>
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </div>
@@ -132,97 +165,135 @@
                 </div>
             </div>
         </div>
-    </div>
-    <input type="file" id="file-input" accept=".jpeg,.jpg,.png,.webp,.tiff,.tif" style="display: none;">
+        <input type="file" id="file-input" accept=".jpeg,.jpg,.png,.webp,.tiff,.tif" style="display: none;">
 
-    <div id="save-dialog" class="dialog-overlay" style="display: none;">
-        <div class="dialog-box">
-            <div class="dialog-header" data-i18n="TR_DIALOG_SAVE_TITLE">写真を保存</div>
-            <div class="dialog-content">
-                <label for="format-select" data-i18n="TR_SELECT_FORMAT">フォーマットを選択</label>
-                <select id="format-select">
-                    <option value="jpeg">JPEG</option>
-                    <option value="png">PNG</option>
-                </select>
-            </div>
-            <div class="dialog-footer">
-                <button id="save-dialog-save" data-i18n="TR_BUTTON_SAVE">保存</button>
-                <button id="save-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="settings-dialog" class="dialog-overlay" style="display: none;">
-        <div class="dialog-box">
-            <div class="dialog-header" data-i18n="TR_SETTINGS_TITLE">設定</div>
-            <div class="dialog-content">
-                <div class="settings-grid">
-                    <h3 data-i18n="TR_SETTINGS_TAB_IMAGE">画像</h3>
-
-                    <label for="ui-preview-size-slider" data-i18n="TR_SETTINGS_UI_PREVIEW_SIZE">UIプレビューサイズ</label>
-                    <div class="slider-container">
-                        <input type="range" id="ui-preview-size-slider" min="500" max="2000" step="10">
-                        <input type="number" id="ui-preview-size-input" class="slider-value-input" min="500" max="2000">
-                    </div>
-
-                    <label for="drag-preview-size-slider"
-                        data-i18n="TR_SETTINGS_DRAG_PREVIEW_SIZE">ドラッグ中プレビューサイズ</label>
-                    <div class="slider-container">
-                        <input type="range" id="drag-preview-size-slider" min="100" max="800" step="10">
-                        <input type="number" id="drag-preview-size-input" class="slider-value-input" min="100"
-                            max="800">
-                    </div>
-
-                    <h3 data-i18n="TR_SETTINGS_TAB_LANGUAGE">言語</h3>
-                    <label for="language-select" data-i18n="TR_SETTINGS_LANGUAGE_LABEL">言語</label>
-                    <select id="language-select">
-                        <option value="en">English</option>
-                        <option value="ja">日本語</option>
+        <div id="save-dialog" class="dialog-overlay" style="display: none;">
+            <div class="dialog-box">
+                <div class="dialog-header" data-i18n="TR_DIALOG_SAVE_TITLE">写真を保存</div>
+                <div class="dialog-content">
+                    <label for="format-select" data-i18n="TR_SELECT_FORMAT">フォーマットを選択</label>
+                    <select id="format-select">
+                        <option value="jpeg">JPEG</option>
+                        <option value="png">PNG</option>
                     </select>
-
-                    <h3 data-i18n="TR_SETTINGS_TAB_LICENSE">ライセンス</h3>
-
-                    <label data-i18n="TR_SETTINGS_LICENSE_RPF">RawPhotoForgeライセンス</label>
-                    <div>
-                        <a href="https://kingyo1205.github.io/RawPhotoForge/LICENSE" target="_blank">
-                            https://kingyo1205.github.io/RawPhotoForge/LICENSE
-                        </a>
-                    </div>
-
-                    <label data-i18n="TR_SETTINGS_LICENSE_THIRD">サードパーティライセンス</label>
-                    <div>
-                        <a href="https://kingyo1205.github.io/RawPhotoForge/rust/rust_licenses.html" target="_blank">
-                            https://kingyo1205.github.io/RawPhotoForge/rust/rust_licenses.html
-                        </a>
-                    </div>
-
-                    <label data-i18n="TR_SETTINGS_SOURCE_CODE">ソースコード</label>
-                    <div>
-                        <a href="https://github.com/kingyo1205/RawPhotoForge" target="_blank">
-                            https://github.com/kingyo1205/RawPhotoForge
-                        </a>
-                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button id="save-dialog-save" data-i18n="TR_BUTTON_SAVE">保存</button>
+                    <button id="save-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
                 </div>
             </div>
-            <div class="dialog-footer">
-                <button id="settings-dialog-save" data-i18n="TR_SETTINGS_SAVE_BUTTON">保存</button>
-                <button id="settings-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
-            </div>
         </div>
-    </div>
 
-    <div id="info-dialog" class="dialog-overlay" style="display: none;">
-        <div class="dialog-box">
-            <div class="dialog-header" data-i18n="TR_INFO_DIALOG_TITLE">情報</div>
-            <div class="dialog-content">
-                <p id="info-dialog-text"></p>
-            </div>
-            <div class="dialog-footer">
-                <button id="info-dialog-ok" data-i18n="TR_BUTTON_OK">OK</button>
+        <div id="settings-dialog" class="dialog-overlay" style="display: none;">
+            <div class="dialog-box">
+                <div class="dialog-header" data-i18n="TR_SETTINGS_TITLE">設定</div>
+                <div class="dialog-content">
+                    <div class="settings-grid">
+                        <h3 data-i18n="TR_SETTINGS_TAB_IMAGE">画像</h3>
+
+                        <label for="ui-preview-size-slider" data-i18n="TR_SETTINGS_UI_PREVIEW_SIZE">UIプレビューサイズ</label>
+                        <div class="slider-container">
+                            <input type="range" id="ui-preview-size-slider" min="500" max="2000" step="10">
+                            <input type="number" id="ui-preview-size-input" class="slider-value-input" min="500"
+                                max="2000">
+                        </div>
+
+                        <label for="drag-preview-size-slider"
+                            data-i18n="TR_SETTINGS_DRAG_PREVIEW_SIZE">ドラッグ中プレビューサイズ</label>
+                        <div class="slider-container">
+                            <input type="range" id="drag-preview-size-slider" min="100" max="800" step="10">
+                            <input type="number" id="drag-preview-size-input" class="slider-value-input" min="100"
+                                max="800">
+                        </div>
+
+                        <h3 data-i18n="TR_SETTINGS_TAB_LANGUAGE">言語</h3>
+                        <label for="language-select" data-i18n="TR_SETTINGS_LANGUAGE_LABEL">言語</label>
+                        <select id="language-select">
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                        </select>
+
+                        <h3 data-i18n="TR_SETTINGS_TAB_LICENSE">ライセンス</h3>
+
+                        <label data-i18n="TR_SETTINGS_LICENSE_RPF">RawPhotoForgeライセンス</label>
+                        <div>
+                            <a href="https://kingyo1205.github.io/RawPhotoForge/LICENSE" target="_blank">
+                                https://kingyo1205.github.io/RawPhotoForge/LICENSE
+                            </a>
+                        </div>
+
+                        <label data-i18n="TR_SETTINGS_LICENSE_THIRD">サードパーティライセンス</label>
+                        <div>
+                            <a href="https://kingyo1205.github.io/RawPhotoForge/rust/rust_licenses.html"
+                                target="_blank">
+                                https://kingyo1205.github.io/RawPhotoForge/rust/rust_licenses.html
+                            </a>
+                        </div>
+
+                        <label data-i18n="TR_SETTINGS_SOURCE_CODE">ソースコード</label>
+                        <div>
+                            <a href="https://github.com/kingyo1205/RawPhotoForge" target="_blank">
+                                https://github.com/kingyo1205/RawPhotoForge
+                            </a>
+                        </div>
+
+
+                        <h3 data-i18n="TR_SETTINGS_LICENSE_AI">サードパーティライセンス AIマスク</h3>
+
+                        <label data-i18n="TR_SETTINGS_SAM_SOURCE_CODE">SAM 2 ソースコード</label>
+                        <div>
+                            <a href="https://github.com/facebookresearch/sam2" target="_blank">
+                                https://github.com/facebookresearch/sam2
+                            </a>
+                        </div>
+
+                        <label>SAM 2.1 Hiera Large</label>
+                        <div>
+                            <a href="https://huggingface.co/facebook/sam2.1-hiera-large" target="_blank">
+                                https://huggingface.co/facebook/sam2.1-hiera-large
+                            </a>
+                        </div>
+
+                        <label>SAM 2.1 Hiera Large ONNX</label>
+                        <div>
+                            <a href="https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX" target="_blank">
+                                https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX
+                            </a>
+                        </div>
+
+                        <label>Transformers.js</label>
+                        <div>
+                            <a href="https://github.com/huggingface/transformers.js" target="_blank">
+                                https://github.com/huggingface/transformers.js
+                            </a>
+                            <br>
+                            <a href="https://www.jsdelivr.com/package/npm/@huggingface/transformers"
+                                target="_blank">https://www.jsdelivr.com/package/npm/@huggingface/transformers</a>
+                        </div>
+
+
+
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button id="settings-dialog-save" data-i18n="TR_SETTINGS_SAVE_BUTTON">保存</button>
+                    <button id="settings-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
+                </div>
             </div>
         </div>
-    </div>
-
+
+        <div id="info-dialog" class="dialog-overlay" style="display: none;">
+            <div class="dialog-box">
+                <div class="dialog-header" data-i18n="TR_INFO_DIALOG_TITLE">情報</div>
+                <div class="dialog-content">
+                    <p id="info-dialog-text"></p>
+                </div>
+                <div class="dialog-footer">
+                    <button id="info-dialog-ok" data-i18n="TR_BUTTON_OK">OK</button>
+                </div>
+            </div>
+        </div>
+
 </body>
 
 </html>

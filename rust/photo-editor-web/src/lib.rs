@@ -1,6 +1,6 @@
 use photo_editor::{GpuProcessor, ImageFormat, PhotoEditor};
 
-use ndarray::Array1;
+use ndarray::{Array1, Array2};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
@@ -234,5 +234,32 @@ impl WebPhotoEditor {
     pub fn exif_json(&self) -> Result<String, JsValue> {
         serde_json::to_string(&self.inner.get_exif_hashmap())
             .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    pub fn add_mask(
+        &mut self,
+        name: String,
+        data: Vec<f32>,
+        width: u32,
+        height: u32,
+    ) -> Result<(), JsValue> {
+        self.inner.add_mask(
+            &name,
+            Array2::from_shape_vec((height as usize, width as usize), data)
+                .map_err(|e| JsValue::from_str(&e.to_string()))?,
+        );
+        Ok(())
+    }
+
+    pub fn remove_mask(&mut self, name: String) -> Result<(), JsValue> {
+        self.inner.remove_mask(&name);
+        Ok(())
+    }
+
+    pub fn set_mask_range(&mut self, mask_name: String, mask_range: f32) -> Result<(), JsValue> {
+        self.inner
+            .set_mask_range(&mask_name, mask_range)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        Ok(())
     }
 }

@@ -98,6 +98,18 @@ Example:
 cargo about generate about.hbs > rust_licenses.html
 ```
 
+
+### AI Mask Dependencies and Licenses
+The AI ​​Mask feature utilizes the following software, models, and related resources:
+#### SAM 2
+- [https://github.com/facebookresearch/sam2](https://github.com/facebookresearch/sam2)
+- [https://huggingface.co/facebook/sam2.1-hiera-large](https://huggingface.co/facebook/sam2.1-hiera-large)
+- [https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX](https://huggingface.co/onnx-community/sam2.1-hiera-large-ONNX)
+#### Transformers.js
+- [https://github.com/huggingface/transformers.js](https://github.com/huggingface/transformers.js)
+- [https://www.jsdelivr.com/package/npm/@huggingface/transformers](https://www.jsdelivr.com/package/npm/@huggingface/transformers)
+
+
 ---
 
 ## AI Tools Used

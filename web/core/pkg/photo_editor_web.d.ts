@@ -11,6 +11,7 @@ export class WebGpuProcessor {
 export class WebPhotoEditor {
     free(): void;
     [Symbol.dispose](): void;
+    add_mask(name: string, data: Float32Array, width: number, height: number): void;
     apply(): void;
     static create_from_rgb_f32(gpu: WebGpuProcessor, data: Float32Array, width: number, height: number): WebPhotoEditor;
     exif_json(): string;
@@ -18,6 +19,7 @@ export class WebPhotoEditor {
     get_rgba_f32(): Promise<Float32Array>;
     height(): number;
     constructor(gpu: WebGpuProcessor, image_bytes: Uint8Array, extension: string);
+    remove_mask(name: string): void;
     save_jpeg(): Promise<Uint8Array>;
     save_png(): Promise<Uint8Array>;
     /**
@@ -28,6 +30,7 @@ export class WebPhotoEditor {
      * レンズ歪み補正を設定
      */
     set_lens_distortion_correction(value: number): void;
+    set_mask_range(mask_name: string, mask_range: number): void;
     /**
      * 色相（Hue）のトーンカーブを設定
      */
@@ -64,6 +67,7 @@ export interface InitOutput {
     readonly __wbg_webgpuprocessor_free: (a: number, b: number) => void;
     readonly __wbg_webphotoeditor_free: (a: number, b: number) => void;
     readonly webgpuprocessor_create: () => any;
+    readonly webphotoeditor_add_mask: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
     readonly webphotoeditor_apply: (a: number) => [number, number];
     readonly webphotoeditor_create_from_rgb_f32: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
     readonly webphotoeditor_exif_json: (a: number) => [number, number, number, number];
@@ -71,10 +75,12 @@ export interface InitOutput {
     readonly webphotoeditor_get_rgba_f32: (a: number) => any;
     readonly webphotoeditor_height: (a: number) => number;
     readonly webphotoeditor_new: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+    readonly webphotoeditor_remove_mask: (a: number, b: number, c: number) => [number, number];
     readonly webphotoeditor_save_jpeg: (a: number) => any;
     readonly webphotoeditor_save_png: (a: number) => any;
     readonly webphotoeditor_set_brightness_tone_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
     readonly webphotoeditor_set_lens_distortion_correction: (a: number, b: number) => [number, number];
+    readonly webphotoeditor_set_mask_range: (a: number, b: number, c: number, d: number) => [number, number];
     readonly webphotoeditor_set_oklch_hue_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
     readonly webphotoeditor_set_oklch_lightness_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
     readonly webphotoeditor_set_oklch_saturation_curve: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => [number, number];
@@ -83,9 +89,9 @@ export interface InitOutput {
     readonly webphotoeditor_set_whitebalance: (a: number, b: number, c: number, d: number, e: number) => [number, number];
     readonly webphotoeditor_width: (a: number) => number;
     readonly init: () => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h2dd1d8210877e39f: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h2b7d574d429adee3: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h604c9726e9c45ea3: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen_46a9236ac5bcbc21___convert__closures_____invoke___wasm_bindgen_46a9236ac5bcbc21___JsValue__core_f0fd674eaa06beef___result__Result_____wasm_bindgen_46a9236ac5bcbc21___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_46a9236ac5bcbc21___convert__closures_____invoke___js_sys_ed5f3a2b9f4611a2___Function_fn_wasm_bindgen_46a9236ac5bcbc21___JsValue_____wasm_bindgen_46a9236ac5bcbc21___sys__Undefined___js_sys_ed5f3a2b9f4611a2___Function_fn_wasm_bindgen_46a9236ac5bcbc21___JsValue_____wasm_bindgen_46a9236ac5bcbc21___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_46a9236ac5bcbc21___convert__closures_____invoke___wasm_bindgen_46a9236ac5bcbc21___JsValue______true_: (a: number, b: number, c: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

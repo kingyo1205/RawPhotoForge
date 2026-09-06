@@ -1,13 +1,13 @@
-
 import init, {
     WebGpuProcessor as GpuImageProcessor,
     WebPhotoEditor as PhotoEditor,
 } from "photo-editor-web";
+import { RawImage, ensureModelLoaded, generateMask } from './ai_mask';
 import { CurveMode, ToneCurveEditor } from './tone_curve_editor';
 import translation from "./translations/translation.json?raw";
 await init();
-type Translations = Record<string, Record<string, string>>;
 
+type Translations = Record<string, Record<string, string>>;
 
 interface Settings {
     uiPreviewSize: number;
@@ -15,17 +15,16 @@ interface Settings {
     locale: string;
 }
 
-
 interface Float32ArrayImageRGB {
     data: Float32Array<ArrayBuffer>;
     width: number;
     height: number;
 }
 
-interface Float32ArrayImageRGBA {
-    data: Float32Array<ArrayBuffer>,
-    width: number,
-    height: number
+interface Float32Mask {
+    data: Float32Array;
+    width: number;
+    height: number;
 }
 
 const defaultSettings: Settings = {
@@ -37,7 +36,6 @@ const defaultSettings: Settings = {
 let settings: Settings = { ...defaultSettings };
 const SETTINGS_FILE_PATH = "raw-photo-forge-settings";
 
-
 class I18n {
     private lang: string;
     private data: Translations;
@@ -45,7 +43,6 @@ class I18n {
     constructor(data: Translations, lang: string) {
         this.data = data;
         this.lang = lang;
-        console.log(data);
     }
 
     t(key: string): string {
@@ -59,7 +56,7 @@ class I18n {
     }
 }
 
-type EditState = {
+export interface EditParameters {
     exposure: number;
     contrast: number;
     shadow: number;
@@ -74,10 +71,59 @@ type EditState = {
     hue_tone_curve_points: { x: number, y: number }[];
     saturation_tone_curve_points: { x: number, y: number }[];
     lightness_tone_curve_points: { x: number, y: number }[];
-};
+    mask_range: number;
+}
+
+// 「現在UIが編集している対象」= 選択中マスクの edit_parameters への参照（エイリアス）。
+// masks配列の該当エントリと同じオブジェクトを指すので、書き換えるとそのままmasksに反映される。
+type EditState = EditParameters;
+
+export interface Mask {
+    name: string;
+    edit_parameters: EditParameters;
+    data: Float32Array | null; // mainはnull（生データ、二値化前）
+}
+
+function createDefaultParameters(): EditParameters {
+    return {
+        exposure: 0.0,
+        contrast: 0,
+        shadow: 0,
+        highlight: 0,
+        black: 0,
+        white: 0,
+        temperature: 0,
+        tint: 0,
+        vignette: 0,
+        lens_distortion: 0,
+        brightness_tone_curve_points: [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 1.0 }],
+        hue_tone_curve_points: [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 1.0 }],
+        saturation_tone_curve_points: [{ x: 0.0, y: 1.0 }, { x: 1.0, y: 1.0 }],
+        lightness_tone_curve_points: [{ x: 0.0, y: 1.0 }, { x: 1.0, y: 1.0 }],
+        mask_range: 0.0,
+    };
+}
+
+let masks: Mask[] = [{
+    name: "main",
+    edit_parameters: createDefaultParameters(),
+    data: null
+}];
 
 enum PreviewLevel { LOW, MID, FULL }
 
+// --- AIマスク関連の状態 ---
+let maskCounter = 1;
+let selectedMaskName = "main";
+let isCreatingMask = false;
+let clickPoints: { x: number, y: number }[] = [];
+let showMask = false;
+
+const maskDataCache = new Map<string, Float32Mask>();      // フル解像度の生データ（二値化前）
+const maskOverlayCache = new Map<string, Float32Mask>();   // プレビュー表示用リサイズキャッシュ（生データ）
+
+let modelLoadPromise: Promise<void> | null = null;
+let captureImagePromise: Promise<InstanceType<typeof RawImage>> | null = null;
 
 let gpuProcessor: GpuImageProcessor;
 let editorFull: PhotoEditor | null = null;
@@ -94,35 +140,18 @@ let uniformBuffer: GPUBuffer;
 
 let toneCurveEditors: { [key: string]: ToneCurveEditor } = {};
 
-const initialEditState: EditState = {
-    exposure: 0.0,
-    contrast: 0,
-    shadow: 0,
-    highlight: 0,
-    black: 0,
-    white: 0,
-    temperature: 0,
-    tint: 0,
-    vignette: 0,
-    lens_distortion: 0,
-    brightness_tone_curve_points: [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 1.0 }],
-    hue_tone_curve_points: [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 1.0 }],
-    saturation_tone_curve_points: [{ x: 0.0, y: 1.0 }, { x: 1.0, y: 1.0 }],
-    lightness_tone_curve_points: [{ x: 0.0, y: 1.0 }, { x: 1.0, y: 1.0 }],
-};
-
-let editState: EditState = { ...initialEditState };
-
+// UIが今編集している対象（選択中マスクへのエイリアス）
+let editState: EditState = masks[0].edit_parameters;
+// vignette / lens_distortion はマスク非対応のためmain固定で参照する
+let mainEditParams: EditParameters = masks[0].edit_parameters;
 
 let canvasContext: GPUCanvasContext | null = null;
 let presentationFormat: GPUTextureFormat;
 let renderPipeline: GPURenderPipeline | null = null;
 let isRendering = false;
 
-const data: Translations = JSON.parse(translation);
-console.log(data);
-const i18n: I18n = new I18n(data, "en");
-
+const translationsData: Translations = JSON.parse(translation);
+const i18n: I18n = new I18n(translationsData, "en");
 
 class WebGpuContext {
     adapter: GPUAdapter;
@@ -131,13 +160,10 @@ class WebGpuContext {
 
     static async create(): Promise<WebGpuContext> {
         const adapter = await navigator.gpu.requestAdapter();
-
         if (!adapter) {
             throw new Error("No GPU adapter");
         }
-
         const device = await adapter.requestDevice();
-
         return {
             adapter,
             device,
@@ -177,11 +203,9 @@ const renderShaderCode = `
     }
 `;
 
-
 const ui = {
     mainCanvas: document.getElementById('main-canvas') as HTMLCanvasElement,
     fileInput: document.getElementById('file-input') as HTMLInputElement,
-
 
     exposureLabel: document.getElementById('exposure-label') as HTMLLabelElement,
     contrastLabel: document.getElementById('contrast-label') as HTMLLabelElement,
@@ -194,7 +218,6 @@ const ui = {
     vignetteLabel: document.getElementById('vignette-label') as HTMLLabelElement,
     lensDistortionLabel: document.getElementById('lens-distortion-label') as HTMLLabelElement,
 
-
     exposureSlider: document.getElementById('exposure-slider') as HTMLInputElement,
     contrastSlider: document.getElementById('contrast-slider') as HTMLInputElement,
     shadowSlider: document.getElementById('shadow-slider') as HTMLInputElement,
@@ -206,7 +229,6 @@ const ui = {
     vignetteSlider: document.getElementById('vignette-slider') as HTMLInputElement,
     lensDistortionSlider: document.getElementById('lens-distortion-slider') as HTMLInputElement,
 
-
     resetToneButton: document.getElementById('reset-tone-button') as HTMLButtonElement,
     resetWbButton: document.getElementById('reset-wb-button') as HTMLButtonElement,
     resetEffectButton: document.getElementById('reset-effect-button') as HTMLButtonElement,
@@ -215,15 +237,12 @@ const ui = {
     resetSaturationButton: document.getElementById('reset-saturation-button') as HTMLButtonElement,
     resetLightnessButton: document.getElementById('reset-lightness-button') as HTMLButtonElement,
 
-
     tabButtons: document.querySelectorAll('.tab-button'),
     tabPanes: document.querySelectorAll('.tab-pane'),
-
 
     openFile: document.getElementById('open-file') as HTMLDivElement,
     saveFile: document.getElementById('save-file') as HTMLDivElement,
     resetAll: document.getElementById('reset-all') as HTMLDivElement,
-
 
     saveDialog: document.getElementById('save-dialog') as HTMLDivElement,
     saveDialogSave: document.getElementById('save-dialog-save') as HTMLButtonElement,
@@ -244,17 +263,26 @@ const ui = {
     infoDialogText: document.getElementById('info-dialog-text') as HTMLParagraphElement,
     infoDialogOk: document.getElementById('info-dialog-ok') as HTMLButtonElement,
 
+    aiMaskStatusLabel: document.getElementById("ai-mask-status") as HTMLLabelElement,
+    maskSelect: document.getElementById("mask-select") as HTMLSelectElement,
+    btnCreateMask: document.getElementById("btn-create-mask") as HTMLButtonElement,
+    actionContainer: document.getElementById("ai-mask-action-container") as HTMLDivElement,
+    btnExecInference: document.getElementById("btn-exec-inference") as HTMLButtonElement,
+    btnCancelMask: document.getElementById("btn-cancel-mask") as HTMLButtonElement,
+    btnDeleteMask: document.getElementById("btn-delete-mask") as HTMLButtonElement,
+    btnInvertMask: document.getElementById("btn-invert-mask") as HTMLButtonElement,
+    chkShowMask: document.getElementById("chk-show-mask") as HTMLInputElement,
+    maskRangeSlider: document.getElementById("mask-range-slider") as HTMLInputElement,
+    maskRangeLabel: document.getElementById("mask-range-label") as HTMLLabelElement,
 };
 
 function applyI18n(i18n: I18n) {
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach(el => {
         el.textContent = i18n.t(el.dataset.i18n!);
     });
-
     document.querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]").forEach(el => {
         el.placeholder = i18n.t(el.dataset.i18nPlaceholder!);
     });
-
     document.querySelectorAll<HTMLImageElement>("[data-i18n-alt]").forEach(el => {
         el.alt = i18n.t(el.dataset.i18nAlt!);
     });
@@ -299,12 +327,9 @@ function saveSettings() {
 }
 
 function applySettings() {
-    if (i18n.setLang) {
-        i18n.setLang(settings.locale);
-    }
+    i18n.setLang(settings.locale);
     applyI18n(i18n);
     updateAllSliderLabels();
-    console.log("Applied settings:", settings);
 }
 
 function updateSettingsUI() {
@@ -319,8 +344,10 @@ async function initializeApp() {
     loadSettings();
     applySettings();
     setupEventListeners();
+    setupAiMaskEventListeners();
     setupToneCurveEditors();
     updateAllSliderLabels();
+    updateMaskControlsEnabled();
 
     const observer = new MutationObserver((mutations) => {
         for (const m of mutations) {
@@ -353,9 +380,6 @@ async function initializeApp() {
 
     gpu = await WebGpuContext.create();
 
-
-
-
     canvasContext = ui.mainCanvas.getContext("webgpu");
     if (!canvasContext) {
         alert(i18n.t("TR_ERROR_GET_WEBGPU_CANVAS_CONTEXT"));
@@ -379,16 +403,12 @@ async function initializeApp() {
             {
                 binding: 0,
                 visibility: GPUShaderStage.FRAGMENT,
-                texture: {
-                    sampleType: 'unfilterable-float',
-                },
+                texture: { sampleType: 'unfilterable-float' },
             },
             {
                 binding: 1,
                 visibility: GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                },
+                buffer: { type: 'uniform' },
             },
         ],
     });
@@ -477,10 +497,8 @@ function setupEventListeners() {
     });
     ui.resetAll.addEventListener('click', resetAllEdits);
 
-
     ui.saveDialogCancel.addEventListener('click', () => ui.saveDialog.style.display = 'none');
     ui.saveDialogSave.addEventListener('click', saveImage);
-
 
     ui.tabButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -493,15 +511,14 @@ function setupEventListeners() {
                 newPane.classList.add('active');
             }
 
-
             if (toneCurveEditors[tabName]) {
                 toneCurveEditors[tabName].draw();
             }
         });
     });
 
-
-    const sliders = [
+    // マスクごとに独立して持つパラメータ（editState = 選択中マスクのedit_parameters）
+    const perMaskSliders = [
         { s: ui.exposureSlider, k: 'exposure', l: ui.exposureLabel, n: i18n.t("TR_EXPOSURE"), f: (v: number) => v.toFixed(2) },
         { s: ui.contrastSlider, k: 'contrast', l: ui.contrastLabel, n: i18n.t("TR_CONTRAST"), f: (v: number) => Math.round(v) },
         { s: ui.shadowSlider, k: 'shadow', l: ui.shadowLabel, n: i18n.t("TR_SHADOW"), f: (v: number) => Math.round(v) },
@@ -510,11 +527,9 @@ function setupEventListeners() {
         { s: ui.whiteSlider, k: 'white', l: ui.whiteLabel, n: i18n.t("TR_WHITE_LEVEL"), f: (v: number) => Math.round(v) },
         { s: ui.temperatureSlider, k: 'temperature', l: ui.temperatureLabel, n: i18n.t("TR_TEMPERATURE"), f: (v: number) => Math.round(v) },
         { s: ui.tintSlider, k: 'tint', l: ui.tintLabel, n: i18n.t("TR_TINT"), f: (v: number) => Math.round(v) },
-        { s: ui.vignetteSlider, k: 'vignette', l: ui.vignetteLabel, n: i18n.t("TR_VIGNETTE"), f: (v: number) => Math.round(v) },
-        { s: ui.lensDistortionSlider, k: 'lens_distortion', l: ui.lensDistortionLabel, n: i18n.t("TR_LENS_DISTORTION"), f: (v: number) => Math.round(v) },
     ];
 
-    sliders.forEach(({ s, k, l, n, f }) => {
+    perMaskSliders.forEach(({ s, k, l, n, f }) => {
         s.addEventListener('input', () => {
             const value = parseFloat(s.value);
             (editState as any)[k] = value;
@@ -525,6 +540,22 @@ function setupEventListeners() {
         s.addEventListener('mouseup', onDragEnd);
     });
 
+    // マスク非対応（グローバルのみ）＝ 常にmainのパラメータを編集
+    const globalSliders = [
+        { s: ui.vignetteSlider, k: 'vignette', l: ui.vignetteLabel, n: i18n.t("TR_VIGNETTE"), f: (v: number) => Math.round(v) },
+        { s: ui.lensDistortionSlider, k: 'lens_distortion', l: ui.lensDistortionLabel, n: i18n.t("TR_LENS_DISTORTION"), f: (v: number) => Math.round(v) },
+    ];
+
+    globalSliders.forEach(({ s, k, l, n, f }) => {
+        s.addEventListener('input', () => {
+            const value = parseFloat(s.value);
+            (mainEditParams as any)[k] = value;
+            l.textContent = `${n} ${f(value)}`;
+            updateImage();
+        });
+        s.addEventListener('mousedown', onDragStart);
+        s.addEventListener('mouseup', onDragEnd);
+    });
 
     ui.resetToneButton.addEventListener('click', resetTone);
     ui.resetWbButton.addEventListener('click', resetWb);
@@ -533,7 +564,6 @@ function setupEventListeners() {
     ui.resetHueButton.addEventListener('click', () => resetCurve('hue'));
     ui.resetSaturationButton.addEventListener('click', () => resetCurve('saturation'));
     ui.resetLightnessButton.addEventListener('click', () => resetCurve('lightness'));
-
 
     ui.settingsMenu.addEventListener('click', () => {
         updateSettingsUI();
@@ -553,11 +583,9 @@ function setupEventListeners() {
         }
     });
 
-
     ui.infoDialogOk.addEventListener('click', () => {
         ui.infoDialog.style.display = 'none';
     });
-
 
     ui.uiPreviewSizeSlider.addEventListener('input', () => {
         ui.uiPreviewSizeInput.value = ui.uiPreviewSizeSlider.value;
@@ -586,6 +614,316 @@ function setupEventListeners() {
     });
 }
 
+// ============================================================
+// AIマスク機能
+// ============================================================
+
+function getMaskEntry(name: string): Mask | undefined {
+    return masks.find(m => m.name === name);
+}
+
+function setupAiMaskEventListeners() {
+    ui.maskSelect.addEventListener("change", (e) => {
+        const name = (e.target as HTMLSelectElement).value;
+        switchToMaskEditState(name);
+    });
+
+    ui.maskRangeSlider.addEventListener("input", (e) => {
+        if (selectedMaskName === "main") return; // mainには意味がない
+        const value = parseFloat((e.target as HTMLInputElement).value);
+        editState.mask_range = value;
+        updateMaskRangeLabel();
+        updateImage();
+    });
+    ui.maskRangeSlider.addEventListener('mousedown', onDragStart);
+    ui.maskRangeSlider.addEventListener('mouseup', onDragEnd);
+
+    ui.chkShowMask.addEventListener("change", (e) => {
+        showMask = (e.target as HTMLInputElement).checked;
+        updateImage();
+    });
+
+    ui.btnCreateMask.addEventListener("click", () => {
+        if (!imageLoaded || !editorFull) {
+            showInfoDialog(i18n.t("TR_ERROR_NO_IMAGE_FOR_MASK"));
+            return;
+        }
+
+        isCreatingMask = true;
+        clickPoints = [];
+        clearPointMarkers();
+        ui.btnCreateMask.style.display = "none";
+        ui.actionContainer.style.display = "flex";
+        ui.mainCanvas.style.cursor = "crosshair";
+
+        // クリックしている間にモデルのロードと画像取得を裏で進めておく
+        modelLoadPromise = ensureModelLoaded((p) => { ui.aiMaskStatusLabel.textContent = `${i18n.t("TR_MASK_MODEL_LOAD_STATUS")}: ${p}%` });
+        captureImagePromise = captureFullResRawImage();
+    });
+
+    ui.btnCancelMask.addEventListener("click", () => {
+        exitMaskCreationMode();
+    });
+
+    ui.mainCanvas.addEventListener("click", (e) => {
+        if (!isCreatingMask) return;
+
+        const rect = ui.mainCanvas.getBoundingClientRect();
+        const xFrac = (e.clientX - rect.left) / rect.width;
+        const yFrac = (e.clientY - rect.top) / rect.height;
+
+        if (xFrac < 0 || xFrac > 1 || yFrac < 0 || yFrac > 1) return;
+
+        clickPoints.push({ x: xFrac, y: yFrac });
+        addPointMarker(xFrac, yFrac);
+    });
+
+    ui.btnExecInference.addEventListener("click", async () => {
+        if (!isCreatingMask) return;
+
+        if (clickPoints.length === 0) {
+            showInfoDialog(i18n.t("TR_ERROR_NO_MASK_POINTS"));
+            return;
+        }
+
+        const points = clickPoints;
+        exitMaskCreationMode();
+        ui.btnExecInference.disabled = true;
+
+        try {
+            await modelLoadPromise;
+            if (!captureImagePromise) throw new Error("No captured image for mask generation.");
+            const rawImage = await captureImagePromise;
+
+            const result = await generateMask(rawImage, points);
+
+            // 二値化はしない。生データ（ロジット）のままキャッシュ・登録する。
+            registerNewMask(result.data, result.width, result.height);
+        } catch (err) {
+            console.error("AI mask generation failed:", err);
+            showInfoDialog(i18n.t("TR_ERROR_AI_MASK"));
+        } finally {
+            ui.btnExecInference.disabled = false;
+            modelLoadPromise = null;
+            captureImagePromise = null;
+        }
+    });
+
+    ui.btnDeleteMask.addEventListener("click", () => {
+        if (selectedMaskName === "main") return;
+
+        const nameToDelete = selectedMaskName;
+
+        removeMaskFromAllEditors(nameToDelete);
+        maskDataCache.delete(nameToDelete);
+        maskOverlayCache.delete(nameToDelete);
+        masks = masks.filter(m => m.name !== nameToDelete);
+
+        const optionToRemove = ui.maskSelect.querySelector(`option[value="${CSS.escape(nameToDelete)}"]`);
+        optionToRemove?.remove();
+
+        ui.maskSelect.value = "main";
+        switchToMaskEditState("main");
+    });
+
+    ui.btnInvertMask.addEventListener("click", () => {
+        if (selectedMaskName === "main") return;
+
+        const original = maskDataCache.get(selectedMaskName);
+        if (!original) return;
+
+        // 生データ（ロジット）の符号を反転することで前景/背景を入れ替える
+        const inverted = new Float32Array(original.data.length);
+        for (let i = 0; i < original.data.length; i++) {
+            inverted[i] = -original.data[i];
+        }
+
+        registerNewMask(inverted, original.width, original.height);
+    });
+}
+
+function exitMaskCreationMode() {
+    isCreatingMask = false;
+    clickPoints = [];
+    clearPointMarkers();
+    ui.btnCreateMask.style.display = "block";
+    ui.actionContainer.style.display = "none";
+    ui.mainCanvas.style.cursor = "default";
+}
+
+function addPointMarker(xFrac: number, yFrac: number) {
+    const container = ui.mainCanvas.parentElement;
+    if (!container) return;
+
+    const canvasRect = ui.mainCanvas.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const marker = document.createElement("div");
+    marker.className = "mask-point-marker";
+    marker.style.left = `${canvasRect.left - containerRect.left + xFrac * canvasRect.width}px`;
+    marker.style.top = `${canvasRect.top - containerRect.top + yFrac * canvasRect.height}px`;
+    container.appendChild(marker);
+}
+
+function clearPointMarkers() {
+    ui.mainCanvas.parentElement?.querySelectorAll(".mask-point-marker")
+        .forEach(el => el.remove());
+}
+
+/**
+ * 現在の編集（全マスク込み）を適用したフル解像度画像から RawImage を作成する（SAM2への入力用）。
+ */
+async function captureFullResRawImage(): Promise<InstanceType<typeof RawImage>> {
+    if (!editorFull) {
+        throw new Error("No image loaded.");
+    }
+
+    applyAllMasksToEditor(editorFull);
+    editorFull.apply();
+
+    const rgb = await editorFull.get_rgb_f32() as Float32Array;
+    const width = editorFull.width();
+    const height = editorFull.height();
+
+    const uint8 = new Uint8ClampedArray(rgb.length);
+    for (let i = 0; i < rgb.length; i++) {
+        uint8[i] = Math.max(0, Math.min(255, Math.round(rgb[i] * 255)));
+    }
+
+    return new RawImage(uint8, width, height, 3);
+}
+
+/**
+ * 新規マスクをキャッシュ・UI・各解像度のエディタすべてに登録し、選択状態にする。
+ * data は二値化前の生データ（SAM2ロジット等）。
+ */
+function registerNewMask(data: Float32Array, width: number, height: number): string {
+    const name = `${maskCounter++}`;
+    const params = createDefaultParameters();
+
+    maskDataCache.set(name, { data, width, height });
+    maskOverlayCache.delete(name);
+
+    masks.push({
+        name,
+        edit_parameters: params,
+        data,
+    });
+
+    addMaskToAllEditors(name, data, width, height);
+
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    ui.maskSelect.appendChild(option);
+
+    ui.maskSelect.value = name;
+    switchToMaskEditState(name);
+    return name;
+}
+
+/**
+ * UIの編集対象を指定マスクに切り替える。トーンカーブUI・スライダー・有効/無効状態を全て同期する。
+ */
+function switchToMaskEditState(name: string) {
+    const entry = getMaskEntry(name);
+    if (!entry) return;
+
+    selectedMaskName = name;
+    editState = entry.edit_parameters;
+
+    updateAllSliderLabels();
+    syncToneCurveEditorsFromState();
+    updateMaskControlsEnabled();
+    updateImage();
+}
+
+function syncToneCurveEditorsFromState() {
+    toneCurveEditors['brightness'].points = editState.brightness_tone_curve_points;
+    toneCurveEditors['hue'].points = editState.hue_tone_curve_points;
+    toneCurveEditors['saturation'].points = editState.saturation_tone_curve_points;
+    toneCurveEditors['lightness'].points = editState.lightness_tone_curve_points;
+
+    Object.values(toneCurveEditors).forEach(editor => editor.draw());
+}
+
+function updateMaskControlsEnabled() {
+    const isMain = selectedMaskName === "main";
+    ui.btnDeleteMask.disabled = isMain;
+    ui.btnInvertMask.disabled = isMain;
+    ui.maskRangeSlider.disabled = isMain;
+}
+
+function addMaskToAllEditors(name: string, data: Float32Array, width: number, height: number) {
+    const src: Float32Mask = { data, width, height };
+
+    if (editorFull) {
+        const r = resizeFloat32SingleChannelIfNeeded(src, editorFull.width(), editorFull.height());
+        editorFull.add_mask(name, r.data, r.width, r.height);
+    }
+    if (editorMid) {
+        const r = resizeFloat32SingleChannelIfNeeded(src, editorMid.width(), editorMid.height());
+        editorMid.add_mask(name, r.data, r.width, r.height);
+    }
+    if (editorLow) {
+        const r = resizeFloat32SingleChannelIfNeeded(src, editorLow.width(), editorLow.height());
+        editorLow.add_mask(name, r.data, r.width, r.height);
+    }
+}
+
+function removeMaskFromAllEditors(name: string) {
+    editorFull?.remove_mask(name);
+    editorMid?.remove_mask(name);
+    editorLow?.remove_mask(name);
+}
+
+/**
+ * 表示用にマスク（生データ）を指定解像度へリサイズする（キャッシュ付き）。
+ */
+function getMaskForDisplay(name: string, width: number, height: number): Float32Mask | undefined {
+    const canonical = maskDataCache.get(name);
+    if (!canonical) return undefined;
+
+    if (canonical.width === width && canonical.height === height) {
+        return canonical;
+    }
+
+    const cached = maskOverlayCache.get(name);
+    if (cached && cached.width === width && cached.height === height) {
+        return cached;
+    }
+
+    const resized = resizeFloat32SingleChannel(canonical, width, height);
+    maskOverlayCache.set(name, resized);
+    return resized;
+}
+
+/**
+ * 選択中マスクを、表示専用に「そのマスクのmask_rangeで二値化」して赤半透明でrgbaにオーバーレイする。
+ * ここでの二値化は表示だけのためのもので、add_maskに渡すデータには一切影響しない。
+ */
+function applyMaskOverlayIfNeeded(rgba: Float32Array, width: number, height: number) {
+    if (!showMask || selectedMaskName === "main") return;
+
+    const mask = getMaskForDisplay(selectedMaskName, width, height);
+    if (!mask) return;
+
+    const threshold = editState.mask_range;
+    const data = mask.data;
+    const pixelCount = width * height;
+    const alpha = 0.5;
+
+    for (let i = 0; i < pixelCount; i++) {
+        if (data[i] <= threshold) continue;
+
+        const idx = i * 4;
+        rgba[idx] = rgba[idx] * (1 - alpha) + 1.0 * alpha;     // R
+        rgba[idx + 1] = rgba[idx + 1] * (1 - alpha);           // G
+        rgba[idx + 2] = rgba[idx + 2] * (1 - alpha);           // B
+    }
+}
+
+// ============================================================
 
 function setupToneCurveEditors() {
     const onCurveChange = (key: keyof EditState) => (points: { x: number, y: number }[]) => {
@@ -598,24 +936,16 @@ function setupToneCurveEditors() {
     toneCurveEditors['saturation'] = new ToneCurveEditor('saturation-tone-curve-editor', CurveMode.SATURATION, onCurveChange('saturation_tone_curve_points'), onDragStart, onDragEnd);
     toneCurveEditors['lightness'] = new ToneCurveEditor('lightness-tone-curve-editor', CurveMode.LIGHTNESS, onCurveChange('lightness_tone_curve_points'), onDragStart, onDragEnd);
 
-
     toneCurveEditors['brightness'].setBackground('./assets/tone_curve/brightness_gradient.png');
     toneCurveEditors['hue'].setBackground('./assets/tone_curve/hue_bars.png');
     toneCurveEditors['saturation'].setBackground('./assets/tone_curve/hue_vs_saturation.png');
     toneCurveEditors['lightness'].setBackground('./assets/tone_curve/hue_vs_lightness.png');
 
-    Object.values(toneCurveEditors).forEach(editor => {
-        editState.brightness_tone_curve_points = editor.points;
-    });
+    syncToneCurveEditorsFromState();
 }
 
-function updateMetadataTableFromJson(
-    json: string
-): void {
-    const tbody = document.querySelector(
-        "#metadata-table tbody"
-    ) as HTMLTableSectionElement;
-
+function updateMetadataTableFromJson(json: string): void {
+    const tbody = document.querySelector("#metadata-table tbody") as HTMLTableSectionElement;
     tbody.innerHTML = "";
 
     let metadata: Record<string, unknown>;
@@ -624,11 +954,9 @@ function updateMetadataTableFromJson(
         metadata = JSON.parse(json);
     } catch {
         const tr = document.createElement("tr");
-
         const td = document.createElement("td");
         td.colSpan = 2;
         td.textContent = "Failed to parse JSON.";
-
         tr.appendChild(td);
         tbody.appendChild(tr);
         return;
@@ -636,33 +964,26 @@ function updateMetadataTableFromJson(
 
     for (const [key, value] of Object.entries(metadata)) {
         const tr = document.createElement("tr");
-
         const keyTd = document.createElement("td");
         keyTd.textContent = key;
-
         const valueTd = document.createElement("td");
         valueTd.textContent = String(value);
-
         tr.appendChild(keyTd);
         tr.appendChild(valueTd);
-
         tbody.appendChild(tr);
     }
 }
 
 async function loadImage(file: File) {
-
     const midResLongEdge = settings.uiPreviewSize;
     const lowResLongEdge = settings.dragPreviewSize;
 
-
+    // 新しい画像を読み込むので、既存のマスクはすべて破棄する
+    resetMasks();
 
     editorFull = new PhotoEditor(gpuProcessor, await file.bytes(), file.name.split('.').pop()?.toLowerCase() as string);
 
-
     const rgb = await editorFull.get_rgb_f32();
-
-
 
     const float32ArrayImageFull: Float32ArrayImageRGB = {
         data: rgb as Float32Array<ArrayBuffer>,
@@ -670,43 +991,43 @@ async function loadImage(file: File) {
         height: editorFull.height()
     };
 
-
-
-    const float32ArrayImageMid =
-        resizeFloat32RGBLongEdge(
-            float32ArrayImageFull,
-            midResLongEdge
-        );
-
+    const float32ArrayImageMid = resizeFloat32RGBLongEdge(float32ArrayImageFull, midResLongEdge);
     editorMid = PhotoEditor.create_from_rgb_f32(gpuProcessor, float32ArrayImageMid.data, float32ArrayImageMid.width, float32ArrayImageMid.height);
 
     const float32ArrayImageLow = resizeFloat32RGBLongEdge(float32ArrayImageFull, lowResLongEdge);
     editorLow = PhotoEditor.create_from_rgb_f32(gpuProcessor, float32ArrayImageLow.data, float32ArrayImageLow.width, float32ArrayImageLow.height);
 
-
     ui.mainCanvas.width = editorFull.width();
     ui.mainCanvas.height = editorFull.height();
-
 
     imageLoaded = true;
 
     updateMetadataTableFromJson(editorFull.exif_json());
     resetAllEdits();
-
 }
 
-async function resizeBitmap(bitmap: ImageBitmap, longEdge: number): Promise<ImageBitmap> {
-    const scale = longEdge / Math.max(bitmap.width, bitmap.height);
-    if (scale >= 1) return bitmap;
+function resetMasks() {
+    exitMaskCreationMode();
+    maskDataCache.clear();
+    maskOverlayCache.clear();
 
-    const newWidth = Math.round(bitmap.width * scale);
-    const newHeight = Math.round(bitmap.height * scale);
+    masks = [{ name: "main", edit_parameters: createDefaultParameters(), data: null }];
+    maskCounter = 1;
+    showMask = false;
 
-    return await createImageBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, {
-        resizeWidth: newWidth,
-        resizeHeight: newHeight,
-        resizeQuality: 'high'
-    });
+    mainEditParams = masks[0].edit_parameters;
+    editState = masks[0].edit_parameters;
+    selectedMaskName = "main";
+
+    ui.maskSelect.innerHTML = "";
+    const mainOption = document.createElement("option");
+    mainOption.value = "main";
+    mainOption.textContent = "main";
+    ui.maskSelect.appendChild(mainOption);
+    ui.maskSelect.value = "main";
+    ui.chkShowMask.checked = false;
+
+    updateMaskControlsEnabled();
 }
 
 async function renderProcessedTextureToCanvas(
@@ -716,10 +1037,8 @@ async function renderProcessedTextureToCanvas(
 ) {
     if (!canvasContext || !renderPipeline) return;
 
-    // CPUに戻してるから一旦、UI側でもwebgpuやる
     const device = gpu.device;
     const queue = gpu.queue;
-
 
     const data = new Float32Array([
         ui.mainCanvas.width,
@@ -758,7 +1077,6 @@ async function renderProcessedTextureToCanvas(
     queue.submit([commandEncoder.finish()]);
 }
 
-
 async function updateImage() {
     if (isRendering) {
         return;
@@ -769,7 +1087,7 @@ async function updateImage() {
         isRendering = false;
         return;
     }
-    let s = Date.now();
+
     let editor: PhotoEditor;
     switch (previewLevel) {
         case PreviewLevel.LOW: editor = editorLow; break;
@@ -777,55 +1095,71 @@ async function updateImage() {
         case PreviewLevel.FULL: editor = editorFull; break;
     }
 
-    setEditorParameters(editor);
+    applyAllMasksToEditor(editor);
     editor.apply();
-    console.log("applyAdjustments", Date.now() - s);
-
-
-
-
 
     const rgba = await editor.get_rgba_f32() as Float32Array;
+    const width = editor.width();
+    const height = editor.height();
 
-    const textureView =
-        await uploadFloat32Texture(
-            rgba,
-            editor.width(),
-            editor.height()
-        );
+    applyMaskOverlayIfNeeded(rgba, width, height);
 
-    await renderProcessedTextureToCanvas(
-        textureView,
-        editor.width(),
-        editor.height()
-    );
-
-
+    const textureView = await uploadFloat32Texture(rgba, width, height);
+    await renderProcessedTextureToCanvas(textureView, width, height);
 
     isRendering = false;
-
-    console.log("applyAdjustments+render", Date.now() - s);
 }
 
-function setEditorParameters(e: PhotoEditor) {
-    const s = editState;
-
-    e.set_tone(s.exposure, s.contrast, s.shadow, s.highlight, s.black, s.white);
-    e.set_whitebalance(s.temperature, s.tint);
-    e.set_vignette(s.vignette);
-    e.set_lens_distortion_correction(s.lens_distortion);
+/**
+ * main + 全マスクぶんのトーン/WB/カーブ/mask_rangeを指定エディタに適用する。
+ * vignette / lens_distortion はマスク非対応のため常にmainの値を使う。
+ */
+function applyAllMasksToEditor(e: PhotoEditor) {
+    e.set_vignette(mainEditParams.vignette);
+    e.set_lens_distortion_correction(mainEditParams.lens_distortion);
 
     const toPoints = (points: { x: number, y: number }[]) => points.map(p => p.x * 65535);
     const toValues = (points: { x: number, y: number }[]) => points.map(p => p.y * 65535);
-
-    e.set_brightness_tone_curve(undefined, new Int32Array(toPoints(s.brightness_tone_curve_points)), new Int32Array(toValues(s.brightness_tone_curve_points)));
-    e.set_oklch_hue_curve(undefined, new Int32Array(toPoints(s.hue_tone_curve_points)), new Int32Array(toValues(s.hue_tone_curve_points)));
-
     const toSatLightValues = (points: { x: number, y: number }[]) => points.map(p => p.y / 2 * 65535);
-    e.set_oklch_saturation_curve(undefined, new Int32Array(toPoints(s.saturation_tone_curve_points)), new Int32Array(toSatLightValues(s.saturation_tone_curve_points)));
-    e.set_oklch_lightness_curve(undefined, new Int32Array(toPoints(s.lightness_tone_curve_points)), new Int32Array((toSatLightValues(s.lightness_tone_curve_points))));
-}
 
+    for (const maskEntry of masks) {
+        const s = maskEntry.edit_parameters;
+        const isMain = maskEntry.name === "main";
+        const maskNameArg = isMain ? undefined : maskEntry.name;
+
+        e.set_tone(s.exposure, s.contrast, s.shadow, s.highlight, s.black, s.white, maskNameArg);
+        e.set_whitebalance(s.temperature, s.tint, maskNameArg);
+
+        e.set_brightness_tone_curve(
+            undefined,
+            new Int32Array(toPoints(s.brightness_tone_curve_points)),
+            new Int32Array(toValues(s.brightness_tone_curve_points)),
+            maskNameArg
+        );
+        e.set_oklch_hue_curve(
+            undefined,
+            new Int32Array(toPoints(s.hue_tone_curve_points)),
+            new Int32Array(toValues(s.hue_tone_curve_points)),
+            maskNameArg
+        );
+        e.set_oklch_saturation_curve(
+            undefined,
+            new Int32Array(toPoints(s.saturation_tone_curve_points)),
+            new Int32Array(toSatLightValues(s.saturation_tone_curve_points)),
+            maskNameArg
+        );
+        e.set_oklch_lightness_curve(
+            undefined,
+            new Int32Array(toPoints(s.lightness_tone_curve_points)),
+            new Int32Array(toSatLightValues(s.lightness_tone_curve_points)),
+            maskNameArg
+        );
+
+        if (!isMain) {
+            e.set_mask_range(maskEntry.name, s.mask_range);
+        }
+    }
+}
 
 function resetAllEdits() {
     resetCurve('brightness');
@@ -854,8 +1188,8 @@ function resetWb() {
     updateImage();
 }
 function resetEffect() {
-    editState.vignette = 0;
-    editState.lens_distortion = 0;
+    mainEditParams.vignette = 0;
+    mainEditParams.lens_distortion = 0;
     updateAllSliderLabels();
     updateImage();
 }
@@ -873,6 +1207,10 @@ function resetCurve(name: string) {
     }
 }
 
+function updateMaskRangeLabel() {
+    ui.maskRangeSlider.value = editState.mask_range.toString();
+    ui.maskRangeLabel.textContent = `${i18n.t("TR_MASK_RANGE")}: ${editState.mask_range.toFixed(1)}`;
+}
 
 function updateAllSliderLabels() {
     ui.exposureSlider.value = editState.exposure.toString();
@@ -891,12 +1229,15 @@ function updateAllSliderLabels() {
     ui.temperatureLabel.textContent = `${i18n.t("TR_TEMPERATURE")} ${editState.temperature}`;
     ui.tintSlider.value = editState.tint.toString();
     ui.tintLabel.textContent = `${i18n.t("TR_TINT")} ${editState.tint}`;
-    ui.vignetteSlider.value = editState.vignette.toString();
-    ui.vignetteLabel.textContent = `${i18n.t("TR_VIGNETTE")} ${editState.vignette}`;
-    ui.lensDistortionSlider.value = editState.lens_distortion.toString();
-    ui.lensDistortionLabel.textContent = `${i18n.t("TR_LENS_DISTORTION")} ${editState.lens_distortion}`;
-}
 
+    // vignette / lens_distortion は常にmain固定
+    ui.vignetteSlider.value = mainEditParams.vignette.toString();
+    ui.vignetteLabel.textContent = `${i18n.t("TR_VIGNETTE")} ${mainEditParams.vignette}`;
+    ui.lensDistortionSlider.value = mainEditParams.lens_distortion.toString();
+    ui.lensDistortionLabel.textContent = `${i18n.t("TR_LENS_DISTORTION")} ${mainEditParams.lens_distortion}`;
+
+    updateMaskRangeLabel();
+}
 
 function onDragStart() {
     previewLevel = PreviewLevel.LOW;
@@ -907,15 +1248,13 @@ function onDragEnd() {
     updateImage();
 }
 
-
 async function saveImage() {
     if (!editorFull || !currentImageFile) return;
 
     ui.saveDialog.style.display = 'none';
 
-
     previewLevel = PreviewLevel.FULL;
-    setEditorParameters(editorFull);
+    applyAllMasksToEditor(editorFull);
     editorFull.apply();
 
     let bytes: Uint8Array<ArrayBuffer>;
@@ -936,12 +1275,6 @@ async function saveImage() {
         }
     );
 
-
-
-
-
-
-
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const basename = currentImageFile.name.split('.').slice(0, -1).join('.');
@@ -954,8 +1287,6 @@ async function saveImage() {
     URL.revokeObjectURL(url);
 }
 
-
-
 function resizeFloat32RGBLongEdge(
     src: Float32ArrayImageRGB,
     targetLongEdge: number
@@ -963,7 +1294,6 @@ function resizeFloat32RGBLongEdge(
 
     const srcWidth = src.width;
     const srcHeight = src.height;
-
     const srcData = src.data;
 
     let dstWidth: number;
@@ -984,18 +1314,14 @@ function resizeFloat32RGBLongEdge(
 
     for (let y = 0; y < dstHeight; y++) {
         const sy = (y + 0.5) * scaleY - 0.5;
-
         const y0 = Math.max(Math.floor(sy), 0);
         const y1 = Math.min(y0 + 1, srcHeight - 1);
-
         const ty = sy - y0;
 
         for (let x = 0; x < dstWidth; x++) {
             const sx = (x + 0.5) * scaleX - 0.5;
-
             const x0 = Math.max(Math.floor(sx), 0);
             const x1 = Math.min(x0 + 1, srcWidth - 1);
-
             const tx = sx - x0;
 
             const i00 = (y0 * srcWidth + x0) * 3;
@@ -1019,84 +1345,51 @@ function resizeFloat32RGBLongEdge(
         }
     }
 
-    return {
-        data: dst,
-        width: dstWidth,
-        height: dstHeight,
-    };
+    return { data: dst, width: dstWidth, height: dstHeight };
 }
 
-function resizeFloat32RGBALongEdge(
-    src: Float32ArrayImageRGBA,
-    targetLongEdge: number
-): Float32ArrayImageRGBA {
+/**
+ * 単一チャンネル（マスク生データ）を指定の幅・高さへバイリニアでリサイズする。
+ */
+function resizeFloat32SingleChannel(src: Float32Mask, dstWidth: number, dstHeight: number): Float32Mask {
+    const { width: srcWidth, height: srcHeight, data: srcData } = src;
 
-    const srcWidth = src.width;
-    const srcHeight = src.height
-
-    const src_data = src.data;
-
-
-    let dstWidth: number;
-    let dstHeight: number;
-
-    if (srcWidth >= srcHeight) {
-        dstWidth = targetLongEdge;
-        dstHeight = Math.round(srcHeight * (targetLongEdge / srcWidth));
-    } else {
-        dstHeight = targetLongEdge;
-        dstWidth = Math.round(srcWidth * (targetLongEdge / srcHeight));
-    }
-
-    const dst = new Float32Array(dstWidth * dstHeight * 4);
-
+    const dst = new Float32Array(dstWidth * dstHeight);
     const scaleX = srcWidth / dstWidth;
     const scaleY = srcHeight / dstHeight;
 
     for (let y = 0; y < dstHeight; y++) {
         const sy = (y + 0.5) * scaleY - 0.5;
-
         const y0 = Math.max(Math.floor(sy), 0);
         const y1 = Math.min(y0 + 1, srcHeight - 1);
-
         const ty = sy - y0;
 
         for (let x = 0; x < dstWidth; x++) {
             const sx = (x + 0.5) * scaleX - 0.5;
-
             const x0 = Math.max(Math.floor(sx), 0);
             const x1 = Math.min(x0 + 1, srcWidth - 1);
-
             const tx = sx - x0;
 
-            const i00 = (y0 * srcWidth + x0) * 4;
-            const i10 = (y0 * srcWidth + x1) * 4;
-            const i01 = (y1 * srcWidth + x0) * 4;
-            const i11 = (y1 * srcWidth + x1) * 4;
+            const c00 = srcData[y0 * srcWidth + x0];
+            const c10 = srcData[y0 * srcWidth + x1];
+            const c01 = srcData[y1 * srcWidth + x0];
+            const c11 = srcData[y1 * srcWidth + x1];
 
-            const di = (y * dstWidth + x) * 4;
+            const cx0 = c00 * (1.0 - tx) + c10 * tx;
+            const cx1 = c01 * (1.0 - tx) + c11 * tx;
 
-            for (let c = 0; c < 4; c++) {
-                const c00 = src_data[i00 + c];
-                const c10 = src_data[i10 + c];
-                const c01 = src_data[i01 + c];
-                const c11 = src_data[i11 + c];
-
-                const cx0 = c00 * (1.0 - tx) + c10 * tx;
-                const cx1 = c01 * (1.0 - tx) + c11 * tx;
-
-                dst[di + c] = cx0 * (1.0 - ty) + cx1 * ty;
-            }
+            dst[y * dstWidth + x] = cx0 * (1.0 - ty) + cx1 * ty;
         }
     }
 
-    return {
-        data: dst,
-        width: dstWidth,
-        height: dstHeight,
-    };
+    return { data: dst, width: dstWidth, height: dstHeight };
 }
 
-
+function resizeFloat32SingleChannelIfNeeded(src: Float32Mask, dstWidth: number, dstHeight: number): Float32Mask {
+    if (src.width === dstWidth && src.height === dstHeight) {
+        return { data: src.data.slice(), width: dstWidth, height: dstHeight };
+    }
+    return resizeFloat32SingleChannel(src, dstWidth, dstHeight);
+}
 
 initializeApp();

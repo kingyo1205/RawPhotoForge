@@ -17,7 +17,8 @@
 struct BaseParams {
     width: u32,
     height: u32,
-    num_masks: u32};
+    num_masks: u32,
+};
 
 struct GpuEditParameters {
     r_gain: f32,
@@ -31,6 +32,7 @@ struct GpuEditParameters {
     highlight: f32,
     black: f32,
     white: f32,
+    mask_range: f32,
 };
 
 //--------------------------------------------------------------------------------
@@ -278,10 +280,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Per-mask Linear RGB adjustments
     for (var mask_index = 0u; mask_index < base_params.num_masks; mask_index++) {
         let mask_value = textureLoad(masks_tex, xy, mask_index, 0).r;
-        if mask_value != 1.0 { continue; }
 
         let p = masks_params[mask_index];
 
+        if mask_value < p.mask_range { continue; }
         // White Balance
         var r_f32 = rgb_vec4.r * p.r_gain;
         var g_f32 = rgb_vec4.g * p.g_gain;
@@ -311,7 +313,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     var oklch_vec4 = linear_srgb_to_oklch(rgb_vec4);
     for (var mask_index = 0u; mask_index < base_params.num_masks; mask_index++) {
         let mask_value = textureLoad(masks_tex, xy, mask_index, 0).r;
-        if mask_value != 1.0 { continue; }
+        let p = masks_params[mask_index];
+
+        if mask_value < p.mask_range { continue; }
 
         var l_f32 = oklch_vec4.x;
         var c_f32 = oklch_vec4.y;

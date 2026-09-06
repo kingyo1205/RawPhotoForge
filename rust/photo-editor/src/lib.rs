@@ -478,18 +478,22 @@ impl PhotoEditor {
         Ok(())
     }
 
+    pub fn set_mask_range(
+        &mut self,
+        mask_name: &str,
+        mask_range: f32,
+    ) -> Result<(), PhotoEditorError> {
+        self.get_adjustment_set(Some(mask_name))?.mask_range = mask_range;
+        Ok(())
+    }
+
     pub fn add_mask(&mut self, name: &str, mask_data: Array2<f32>) {
-        let mask_range = self.get_adjustment_set(None).unwrap().mask_range;
-        let binarized_mask_data: Vec<f32> = mask_data
-            .iter()
-            .map(|&v| if v >= mask_range { 1.0 } else { 0.0 })
-            .collect();
         let gpu_mask = Self::create_gpu_mask(
             self.gpu_processor.device(),
             self.gpu_processor.queue(),
             self.original_image.width,
             self.original_image.height,
-            Some(&binarized_mask_data),
+            Some(&mask_data.into_iter().collect::<Vec<f32>>()),
         );
         self.masks.push(Mask {
             name: name.to_string(),
