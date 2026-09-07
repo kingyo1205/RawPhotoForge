@@ -2,3 +2,4 @@
 *.py linguist-vendored
 *.slang linguist-vendored
 *.hbs linguist-vendored
+*.gd linguist-vendored
