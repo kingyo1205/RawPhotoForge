@@ -13,20 +13,20 @@
     <div id="app-container">
         <div class="menu-bar">
             <div class="menu-item">
-                <span data-i18n="TR_MENU_FILE">ファイル</span>
+                <span data-i18n="TR_MENU_FILE">File</span>
                 <div class="menu-popup">
-                    <div data-i18n="TR_MENU_OPEN" id="open-file">写真を開く</div>
-                    <div data-i18n="TR_MENU_SAVE" id="save-file">写真を保存</div>
+                    <div data-i18n="TR_MENU_OPEN" id="open-file">Open Photo</div>
+                    <div data-i18n="TR_MENU_SAVE" id="save-file">Save Photo</div>
                 </div>
             </div>
             <div class="menu-item">
-                <span data-i18n="TR_MENU_EDIT">編集</span>
+                <span data-i18n="TR_MENU_EDIT">Edit</span>
                 <div class="menu-popup">
-                    <div data-i18n="TR_MENU_RESET_ALL" id="reset-all">すべての編集をリセット</div>
+                    <div data-i18n="TR_MENU_RESET_ALL" id="reset-all">Reset All Edits</div>
                 </div>
             </div>
             <div class="menu-item" id="settings-menu">
-                <span data-i18n="TR_MENU_SETTING">設定</span>
+                <span data-i18n="TR_MENU_SETTING">Settings</span>
             </div>
             <div class="RawPhotoForge-link">
                 <a href="https://github.com/kingyo1205/RawPhotoForge"
@@ -42,80 +42,87 @@
             <div id="edit-panel" class="panel-container">
                 <div class="tab-container">
                     <div class="tab-header">
-                        <button class="tab-button active" data-tab="tone" data-i18n="TR_TAB_TONE">トーン</button>
-                        <button class="tab-button" data-tab="brightness" data-i18n="TR_TAB_BRIGHTNESS">明るさ</button>
-                        <button class="tab-button" data-tab="hue" data-i18n="TR_TAB_HUE">色相</button>
-                        <button class="tab-button" data-tab="saturation" data-i18n="TR_TAB_SATURATION">彩度</button>
-                        <button class="tab-button" data-tab="lightness" data-i18n="TR_TAB_LIGHTNESS">輝度</button>
-                        <button class="tab-button" data-tab="wb" data-i18n="TR_TAB_WB">WB</button>
-                        <button class="tab-button" data-tab="effect" data-i18n="TR_TAB_EFFECT">効果</button>
-                        <button class="tab-button" data-tab="ai-mask" data-i18n="TR_TAB_AI_MASK">AIマスク</button>
-                        <button class="tab-button" data-tab="metadata" data-i18n="TR_TAB_METADATA">メタデータ</button>
+                        <button class="tab-button active" data-tab="tone" data-i18n="TR_TAB_TONE">Tone</button>
+                        <button class="tab-button" data-tab="brightness"
+                            data-i18n="TR_TAB_BRIGHTNESS">Brightness</button>
+                        <button class="tab-button" data-tab="hue" data-i18n="TR_TAB_HUE">Hue</button>
+                        <button class="tab-button" data-tab="saturation"
+                            data-i18n="TR_TAB_SATURATION">Saturation</button>
+                        <button class="tab-button" data-tab="lightness" data-i18n="TR_TAB_LIGHTNESS">Lightness</button>
+                        <button class="tab-button" data-tab="wb" data-i18n="TR_TAB_WB">White Balance</button>
+                        <button class="tab-button" data-tab="effect" data-i18n="TR_TAB_EFFECT">Effect</button>
+                        <button class="tab-button" data-tab="ai-mask" data-i18n="TR_TAB_AI_MASK">AI Mask</button>
+                        <button class="tab-button" data-tab="metadata" data-i18n="TR_TAB_METADATA">Metadata</button>
                     </div>
                     <div class="tab-content">
                         <div id="tab-tone" class="tab-pane active">
                             <div class="scroll-container">
                                 <div class="vbox">
-                                    <label id="exposure-label" data-i18n="TR_EXPOSURE">露出 0.00</label>
+                                    <label id="exposure-label" data-i18n="TR_EXPOSURE">Exposure 0.00</label>
                                     <input type="range" id="exposure-slider" min="-6" max="6" step="0.05" value="0">
-                                    <label id="contrast-label" data-i18n="TR_CONTRAST">コントラスト 0</label>
+                                    <label id="contrast-label" data-i18n="TR_CONTRAST">Contrast 0</label>
                                     <input type="range" id="contrast-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="shadow-label" data-i18n="TR_SHADOW">シャドウ 0</label>
+                                    <label id="shadow-label" data-i18n="TR_SHADOW">Shadow 0</label>
                                     <input type="range" id="shadow-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="highlight-label" data-i18n="TR_HIGHLIGHT">ハイライト 0</label>
+                                    <label id="highlight-label" data-i18n="TR_HIGHLIGHT">Highlight 0</label>
                                     <input type="range" id="highlight-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="black-label" data-i18n="TR_BLACK_LEVEL">黒レベル 0</label>
+                                    <label id="black-label" data-i18n="TR_BLACK_LEVEL">Black Level 0</label>
                                     <input type="range" id="black-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="white-label" data-i18n="TR_WHITE_LEVEL">白レベル 0</label>
+                                    <label id="white-label" data-i18n="TR_WHITE_LEVEL">White Level 0</label>
                                     <input type="range" id="white-slider" min="-100" max="100" step="1" value="0">
-                                    <button id="reset-tone-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                    <button id="reset-tone-button" data-i18n="TR_RESET_THIS_TAB">Reset This Tab</button>
                                 </div>
                             </div>
                         </div>
                         <div id="tab-brightness" class="tab-pane">
                             <div class="vbox">
                                 <div id="brightness-tone-curve-editor" class="tone-curve-editor"></div>
-                                <button id="reset-brightness-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                <button id="reset-brightness-button" data-i18n="TR_RESET_THIS_TAB">Reset This
+                                    Tab</button>
                             </div>
                         </div>
                         <div id="tab-hue" class="tab-pane">
                             <div class="vbox">
                                 <div id="hue-tone-curve-editor" class="tone-curve-editor"></div>
-                                <button id="reset-hue-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                <button id="reset-hue-button" data-i18n="TR_RESET_THIS_TAB">Reset This Tab</button>
                             </div>
                         </div>
                         <div id="tab-saturation" class="tab-pane">
                             <div class="vbox">
                                 <div id="saturation-tone-curve-editor" class="tone-curve-editor"></div>
-                                <button id="reset-saturation-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                <button id="reset-saturation-button" data-i18n="TR_RESET_THIS_TAB">Reset This
+                                    Tab</button>
                             </div>
                         </div>
                         <div id="tab-lightness" class="tab-pane">
                             <div class="vbox">
                                 <div id="lightness-tone-curve-editor" class="tone-curve-editor"></div>
-                                <button id="reset-lightness-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                <button id="reset-lightness-button" data-i18n="TR_RESET_THIS_TAB">Reset This
+                                    Tab</button>
                             </div>
                         </div>
                         <div id="tab-wb" class="tab-pane">
                             <div class="scroll-container">
                                 <div class="vbox">
-                                    <label id="temperature-label" data-i18n="TR_TEMPERATURE">色温度 0</label>
+                                    <label id="temperature-label" data-i18n="TR_TEMPERATURE">Temperature 0</label>
                                     <input type="range" id="temperature-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="tint-label" data-i18n="TR_TINT">色かぶり補正 0</label>
+                                    <label id="tint-label" data-i18n="TR_TINT">Tint 0</label>
                                     <input type="range" id="tint-slider" min="-100" max="100" step="1" value="0">
-                                    <button id="reset-wb-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                    <button id="reset-wb-button" data-i18n="TR_RESET_THIS_TAB">Reset This Tab</button>
                                 </div>
                             </div>
                         </div>
                         <div id="tab-effect" class="tab-pane">
                             <div class="scroll-container">
                                 <div class="vbox">
-                                    <label id="vignette-label" data-i18n="TR_VIGNETTE">周辺減光 0</label>
+                                    <label id="vignette-label" data-i18n="TR_VIGNETTE">Vignette 0</label>
                                     <input type="range" id="vignette-slider" min="-100" max="100" step="1" value="0">
-                                    <label id="lens-distortion-label" data-i18n="TR_LENS_DISTORTION">レンズ歪み補正 0</label>
+                                    <label id="lens-distortion-label" data-i18n="TR_LENS_DISTORTION">Lens Distortion
+                                        0</label>
                                     <input type="range" id="lens-distortion-slider" min="-100" max="100" step="1"
                                         value="0">
-                                    <button id="reset-effect-button" data-i18n="TR_RESET_THIS_TAB">このタブをリセット</button>
+                                    <button id="reset-effect-button" data-i18n="TR_RESET_THIS_TAB">Reset This
+                                        Tab</button>
                                 </div>
                             </div>
                         </div>
@@ -124,30 +131,32 @@
                             <div class="scroll-container">
                                 <div class="vbox">
                                     <label id="ai-mask-status"></label>
-                                    <label data-i18n="TR_MASK_SELECT">マスク選択</label>
+                                    <label data-i18n="TR_MASK_SELECT">Select Mask</label>
                                     <select id="mask-select">
                                         <option value="main">main</option>
                                     </select>
 
-                                    <button id="btn-create-mask" data-i18n="TR_BTN_CREATE_MASK">AIマスク作成</button>
+                                    <button id="btn-create-mask" data-i18n="TR_BTN_CREATE_MASK">Create AI Mask</button>
                                     <div id="ai-mask-action-container"
                                         style="display: none; gap: 12px; flex-direction: column;">
                                         <button id="btn-exec-inference" style="border-color: rgba(0,255,204,0.5);"
-                                            data-i18n="TR_BTN_EXEC_INFERENCE">推論実行 (クリック終了)</button>
+                                            data-i18n="TR_BTN_EXEC_INFERENCE">Run Inference (Finish Clicking)</button>
                                         <button id="btn-cancel-mask" style="border-color: rgba(255,100,100,0.5);"
-                                            data-i18n="TR_BTN_CANCEL_MASK">キャンセル</button>
+                                            data-i18n="TR_BTN_CANCEL_MASK">Cancel</button>
                                     </div>
 
-                                    <button id="btn-delete-mask" data-i18n="TR_BTN_DELETE_MASK">選択中のマスクを削除</button>
-                                    <button id="btn-invert-mask"
-                                        data-i18n="TR_BTN_INVERT_MASK">選択中のマスクを反転して新規作成</button>
+                                    <button id="btn-delete-mask" data-i18n="TR_BTN_DELETE_MASK">Delete Selected
+                                        Mask</button>
+                                    <button id="btn-invert-mask" data-i18n="TR_BTN_INVERT_MASK">Create New Mask by
+                                        Inverting Selected</button>
 
                                     <label style="display: flex; align-items: center; gap: 8px;">
                                         <input type="checkbox" id="chk-show-mask">
-                                        <span data-i18n="TR_CHK_SHOW_MASK">マスクを表示する</span>
+                                        <span data-i18n="TR_CHK_SHOW_MASK">Show Mask</span>
                                     </label>
 
-                                    <label id="mask-range-label" data-i18n="TR_MASK_RANGE">マスク範囲 (二値化閾値): 0.0</label>
+                                    <label id="mask-range-label" data-i18n="TR_MASK_RANGE">Mask Range (Binarize
+                                        Threshold): 0.0</label>
                                     <input type="range" id="mask-range-slider" min="-10.0" max="10.0" step="0.1"
                                         value="0.0">
                                 </div>
@@ -169,60 +178,61 @@
 
         <div id="save-dialog" class="dialog-overlay" style="display: none;">
             <div class="dialog-box">
-                <div class="dialog-header" data-i18n="TR_DIALOG_SAVE_TITLE">写真を保存</div>
+                <div class="dialog-header" data-i18n="TR_DIALOG_SAVE_TITLE">Save Photo</div>
                 <div class="dialog-content">
-                    <label for="format-select" data-i18n="TR_SELECT_FORMAT">フォーマットを選択</label>
+                    <label for="format-select" data-i18n="TR_SELECT_FORMAT">Select Format</label>
                     <select id="format-select">
                         <option value="jpeg">JPEG</option>
                         <option value="png">PNG</option>
                     </select>
                 </div>
                 <div class="dialog-footer">
-                    <button id="save-dialog-save" data-i18n="TR_BUTTON_SAVE">保存</button>
-                    <button id="save-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
+                    <button id="save-dialog-save" data-i18n="TR_BUTTON_SAVE">Save</button>
+                    <button id="save-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">Cancel</button>
                 </div>
             </div>
         </div>
 
         <div id="settings-dialog" class="dialog-overlay" style="display: none;">
             <div class="dialog-box">
-                <div class="dialog-header" data-i18n="TR_SETTINGS_TITLE">設定</div>
+                <div class="dialog-header" data-i18n="TR_SETTINGS_TITLE">Settings</div>
                 <div class="dialog-content">
                     <div class="settings-grid">
-                        <h3 data-i18n="TR_SETTINGS_TAB_IMAGE">画像</h3>
+                        <h3 data-i18n="TR_SETTINGS_TAB_IMAGE">Image</h3>
 
-                        <label for="ui-preview-size-slider" data-i18n="TR_SETTINGS_UI_PREVIEW_SIZE">UIプレビューサイズ</label>
+                        <label for="ui-preview-size-slider" data-i18n="TR_SETTINGS_UI_PREVIEW_SIZE">UI Preview Size
+                            (Long Edge)</label>
                         <div class="slider-container">
                             <input type="range" id="ui-preview-size-slider" min="500" max="2000" step="10">
                             <input type="number" id="ui-preview-size-input" class="slider-value-input" min="500"
                                 max="2000">
                         </div>
 
-                        <label for="drag-preview-size-slider"
-                            data-i18n="TR_SETTINGS_DRAG_PREVIEW_SIZE">ドラッグ中プレビューサイズ</label>
+                        <label for="drag-preview-size-slider" data-i18n="TR_SETTINGS_DRAG_PREVIEW_SIZE">Drag Preview
+                            Size (Long Edge)</label>
                         <div class="slider-container">
                             <input type="range" id="drag-preview-size-slider" min="100" max="800" step="10">
                             <input type="number" id="drag-preview-size-input" class="slider-value-input" min="100"
                                 max="800">
                         </div>
 
-                        <h3 data-i18n="TR_SETTINGS_TAB_LANGUAGE">言語</h3>
-                        <label for="language-select" data-i18n="TR_SETTINGS_LANGUAGE_LABEL">言語</label>
+                        <h3 data-i18n="TR_SETTINGS_TAB_LANGUAGE">Language</h3>
+                        <label for="language-select" data-i18n="TR_SETTINGS_LANGUAGE_LABEL">Language</label>
                         <select id="language-select">
                             <option value="en">English</option>
-                            <option value="ja">日本語</option>
+                            <option value="ja">Japanese</option>
                         </select>
 
-                        <h3 data-i18n="TR_SETTINGS_TAB_LICENSE">ライセンス</h3>
+                        <h3 data-i18n="TR_SETTINGS_TAB_LICENSE">License</h3>
 
-                        <label data-i18n="TR_SETTINGS_LICENSE_RPF">RawPhotoForgeライセンス</label>
+                        <label data-i18n="TR_SETTINGS_LICENSE_RPF">RawPhotoForge License</label>
                         <div>
                             <a href="https://kingyo1205.github.io/RawPhotoForge/LICENSE" target="_blank">
                                 https://kingyo1205.github.io/RawPhotoForge/LICENSE
                             </a>
                         </div>
 
-                        <label data-i18n="TR_SETTINGS_LICENSE_THIRD">サードパーティライセンス</label>
+                        <label data-i18n="TR_SETTINGS_LICENSE_THIRD">Third-party Licenses</label>
                         <div>
                             <a href="https://kingyo1205.github.io/RawPhotoForge/rust/rust_licenses.html"
                                 target="_blank">
@@ -230,7 +240,7 @@
                             </a>
                         </div>
 
-                        <label data-i18n="TR_SETTINGS_SOURCE_CODE">ソースコード</label>
+                        <label data-i18n="TR_SETTINGS_SOURCE_CODE">Source Code</label>
                         <div>
                             <a href="https://github.com/kingyo1205/RawPhotoForge" target="_blank">
                                 https://github.com/kingyo1205/RawPhotoForge
@@ -238,9 +248,9 @@
                         </div>
 
 
-                        <h3 data-i18n="TR_SETTINGS_LICENSE_AI">サードパーティライセンス AIマスク</h3>
+                        <h3 data-i18n="TR_SETTINGS_LICENSE_AI">Third-party Licenses AI Mask</h3>
 
-                        <label data-i18n="TR_SETTINGS_SAM_SOURCE_CODE">SAM 2 ソースコード</label>
+                        <label data-i18n="TR_SETTINGS_SAM_SOURCE_CODE">SAM 2 Source Code</label>
                         <div>
                             <a href="https://github.com/facebookresearch/sam2" target="_blank">
                                 https://github.com/facebookresearch/sam2
@@ -276,15 +286,15 @@
                     </div>
                 </div>
                 <div class="dialog-footer">
-                    <button id="settings-dialog-save" data-i18n="TR_SETTINGS_SAVE_BUTTON">保存</button>
-                    <button id="settings-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">キャンセル</button>
+                    <button id="settings-dialog-save" data-i18n="TR_SETTINGS_SAVE_BUTTON">Save Settings</button>
+                    <button id="settings-dialog-cancel" data-i18n="TR_BUTTON_CANCEL">Cancel</button>
                 </div>
             </div>
         </div>
 
         <div id="info-dialog" class="dialog-overlay" style="display: none;">
             <div class="dialog-box">
-                <div class="dialog-header" data-i18n="TR_INFO_DIALOG_TITLE">情報</div>
+                <div class="dialog-header" data-i18n="TR_INFO_DIALOG_TITLE">Information</div>
                 <div class="dialog-content">
                     <p id="info-dialog-text"></p>
                 </div>
