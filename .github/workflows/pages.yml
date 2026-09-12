@@ -62,16 +62,10 @@ jobs:
           mkdir -p web/dist/assets
           cp -r web/assets/tone_curve web/dist/assets/tone_curve
 
-      - name: Prepare GitHub Pages directory
-        run: |
-          mkdir -p pages/RawPhotoForge/web
-          cp index.html pages/RawPhotoForge/index.html
-          cp -r web/dist pages/RawPhotoForge/web/
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pages
+          path: .
 
   deploy:
     environment:
